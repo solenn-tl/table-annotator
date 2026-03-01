@@ -14,12 +14,13 @@
       margin: 0;
       background: Canvas;
       color: CanvasText;
+      overflow-y: auto;
     }
 
     .app {
       display: grid;
-      grid-template-rows: auto minmax(0, 1fr) auto;
-      height: 100vh;
+      grid-template-rows: auto auto auto auto;
+      min-height: 100vh;
     }
 
     .toolbar {
@@ -97,7 +98,8 @@
       gap: 12px;
       padding: 12px;
       padding-bottom: 0;
-      min-height: 0;
+      height: calc(100vh - 120px);
+      min-height: 420px;
     }
 
     .panel {
@@ -228,6 +230,41 @@
       color: #fff;
       white-space: nowrap;
       pointer-events: none;
+    }
+
+    .bbox-handle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border: 1px solid #fff;
+      background: #4da3ff;
+      border-radius: 2px;
+      box-sizing: border-box;
+      pointer-events: auto;
+    }
+
+    .bbox-handle.nw {
+      left: -5px;
+      top: -5px;
+      cursor: nwse-resize;
+    }
+
+    .bbox-handle.ne {
+      right: -5px;
+      top: -5px;
+      cursor: nesw-resize;
+    }
+
+    .bbox-handle.sw {
+      left: -5px;
+      bottom: -5px;
+      cursor: nesw-resize;
+    }
+
+    .bbox-handle.se {
+      right: -5px;
+      bottom: -5px;
+      cursor: nwse-resize;
     }
 
     #drawRect {
@@ -384,6 +421,52 @@
       padding: 12px;
       color: GrayText;
     }
+
+    .field-cluster-panel {
+      margin: 12px;
+      margin-top: 0;
+      min-height: 220px;
+      max-height: 34vh;
+      display: grid;
+      grid-template-rows: auto auto auto minmax(140px, 1fr);
+    }
+
+    .field-cluster-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-size: 13px;
+    }
+
+    .field-cluster-controls input {
+      padding: 4px 8px;
+      min-width: 220px;
+      max-width: 360px;
+      width: 32vw;
+    }
+
+    .field-cluster-controls input[type="range"] {
+      min-width: 160px;
+      width: 200px;
+      max-width: none;
+      padding: 0;
+    }
+
+    .field-threshold-value {
+      min-width: 42px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    #fieldClusterResults {
+      overflow: auto;
+      padding: 8px 10px;
+      min-height: 140px;
+      font-size: 13px;
+    }
   </style>
 </head>
 <body>
@@ -398,13 +481,16 @@
       <input id="addRowsCountInput" type="number" min="1" step="1" value="10" style="width:90px;" aria-label="Rows to add" />
       <button id="addRowsBatchBtn" type="button">Add rows</button>
       <button id="deleteRowBtn" type="button" disabled>Delete row</button>
-      <button id="fillSeriesBtn" type="button" disabled>Fill sequence</button>
-      <button id="fillIdemBtn" type="button" disabled>Fill sequence with &lt;IDEM&gt;</button>
-      <button id="fillEmptyBtn" type="button" disabled>Fill sequence with &lt;EMPTY&gt;</button>
+      <button id="fillSeriesBtn" type="button" disabled>Fill with numeric sequence</button>
+      <button id="fillIdemBtn" type="button">Set batch &lt;IDEM&gt;</button>
+      <button id="fillEmptyBtn" type="button">Set batch &lt;EMPTY&gt;</button>
+      <button id="clearBatchValueBtn" type="button">Clear batch value</button>
       <input id="batchValueInput" type="text" placeholder="Batch value" />
       <button id="applyRangeBtn" type="button" disabled>Apply to selected range</button>
       <button id="convertIntWordsBtn" type="button" disabled>Integers → lettres</button>
       <button id="drawBboxBtn" type="button" disabled>Draw bbox</button>
+      <button id="editBboxCornersBtn" type="button" disabled>Edit bbox corners</button>
+      <button id="normalizeBboxWidthBtn" type="button">Normalize bbox width</button>
       <label><input id="batchDrawBboxChk" type="checkbox" /> Batch draw bbox</label>
       <button id="saveBtn" type="button" disabled>Save JSON</button>
       <span id="saveModeBadge" class="save-mode-badge unknown">Save: unknown</span>
@@ -452,6 +538,20 @@
       <div id="clustersChart"></div>
       <div id="clustersList" hidden></div>
     </section>
+
+    <section class="panel field-cluster-panel">
+      <div class="panel-title">Cluster by custom field</div>
+      <div class="field-cluster-controls">
+        <label for="clusterFieldInput">Field</label>
+        <input id="clusterFieldInput" type="text" placeholder="ex: contribuable, numeroListe, profession" />
+        <label for="fieldClusterThresholdInput">Threshold</label>
+        <input id="fieldClusterThresholdInput" type="range" min="0" max="1" step="0.01" value="0.20" />
+        <span id="fieldClusterThresholdValue" class="field-threshold-value">0.20</span>
+        <button id="runFieldClusterBtn" class="panel-title-btn" type="button">Run clustering</button>
+      </div>
+      <div id="fieldClusterMeta" class="clusters-meta">Choose a field and click Run clustering.</div>
+      <div id="fieldClusterResults"><div class="clusters-empty">No clustering results yet.</div></div>
+    </section>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
@@ -477,10 +577,13 @@
     const fillSeriesBtn = document.getElementById('fillSeriesBtn');
     const fillIdemBtn = document.getElementById('fillIdemBtn');
     const fillEmptyBtn = document.getElementById('fillEmptyBtn');
+    const clearBatchValueBtn = document.getElementById('clearBatchValueBtn');
     const batchValueInput = document.getElementById('batchValueInput');
     const applyRangeBtn = document.getElementById('applyRangeBtn');
     const convertIntWordsBtn = document.getElementById('convertIntWordsBtn');
     const drawBboxBtn = document.getElementById('drawBboxBtn');
+    const editBboxCornersBtn = document.getElementById('editBboxCornersBtn');
+    const normalizeBboxWidthBtn = document.getElementById('normalizeBboxWidthBtn');
     const batchDrawBboxChk = document.getElementById('batchDrawBboxChk');
     const saveBtn = document.getElementById('saveBtn');
     const toggleClustersBtn = document.getElementById('toggleClustersBtn');
@@ -494,6 +597,12 @@
     const clustersChartElement = document.getElementById('clustersChart');
     const clustersListElement = document.getElementById('clustersList');
     const clustersPanel = document.querySelector('.clusters-panel');
+    const clusterFieldInput = document.getElementById('clusterFieldInput');
+    const fieldClusterThresholdInput = document.getElementById('fieldClusterThresholdInput');
+    const fieldClusterThresholdValue = document.getElementById('fieldClusterThresholdValue');
+    const runFieldClusterBtn = document.getElementById('runFieldClusterBtn');
+    const fieldClusterMeta = document.getElementById('fieldClusterMeta');
+    const fieldClusterResults = document.getElementById('fieldClusterResults');
 
     let pairs = [];
     let pairSourceMode = 'api';
@@ -504,7 +613,9 @@
     let dragRowIndex = null;
     let drawing = false;
     let drawMode = false;
+    let bboxEditMode = false;
     let drawStart = null;
+    let bboxCornerResize = null;
     let panning = false;
     let panStartX = 0;
     let panStartY = 0;
@@ -527,6 +638,15 @@
     let clustersCollapsed = true;
     let clusterChartZoom = 1;
     let latestClustersPayload = null;
+    let clusterChartPanX = 0;
+    let clusterChartPanY = 0;
+    let clusterChartPanning = false;
+    let clusterChartPanStartX = 0;
+    let clusterChartPanStartY = 0;
+    let globalAutocompleteByColumn = {};
+    let globalAutocompleteByNormalizedColumn = {};
+    let lastFieldClusterRowsPayload = null;
+    let lastFieldClusterField = '';
 
     function escapeHtml(value) {
       return String(value)
@@ -548,9 +668,11 @@
       clusterZoomInBtn.disabled = !showChart;
       clusterZoomOutBtn.disabled = !showChart;
       clusterZoomLabel.style.opacity = showChart ? '1' : '0.6';
+      clustersChartElement.style.cursor = showChart ? 'grab' : 'default';
 
       if (showChart && clustersChart) {
         clustersChart.resize();
+        updateClusterChartCenter(clustersChart);
       }
     }
 
@@ -585,11 +707,42 @@
 
       if (!clustersCollapsed && clusterViewMode === 'chart' && clustersChart) {
         clustersChart.resize();
+        updateClusterChartCenter(clustersChart);
       }
     }
 
     function setStatus(message) {
       status.textContent = message;
+    }
+
+    function normalizeAutocompleteFieldName(value) {
+      return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function rebuildNormalizedAutocompleteIndex() {
+      const next = {};
+
+      for (const [column, suggestions] of Object.entries(globalAutocompleteByColumn || {})) {
+        const normalized = normalizeAutocompleteFieldName(column);
+        if (!normalized) {
+          continue;
+        }
+
+        if (!next[normalized]) {
+          next[normalized] = [];
+        }
+
+        const bucket = next[normalized];
+        for (const item of Array.isArray(suggestions) ? suggestions : []) {
+          const text = String(item || '').trim();
+          if (!text || bucket.includes(text)) {
+            continue;
+          }
+          bucket.push(text);
+        }
+      }
+
+      globalAutocompleteByNormalizedColumn = next;
     }
 
     function ensureClustersChart() {
@@ -599,9 +752,89 @@
 
       if (!clustersChart) {
         clustersChart = window.echarts.init(clustersChartElement);
+        setupClustersChartPanning(clustersChart);
       }
 
       return clustersChart;
+    }
+
+    function getClusterChartCenter(chart) {
+      const width = chart.getWidth();
+      const height = chart.getHeight();
+      return [
+        Math.round((width / 2) + clusterChartPanX),
+        Math.round((height / 2) + clusterChartPanY),
+      ];
+    }
+
+    function updateClusterChartCenter(chart) {
+      chart.setOption({
+        series: [
+          {
+            center: getClusterChartCenter(chart),
+          },
+        ],
+      });
+    }
+
+    function setupClustersChartPanning(chart) {
+      const zr = chart.getZr();
+      if (!zr || zr.__clusterPanBound) {
+        return;
+      }
+
+      const stopPanning = () => {
+        clusterChartPanning = false;
+        if (clusterViewMode === 'chart') {
+          clustersChartElement.style.cursor = 'grab';
+        }
+      };
+
+      zr.on('mousedown', (event) => {
+        if (clusterViewMode !== 'chart' || clustersCollapsed) {
+          return;
+        }
+
+        const startX = Number(event?.offsetX);
+        const startY = Number(event?.offsetY);
+        if (!Number.isFinite(startX) || !Number.isFinite(startY)) {
+          return;
+        }
+
+        clusterChartPanning = true;
+        clusterChartPanStartX = startX;
+        clusterChartPanStartY = startY;
+        clustersChartElement.style.cursor = 'grabbing';
+      });
+
+      zr.on('mousemove', (event) => {
+        if (!clusterChartPanning || !latestClustersPayload || clusterViewMode !== 'chart') {
+          return;
+        }
+
+        const moveX = Number(event?.offsetX);
+        const moveY = Number(event?.offsetY);
+        if (!Number.isFinite(moveX) || !Number.isFinite(moveY)) {
+          return;
+        }
+
+        const deltaX = moveX - clusterChartPanStartX;
+        const deltaY = moveY - clusterChartPanStartY;
+        if (deltaX === 0 && deltaY === 0) {
+          return;
+        }
+
+        clusterChartPanX += deltaX;
+        clusterChartPanY += deltaY;
+        clusterChartPanStartX = moveX;
+        clusterChartPanStartY = moveY;
+        updateClusterChartCenter(chart);
+      });
+
+      zr.on('mouseup', stopPanning);
+      zr.on('globalout', stopPanning);
+      zr.__clusterPanBound = true;
+      clustersChartElement.style.cursor = 'grab';
     }
 
     function renderContribuableClusters(payload) {
@@ -652,6 +885,7 @@
         series: [
           {
             type: 'sunburst',
+            center: getClusterChartCenter(chart),
             radius: [radii.inner, radii.outer],
             sort: null,
             nodeClick: 'zoomToNode',
@@ -866,16 +1100,17 @@
     }
 
     async function loadContribuableClustersClientSide() {
+      const rowsPayload = await loadAllRowsFromPairs();
+      return buildClusterPayloadFromRows(rowsPayload.allRows, rowsPayload.scannedFiles, rowsPayload.usedFiles);
+    }
+
+    async function loadAllRowsFromPairs() {
       const sourcePairs = Array.isArray(pairs) ? pairs : [];
       if (!sourcePairs.length) {
         return {
+          allRows: [],
           scannedFiles: 0,
           usedFiles: 0,
-          rows: 0,
-          matchedRows: 0,
-          totalGroups: 0,
-          totalContribuables: 0,
-          groups: [],
         };
       }
 
@@ -911,7 +1146,223 @@
         }
       }
 
-      return buildClusterPayloadFromRows(allRows, sourcePairs.length, usedFiles);
+      return {
+        allRows,
+        scannedFiles: sourcePairs.length,
+        usedFiles,
+      };
+    }
+
+    function levenshteinDistance(left, right) {
+      const a = String(left ?? '');
+      const b = String(right ?? '');
+
+      if (a === b) {
+        return 0;
+      }
+
+      if (!a.length) {
+        return b.length;
+      }
+
+      if (!b.length) {
+        return a.length;
+      }
+
+      const previous = new Array(b.length + 1);
+      const current = new Array(b.length + 1);
+
+      for (let index = 0; index <= b.length; index += 1) {
+        previous[index] = index;
+      }
+
+      for (let i = 1; i <= a.length; i += 1) {
+        current[0] = i;
+        for (let j = 1; j <= b.length; j += 1) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          current[j] = Math.min(
+            previous[j] + 1,
+            current[j - 1] + 1,
+            previous[j - 1] + cost,
+          );
+        }
+
+        for (let j = 0; j <= b.length; j += 1) {
+          previous[j] = current[j];
+        }
+      }
+
+      return previous[b.length];
+    }
+
+    function normalizedLevenshteinDistance(left, right) {
+      const a = String(left ?? '').trim().toLocaleLowerCase();
+      const b = String(right ?? '').trim().toLocaleLowerCase();
+      const maxLength = Math.max(a.length, b.length);
+
+      if (maxLength === 0) {
+        return 0;
+      }
+
+      return levenshteinDistance(a, b) / maxLength;
+    }
+
+    async function runFieldClustering() {
+      const rawField = String(clusterFieldInput.value || '').trim();
+      if (!rawField) {
+        fieldClusterMeta.textContent = 'Enter a field name first.';
+        fieldClusterResults.innerHTML = '<div class="clusters-empty">No clustering results yet.</div>';
+        return;
+      }
+
+      const normalizedField = normalizeClusterFieldName(rawField);
+      if (!normalizedField) {
+        fieldClusterMeta.textContent = 'Enter a valid field name first.';
+        fieldClusterResults.innerHTML = '<div class="clusters-empty">No clustering results yet.</div>';
+        return;
+      }
+
+      const threshold = getFieldClusterThreshold();
+      fieldClusterMeta.textContent = `Running clustering for "${rawField}" (threshold ${threshold.toFixed(2)})…`;
+
+      const rowsPayload = await loadAllRowsFromPairs();
+      const valueBuckets = new Map();
+      let matchedRows = 0;
+
+      for (const entry of rowsPayload.allRows) {
+        const row = entry?.row;
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+
+        const value = asClusterText(getClusterFieldValue(row, normalizedField));
+        if (!value) {
+          continue;
+        }
+
+        if (!valueBuckets.has(value)) {
+          valueBuckets.set(value, { count: 0, sources: [] });
+        }
+
+        const bucket = valueBuckets.get(value);
+        bucket.count += 1;
+
+        if (entry?.jsonName && Number.isInteger(entry?.rowNumber)) {
+          bucket.sources.push({ json: entry.jsonName, rowNumber: entry.rowNumber });
+        }
+
+        matchedRows += 1;
+      }
+
+      const uniqueValues = [...valueBuckets.keys()]
+        .sort((left, right) => left.localeCompare(right, undefined, { sensitivity: 'base' }));
+
+      const parent = uniqueValues.map((_, index) => index);
+      const findRoot = (index) => {
+        let root = index;
+        while (parent[root] !== root) {
+          root = parent[root];
+        }
+        while (parent[index] !== index) {
+          const next = parent[index];
+          parent[index] = root;
+          index = next;
+        }
+        return root;
+      };
+      const union = (leftIndex, rightIndex) => {
+        const leftRoot = findRoot(leftIndex);
+        const rightRoot = findRoot(rightIndex);
+        if (leftRoot !== rightRoot) {
+          parent[rightRoot] = leftRoot;
+        }
+      };
+
+      for (let i = 0; i < uniqueValues.length; i += 1) {
+        for (let j = i + 1; j < uniqueValues.length; j += 1) {
+          const distance = normalizedLevenshteinDistance(uniqueValues[i], uniqueValues[j]);
+          if (distance <= threshold) {
+            union(i, j);
+          }
+        }
+      }
+
+      const groupedByRoot = new Map();
+      for (let index = 0; index < uniqueValues.length; index += 1) {
+        const value = uniqueValues[index];
+        const root = findRoot(index);
+
+        if (!groupedByRoot.has(root)) {
+          groupedByRoot.set(root, {
+            label: value,
+            variants: [],
+            count: 0,
+            sources: [],
+          });
+        }
+
+        const cluster = groupedByRoot.get(root);
+        const bucket = valueBuckets.get(value);
+        cluster.variants.push(value);
+        cluster.count += Number(bucket?.count) || 0;
+        if (Array.isArray(bucket?.sources) && bucket.sources.length) {
+          cluster.sources.push(...bucket.sources);
+        }
+      }
+
+      const sortedGroups = [...groupedByRoot.values()]
+        .map((cluster) => {
+          cluster.variants.sort((left, right) => left.localeCompare(right, undefined, { sensitivity: 'base' }));
+          cluster.label = cluster.variants[0] || cluster.label;
+          return cluster;
+        })
+        .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base' }));
+
+      fieldClusterMeta.textContent = `${rowsPayload.scannedFiles} file(s) scanned · ${rowsPayload.usedFiles} file(s) loaded · ${matchedRows} matched row(s) · ${sortedGroups.length} cluster(s) for "${rawField}" · threshold ${threshold.toFixed(2)}`;
+
+      if (!sortedGroups.length) {
+        fieldClusterResults.innerHTML = '<div class="clusters-empty">No matching values for this field.</div>';
+        return;
+      }
+
+      const chunks = sortedGroups.map((group) => {
+        const variantsBlock = group.variants.length > 1
+          ? `<div class="cluster-address">Variants: ${group.variants.map((value) => escapeHtml(value)).join(' | ')}</div>`
+          : '';
+
+        const sources = Array.isArray(group.sources) ? group.sources : [];
+        const sourceItems = sources.length
+          ? `<ul class="cluster-sources">${sources.map((source) => {
+            const jsonName = escapeHtml(source?.json || '?');
+            const rowNumber = Number(source?.rowNumber) || 0;
+            return `<li>${jsonName} · row ${rowNumber > 0 ? rowNumber : '?'}</li>`;
+          }).join('')}</ul>`
+          : '<ul class="cluster-sources"><li>No source row</li></ul>';
+
+        return `
+          <section class="cluster-group">
+            <h4>${escapeHtml(group.label)} · total ${group.count}</h4>
+            ${variantsBlock}
+            ${sourceItems}
+          </section>
+        `;
+      });
+
+      fieldClusterResults.innerHTML = chunks.join('');
+    }
+
+    function getFieldClusterThreshold() {
+      const raw = Number.parseFloat(fieldClusterThresholdInput.value);
+      if (!Number.isFinite(raw)) {
+        return 0;
+      }
+
+      return Math.max(0, Math.min(1, raw));
+    }
+
+    function updateFieldClusterThresholdLabel() {
+      const threshold = getFieldClusterThreshold();
+      fieldClusterThresholdValue.textContent = threshold.toFixed(2);
     }
 
     async function loadContribuableClusters() {
@@ -944,6 +1395,117 @@
           clustersMeta.textContent = message;
         }
       }
+    }
+
+    function buildAutocompletePayloadFromRows(allRows, scannedFiles, usedFiles) {
+      const byColumn = {};
+      let matchedValues = 0;
+
+      for (const row of allRows) {
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+
+        for (const [column, value] of Object.entries(row)) {
+          if (column === 'rowIndex' || value == null || typeof value === 'object') {
+            continue;
+          }
+
+          const text = String(value).trim();
+          if (!text) {
+            continue;
+          }
+
+          if (!byColumn[column]) {
+            byColumn[column] = [];
+          }
+
+          const bucket = byColumn[column];
+          if (bucket.includes(text)) {
+            continue;
+          }
+
+          bucket.push(text);
+          matchedValues += 1;
+        }
+      }
+
+      for (const values of Object.values(byColumn)) {
+        values.sort((left, right) => left.localeCompare(right, undefined, { sensitivity: 'base' }));
+      }
+
+      return {
+        scannedFiles,
+        usedFiles,
+        rows: allRows.length,
+        matchedValues,
+        fields: byColumn,
+      };
+    }
+
+    async function loadAutocompleteFieldsClientSide() {
+      const sourcePairs = Array.isArray(pairs) ? pairs : [];
+      if (!sourcePairs.length) {
+        return {
+          scannedFiles: 0,
+          usedFiles: 0,
+          rows: 0,
+          matchedValues: 0,
+          fields: {},
+        };
+      }
+
+      const allRows = [];
+      let usedFiles = 0;
+
+      for (const pair of sourcePairs) {
+        if (!pair?.json) {
+          continue;
+        }
+
+        try {
+          const response = await fetch(withCacheBust(buildDataUrl(pair.json)), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            continue;
+          }
+
+          usedFiles += 1;
+          for (const row of payload) {
+            allRows.push(row);
+          }
+        } catch {
+          // ignore per-file error, keep processing
+        }
+      }
+
+      return buildAutocompletePayloadFromRows(allRows, sourcePairs.length, usedFiles);
+    }
+
+    async function loadGlobalAutocompleteFields() {
+      let payload = null;
+
+      try {
+        const response = await fetch('/api/autocomplete-fields', { cache: 'no-store' });
+        if (response.ok) {
+          payload = await response.json();
+        } else {
+          payload = await loadAutocompleteFieldsClientSide();
+        }
+      } catch {
+        payload = await loadAutocompleteFieldsClientSide();
+      }
+
+      const nextFields = payload && typeof payload === 'object' && payload.fields && typeof payload.fields === 'object'
+        ? payload.fields
+        : {};
+
+      globalAutocompleteByColumn = nextFields;
+      rebuildNormalizedAutocompleteIndex();
     }
 
     function setSaveModeBadge(mode) {
@@ -1094,9 +1656,9 @@
 
       const options = [
         { value: 'none', label: 'None' },
-        { value: 'sequence', label: 'Fill sequence only' },
+        { value: 'sequence', label: 'Sequence only' },
         { value: 'autocomplete', label: 'Autocomplete only' },
-        { value: 'both', label: 'Fill sequence + Autocomplete' },
+        { value: 'both', label: 'Sequence + Autocompletion' },
       ];
 
       for (const column of panelColumns) {
@@ -1396,8 +1958,6 @@
     function clearSequenceSeeds() {
       sequenceSeeds = [];
       fillSeriesBtn.disabled = true;
-      fillIdemBtn.disabled = true;
-      fillEmptyBtn.disabled = true;
       updateSequenceSeedHighlight();
     }
 
@@ -1754,10 +2314,7 @@
     function updateFillSeriesState() {
       normalizeSequenceSeeds();
       const canFillNumber = hasValidSeriesSelection() && currentData.length >= 3;
-      const canFillText = canFillTextSequenceFromRange() || canFillTextSequenceFromSeed();
       fillSeriesBtn.disabled = !canFillNumber;
-      fillIdemBtn.disabled = !canFillText;
-      fillEmptyBtn.disabled = !canFillText;
       updateSequenceSeedHighlight();
       updateRangeHighlight();
     }
@@ -1793,6 +2350,31 @@
 
         seen.add(text);
         values.push(text);
+      }
+
+      const addGlobalSuggestion = (item) => {
+        const text = String(item ?? '').trim();
+        if (!text || seen.has(text)) {
+          return;
+        }
+
+        seen.add(text);
+        values.push(text);
+      };
+
+      const exactMatches = globalAutocompleteByColumn?.[column];
+      if (Array.isArray(exactMatches)) {
+        for (const item of exactMatches) {
+          addGlobalSuggestion(item);
+        }
+      }
+
+      const normalized = normalizeAutocompleteFieldName(column);
+      const normalizedMatches = globalAutocompleteByNormalizedColumn?.[normalized];
+      if (Array.isArray(normalizedMatches)) {
+        for (const item of normalizedMatches) {
+          addGlobalSuggestion(item);
+        }
       }
 
       return values;
@@ -1991,6 +2573,7 @@
       selectedRowIndex = Number.isInteger(index) ? index : null;
       deleteRowBtn.disabled = selectedRowIndex == null;
       drawBboxBtn.disabled = selectedRowIndex == null;
+      editBboxCornersBtn.disabled = selectedRowIndex == null;
 
       for (const tr of tableContainer.querySelectorAll('tbody tr')) {
         const rowIndex = Number(tr.dataset.rowIndex);
@@ -2071,8 +2654,128 @@
         label.textContent = String(i + 1);
         box.append(label);
 
+        if (bboxEditMode && i === selectedRowIndex) {
+          for (const corner of ['nw', 'ne', 'sw', 'se']) {
+            const handle = document.createElement('div');
+            handle.className = `bbox-handle ${corner}`;
+            handle.addEventListener('mousedown', (event) => {
+              startBboxCornerResize(event, i, corner);
+            });
+            box.append(handle);
+          }
+        }
+
         bboxLayer.append(box);
       }
+    }
+
+    function startBboxCornerResize(event, rowIndex, corner) {
+      if (!bboxEditMode) {
+        return;
+      }
+
+      const bbox = currentData[rowIndex]?.bbox;
+      if (!isBboxObject(bbox)) {
+        return;
+      }
+
+      bboxCornerResize = {
+        rowIndex,
+        corner,
+        startClientX: event.clientX,
+        startClientY: event.clientY,
+        startBox: {
+          x: bbox.x,
+          y: bbox.y,
+          width: bbox.width,
+          height: bbox.height,
+        },
+        changed: false,
+      };
+
+      event.preventDefault();
+      event.stopPropagation();
+      stopPanning();
+    }
+
+    function applyBboxCornerResize(clientX, clientY) {
+      if (!bboxCornerResize || !Number.isFinite(zoom) || zoom <= 0) {
+        return;
+      }
+
+      const row = currentData[bboxCornerResize.rowIndex];
+      if (!row || !isBboxObject(row.bbox)) {
+        return;
+      }
+
+      const deltaX = (clientX - bboxCornerResize.startClientX) / zoom;
+      const deltaY = (clientY - bboxCornerResize.startClientY) / zoom;
+
+      const start = bboxCornerResize.startBox;
+      let left = start.x;
+      let top = start.y;
+      let right = start.x + start.width;
+      let bottom = start.y + start.height;
+
+      switch (bboxCornerResize.corner) {
+        case 'nw':
+          left = Math.min(start.x + deltaX, right - 1);
+          top = Math.min(start.y + deltaY, bottom - 1);
+          break;
+        case 'ne':
+          right = Math.max(left + 1, (start.x + start.width) + deltaX);
+          top = Math.min(start.y + deltaY, bottom - 1);
+          break;
+        case 'sw':
+          left = Math.min(start.x + deltaX, right - 1);
+          bottom = Math.max(top + 1, (start.y + start.height) + deltaY);
+          break;
+        case 'se':
+          right = Math.max(left + 1, (start.x + start.width) + deltaX);
+          bottom = Math.max(top + 1, (start.y + start.height) + deltaY);
+          break;
+        default:
+          return;
+      }
+
+      const nextBbox = {
+        x: Math.round(left),
+        y: Math.round(top),
+        width: Math.max(1, Math.round(right - left)),
+        height: Math.max(1, Math.round(bottom - top)),
+      };
+
+      const prev = row.bbox;
+      if (
+        prev.x === nextBbox.x &&
+        prev.y === nextBbox.y &&
+        prev.width === nextBbox.width &&
+        prev.height === nextBbox.height
+      ) {
+        return;
+      }
+
+      row.bbox = nextBbox;
+      bboxCornerResize.changed = true;
+      renderBboxes();
+    }
+
+    function finishBboxCornerResize() {
+      if (!bboxCornerResize) {
+        return;
+      }
+
+      const { rowIndex, changed } = bboxCornerResize;
+      bboxCornerResize = null;
+
+      if (!changed) {
+        return;
+      }
+
+      setUnsaved(true);
+      renderTable();
+      setSelectedRow(rowIndex);
+      setStatus(`BBox corners updated for row ${rowIndex + 1}`);
     }
 
     function createCellInput(rowIndex, colIndex, column, value, listIdByColumn) {
@@ -2322,8 +3025,33 @@
       }
 
       if (drawMode) {
+        if (bboxEditMode) {
+          bboxEditMode = false;
+          editBboxCornersBtn.classList.remove('active');
+          editBboxCornersBtn.textContent = 'Edit bbox corners';
+          renderBboxes();
+        }
         stopPanning();
       }
+    }
+
+    function setBboxEditMode(enabled) {
+      bboxEditMode = Boolean(enabled);
+      editBboxCornersBtn.classList.toggle('active', bboxEditMode);
+      editBboxCornersBtn.textContent = bboxEditMode ? 'Editing corners…' : 'Edit bbox corners';
+
+      if (bboxEditMode && drawMode) {
+        drawMode = false;
+        drawBboxBtn.classList.remove('active');
+        drawBboxBtn.textContent = 'Draw bbox';
+        drawing = false;
+        drawStart = null;
+        drawRect.style.display = 'none';
+        imageStage.style.cursor = 'default';
+        imageViewport.style.cursor = '';
+      }
+
+      renderBboxes();
     }
 
     function stopPanning() {
@@ -2378,6 +3106,52 @@
       return false;
     }
 
+    function normalizeAllBboxWidths() {
+      if (!Array.isArray(currentData) || !currentData.length) {
+        setStatus('No rows loaded');
+        return;
+      }
+
+      let maxWidth = 0;
+      for (const row of currentData) {
+        const bbox = row?.bbox;
+        if (!isBboxObject(bbox) || bbox.width <= 0) {
+          continue;
+        }
+
+        if (bbox.width > maxWidth) {
+          maxWidth = bbox.width;
+        }
+      }
+
+      if (maxWidth <= 0) {
+        setStatus('No valid bbox width found');
+        return;
+      }
+
+      let updatedCount = 0;
+      for (const row of currentData) {
+        const bbox = row?.bbox;
+        if (!isBboxObject(bbox)) {
+          continue;
+        }
+
+        if (bbox.width !== maxWidth) {
+          bbox.width = maxWidth;
+          updatedCount += 1;
+        }
+      }
+
+      if (!updatedCount) {
+        setStatus(`All bbox widths already set to ${maxWidth}`);
+        return;
+      }
+
+      setUnsaved(true);
+      renderTable();
+      setStatus(`Normalized bbox width to ${maxWidth} for ${updatedCount} row(s)`);
+    }
+
     async function saveCurrentJson() {
       if (!currentSelection) {
         return;
@@ -2424,6 +3198,7 @@
 
       setUnsaved(false);
       setStatus(message);
+      await loadGlobalAutocompleteFields();
       loadContribuableClusters();
     }
 
@@ -2485,6 +3260,7 @@
       }
 
       pairs = loaded;
+      await loadGlobalAutocompleteFields();
       pairSelect.innerHTML = '';
 
       if (!pairs.length) {
@@ -2569,16 +3345,41 @@
       setDrawMode(!drawMode);
     });
 
+    editBboxCornersBtn.addEventListener('click', () => {
+      if (selectedRowIndex == null) {
+        setStatus('Select a row first');
+        return;
+      }
+
+      setBboxEditMode(!bboxEditMode);
+    });
+
+    normalizeBboxWidthBtn.addEventListener('click', () => {
+      normalizeAllBboxWidths();
+    });
+
     fillSeriesBtn.addEventListener('click', () => {
       fillNumberSeries();
     });
 
     fillIdemBtn.addEventListener('click', () => {
-      fillSequenceWithIdem();
+      batchValueInput.value = '<IDEM>';
+      batchValueInput.focus();
+      batchValueInput.select();
+      setStatus('Batch value set to <IDEM>');
     });
 
     fillEmptyBtn.addEventListener('click', () => {
-      fillSequenceWithEmpty();
+      batchValueInput.value = '<EMPTY>';
+      batchValueInput.focus();
+      batchValueInput.select();
+      setStatus('Batch value set to <EMPTY>');
+    });
+
+    clearBatchValueBtn.addEventListener('click', () => {
+      batchValueInput.value = '';
+      batchValueInput.focus();
+      setStatus('Batch value cleared');
     });
 
     applyRangeBtn.addEventListener('click', () => {
@@ -2622,6 +3423,12 @@
     });
 
     window.addEventListener('mousemove', (event) => {
+      if (bboxCornerResize) {
+        applyBboxCornerResize(event.clientX, event.clientY);
+        event.preventDefault();
+        return;
+      }
+
       if (!panning) {
         return;
       }
@@ -2634,6 +3441,7 @@
     });
 
     window.addEventListener('mouseup', () => {
+      finishBboxCornerResize();
       stopPanning();
     });
 
@@ -2647,6 +3455,31 @@
 
     refreshClustersBtn.addEventListener('click', () => {
       loadContribuableClusters();
+    });
+
+    runFieldClusterBtn.addEventListener('click', () => {
+      runFieldClustering();
+    });
+
+    fieldClusterThresholdInput.addEventListener('input', () => {
+      updateFieldClusterThresholdLabel();
+
+      if (String(clusterFieldInput.value || '').trim()) {
+        runFieldClustering();
+      }
+    });
+
+    fieldClusterThresholdInput.addEventListener('change', () => {
+      updateFieldClusterThresholdLabel();
+    });
+
+    clusterFieldInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') {
+        return;
+      }
+
+      event.preventDefault();
+      runFieldClustering();
     });
 
     toggleClustersBtn.addEventListener('click', () => {
@@ -2745,6 +3578,7 @@
     window.addEventListener('resize', () => {
       if (clustersChart) {
         clustersChart.resize();
+        updateClusterChartCenter(clustersChart);
       }
     });
 
@@ -2761,6 +3595,7 @@
     setClusterViewMode('chart');
     updateClusterZoomLabel();
     setClustersCollapsed(true);
+    updateFieldClusterThresholdLabel();
   </script>
 </body>
 </html>

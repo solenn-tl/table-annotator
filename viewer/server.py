@@ -226,6 +226,77 @@ def build_contribuable_clusters() -> dict[str, object]:
     }
 
 
+def build_autocomplete_fields() -> dict[str, object]:
+    scanned_files = 0
+    used_files = 0
+    row_count = 0
+    matched_values = 0
+    value_sets: dict[str, set[str]] = defaultdict(set)
+
+    if not CUT_IMAGES_DIR.exists():
+        return {
+            "scannedFiles": 0,
+            "usedFiles": 0,
+            "rows": 0,
+            "matchedValues": 0,
+            "fields": {},
+        }
+
+    for json_path in sorted(CUT_IMAGES_DIR.glob("*.json")):
+        scanned_files += 1
+
+        try:
+            payload = json.loads(json_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        if not isinstance(payload, list):
+            continue
+
+        file_used = False
+
+        for row in payload:
+            if not isinstance(row, dict):
+                continue
+
+            row_count += 1
+
+            for key, value in row.items():
+                if not isinstance(key, str) or key == "rowIndex":
+                    continue
+
+                if isinstance(value, (dict, list)):
+                    continue
+
+                text = as_non_empty_text(value)
+                if text is None:
+                    continue
+
+                bucket = value_sets[key]
+                if text in bucket:
+                    continue
+
+                bucket.add(text)
+                matched_values += 1
+                file_used = True
+
+        if file_used:
+            used_files += 1
+
+    fields = {
+        key: sorted(values, key=lambda item: item.casefold())
+        for key, values in value_sets.items()
+    }
+
+    return {
+        "scannedFiles": scanned_files,
+        "usedFiles": used_files,
+        "rows": row_count,
+        "matchedValues": matched_values,
+        "fields": fields,
+    }
+
+
 def validate_column_settings_payload(payload: object) -> tuple[bool, str, dict[str, object]]:
     if not isinstance(payload, dict):
         return False, "Payload must be a JSON object", {
@@ -416,6 +487,10 @@ class ViewerHandler(BaseHTTPRequestHandler):
 
         if route == "/api/contribuable-clusters":
             self._send_json(build_contribuable_clusters())
+            return
+
+        if route == "/api/autocomplete-fields":
+            self._send_json(build_autocomplete_fields())
             return
 
         if route.startswith("/data/"):

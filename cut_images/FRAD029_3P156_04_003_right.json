@@ -21,7 +21,7 @@
         "bbox": {
             "x": 48,
             "y": 419,
-            "width": 2164,
+            "width": 2186,
             "height": 162
         },
         "rowIndex": 1
@@ -48,7 +48,7 @@
         "bbox": {
             "x": 48,
             "y": 590,
-            "width": 2159,
+            "width": 2186,
             "height": 140
         },
         "rowIndex": 2
@@ -75,7 +75,7 @@
         "bbox": {
             "x": 48,
             "y": 743,
-            "width": 2159,
+            "width": 2186,
             "height": 149
         },
         "rowIndex": 3
@@ -102,13 +102,13 @@
         "bbox": {
             "x": 39,
             "y": 900,
-            "width": 2159,
+            "width": 2186,
             "height": 105
         },
         "rowIndex": 4
     },
     {
-        "contribuable": "Lagorn Lucia",
+        "contribuable": "Magorn Lucia",
         "adresseContribuable": "bourg",
         "numeroListe": "561",
         "numeroParcelle": 65,
@@ -129,7 +129,7 @@
         "bbox": {
             "x": 39,
             "y": 1022,
-            "width": 2164,
+            "width": 2186,
             "height": 144
         },
         "rowIndex": 5
@@ -156,7 +156,7 @@
         "bbox": {
             "x": 35,
             "y": 1175,
-            "width": 2155,
+            "width": 2186,
             "height": 162
         },
         "rowIndex": 6
@@ -183,7 +183,7 @@
         "bbox": {
             "x": 35,
             "y": 1333,
-            "width": 2168,
+            "width": 2186,
             "height": 122
         },
         "rowIndex": 7
@@ -210,7 +210,7 @@
         "bbox": {
             "x": 39,
             "y": 1457,
-            "width": 2164,
+            "width": 2186,
             "height": 136
         },
         "rowIndex": 8
@@ -237,7 +237,7 @@
         "bbox": {
             "x": 48,
             "y": 1602,
-            "width": 2164,
+            "width": 2186,
             "height": 153
         },
         "rowIndex": 9
@@ -264,7 +264,7 @@
         "bbox": {
             "x": 39,
             "y": 1768,
-            "width": 2168,
+            "width": 2186,
             "height": 157
         },
         "rowIndex": 10
@@ -291,7 +291,7 @@
         "bbox": {
             "x": 35,
             "y": 1934,
-            "width": 2173,
+            "width": 2186,
             "height": 131
         },
         "rowIndex": 11
@@ -345,7 +345,7 @@
         "bbox": {
             "x": 35,
             "y": 2214,
-            "width": 2164,
+            "width": 2186,
             "height": 166
         },
         "rowIndex": 13
@@ -372,7 +372,7 @@
         "bbox": {
             "x": 35,
             "y": 2380,
-            "width": 2164,
+            "width": 2186,
             "height": 131
         },
         "rowIndex": 14
@@ -399,7 +399,7 @@
         "bbox": {
             "x": 35,
             "y": 2515,
-            "width": 2181,
+            "width": 2186,
             "height": 157
         },
         "rowIndex": 15
@@ -426,7 +426,7 @@
         "bbox": {
             "x": 31,
             "y": 2664,
-            "width": 2181,
+            "width": 2186,
             "height": 122
         },
         "rowIndex": 16
@@ -453,7 +453,7 @@
         "bbox": {
             "x": 31,
             "y": 2778,
-            "width": 2168,
+            "width": 2186,
             "height": 175
         },
         "rowIndex": 17
@@ -480,7 +480,7 @@
         "bbox": {
             "x": 26,
             "y": 2957,
-            "width": 2173,
+            "width": 2186,
             "height": 153
         },
         "rowIndex": 18
@@ -507,7 +507,7 @@
         "bbox": {
             "x": 22,
             "y": 3110,
-            "width": 2173,
+            "width": 2186,
             "height": 157
         },
         "rowIndex": 19
@@ -534,7 +534,7 @@
         "bbox": {
             "x": 26,
             "y": 3280,
-            "width": 2164,
+            "width": 2186,
             "height": 122
         },
         "rowIndex": 20

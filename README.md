@@ -1,6 +1,6 @@
-# table-annotator
+# Historical table annotator
 
-Demo for digitized tables annotator.
+This repository contains a demo of a tool to annotate digitized historical tables.
 
 ### Virtual environnement
 ```bash
@@ -21,7 +21,8 @@ MISTRAL_API_KEY=your_mistral_api_key_here
 
 You can copy from `.env.example`.
 
-### Run
+### Run Mistral transcription
+!!! The results are not good. !!!
 ```bash
 python mistral-ocr.py
 ```

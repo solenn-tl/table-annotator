@@ -1,131 +1,88 @@
-# OCR Annotation Tool (Viewer)
+# Annotation Tool (Viewer)
 
-This app loads image/JSON pairs from `cut_images/`, lets you edit annotation rows in a table, draw/select bboxes on the image, and analyze `contribuable` clusters.
+This app loads image/JSON pairs from `cut_images/`, lets you edit table annotations, manage bbox regions on image pages, and run clustering views.
 
-## Run
+## Prepare input files
 
-From the workspace root:
+Use the CLI to split/prep images and create JSON + pairs manifest:
 
-```powershell
-& .\ocr-test\Scripts\python.exe .\viewer\server.py --port 8015
+```bash
+python viewer\cli.py images\ cut_images\ --create-json-and-pairs
 ```
 
-Open: `http://127.0.0.1:8015`
-
----
-
-## What each button does
+## Current UI functions
 
 ### Top toolbar
 
-- **Document** (`pairSelect`)
-  - Selects the current image/JSON pair.
+- **Document** (`pairSelect`): select active image/JSON pair.
+- **Image zoom `- / +`** (`zoomOutBtn` / `zoomInBtn`): zoom image viewport.
+- **Add row** (`addRowBtn`): append one empty row.
+- **Rows to add + Add rows** (`addRowsCountInput` + `addRowsBatchBtn`): append multiple rows (max 1000).
+- **Delete row** (`deleteRowBtn`): delete selected row.
+- **Fill with numeric sequence** (`fillSeriesBtn`): numeric fill-down from 2 consecutive seed cells in the same column.
+- **Set batch `<IDEM>`** (`fillIdemBtn`): sets batch input to `<IDEM>`.
+- **Set batch `<EMPTY>`** (`fillEmptyBtn`): sets batch input to `<EMPTY>`.
+- **Clear batch value** (`clearBatchValueBtn`): empties the batch input.
+- **Batch value + Apply to selected range** (`batchValueInput` + `applyRangeBtn`): apply a single value to selected range.
+- **Integers → lettres** (`convertIntWordsBtn`): convert selected integer range into French words in target column.
+- **Draw bbox** (`drawBboxBtn`): draw bbox on selected row.
+- **Edit bbox corners** (`editBboxCornersBtn`): drag bbox corners directly on image.
+- **Normalize bbox width** (`normalizeBboxWidthBtn`): set all bbox widths to largest existing width (height unchanged).
+- **Batch draw bbox** (`batchDrawBboxChk`): after drawing, auto-select next row.
+- **Save JSON** (`saveBtn`): save current annotation data.
+- **Save badge** (`saveModeBadge`): `server`, `local fallback`, or `unknown`.
 
-- **`-` / `+`** (`zoomOutBtn` / `zoomInBtn`)
-  - Zooms the image viewer out/in.
+### Annotation panel
 
-- **Add row** (`addRowBtn`)
-  - Appends one empty row.
+- **Show/Hide column settings** (`columnTypesBtn`): configure per-column behavior:
+  - `none`
+  - `sequence`
+  - `autocomplete`
+  - `both`
 
-- **Rows to add** (`addRowsCountInput`) + **Add rows** (`addRowsBatchBtn`)
-  - Appends multiple empty rows (up to 1000 at once).
+### `Contribuable clusters by numeroListe` panel
 
-- **Delete row** (`deleteRowBtn`)
-  - Deletes the currently selected row.
+- **Expand / Reduce** (`toggleClustersBtn`): collapse/expand panel.
+- **Chart zoom `- / +`** (`clusterZoomOutBtn` / `clusterZoomInBtn`): zoom sunburst only.
+- **Chart / List** (`clusterChartModeBtn` / `clusterListModeBtn`): switch visualization mode.
+- **Refresh clusters** (`refreshClustersBtn`): reload cluster data.
+- **Chart pan (mouse drag)**: pan inside the chart area in chart mode.
 
-- **Fill sequence** (`fillSeriesBtn`)
-  - Numeric fill down from two consecutive seed cells in the same column.
+### `Cluster by custom field` panel
 
-- **Fill sequence with `<IDEM>`** (`fillIdemBtn`)
-  - Fills a selected range (or below a seed) with `<IDEM>`.
+- **Field** (`clusterFieldInput`): field name to analyze.
+- **Threshold** (`fieldClusterThresholdInput`): normalized Levenshtein distance threshold (`0.00` to `1.00`).
+- **Run clustering** (`runFieldClusterBtn`): compute fuzzy clusters for that field.
+- Threshold changes update value label live and re-run clustering when a field is set.
 
-- **Fill sequence with `<EMPTY>`** (`fillEmptyBtn`)
-  - Fills a selected range (or below a seed) with `<EMPTY>`.
-
-- **Batch value** (`batchValueInput`) + **Apply to selected range** (`applyRangeBtn`)
-  - Applies the input value to the currently selected range in one column.
-
-- **Integers → lettres** (`convertIntWordsBtn`)
-  - Converts integer values in selected range to French words.
-  - Prompts target column name and creates it if missing.
-
-- **Draw bbox** (`drawBboxBtn`)
-  - Toggles draw mode for bbox on selected row.
-
-- **Batch draw bbox** (`batchDrawBboxChk`)
-  - After drawing a bbox, auto-advances to next row.
-
-- **Save JSON** (`saveBtn`)
-  - Saves current annotations to selected JSON.
-
-- **Save badge** (`saveModeBadge`)
-  - Indicates save mode (`server`, `local fallback`, `unknown`).
-
-### Annotations panel header
-
-- **Show/Hide column settings** (`columnTypesBtn`)
-  - Opens a scrollable panel to configure each column behavior:
-    - `none`
-    - `sequence`
-    - `autocomplete`
-    - `both`
-
-### Cluster panel header
-
-- **Expand / Reduce** (`toggleClustersBtn`)
-  - Collapses/expands clustering panel (collapsed by default).
-
-- **Cluster zoom `-` / `+`** (`clusterZoomOutBtn` / `clusterZoomInBtn`)
-  - Zooms sunburst chart only.
-
-- **Chart / List** (`clusterChartModeBtn` / `clusterListModeBtn`)
-  - Switches cluster visualization mode.
-
-- **Refresh clusters** (`refreshClustersBtn`)
-  - Reloads clustering data.
-
----
-
-## How to use (quick workflow)
+## Quick workflow
 
 1. Select a **Document**.
-2. Click a table row/cell to select the active row.
-3. Edit cell values directly.
-4. Draw bboxes (optional): select row → click **Draw bbox** → drag on image.
-5. Use batch helpers as needed:
-   - Shift+click for range
-   - **Batch value** + **Apply to selected range**
-   - **Fill sequence** / `<IDEM>` / `<EMPTY>`
-   - **Integers → lettres**
-6. Click **Save JSON**.
+2. Select row/cell in table and edit values.
+3. Draw or edit bbox if needed.
+4. Use range tools (`Shift+click`, batch apply, numeric sequence, integer→letters).
+5. Save with **Save JSON**.
+6. Review clusters in bottom panels (fixed `numeroListe` panel + custom field panel).
 
----
+## Shortcuts and interactions
 
-## Keyboard and mouse shortcuts
+- **Shift + Arrow** in a cell: move to adjacent cell.
+- **Shift + click** in same column: set a range.
+- **Mouse wheel** on image: zoom at cursor.
+- **Click + drag** on image (non-draw mode): pan image.
+- **Click bbox**: select row + fit row width in image view.
+- **Edit bbox corners mode**: drag corner handles to resize selected bbox.
 
-- **Shift + Arrow keys** in a cell: navigate to adjacent table cell.
-- **Shift + click** in same column: select range.
-- **Mouse wheel** over image: zoom at cursor.
-- **Click + drag** on image (outside draw mode): pan image.
-- **Click bbox**: select row and zoom bbox to fit viewer width.
+## Clustering details
 
----
+- Main cluster panel source: all JSON files in `cut_images/`.
+- Main grouping: `numeroListe` → `contribuable` with source rows and addresses.
+- `numeroListe` cleanup removes markdown strikeout (`~~...~~`) and trims spaces.
+- Custom field clustering uses normalized Levenshtein distance over field values.
 
-## Cluster behavior
+## Data format
 
-- Data source: all JSON files in `cut_images/`.
-- Groups by `numeroListe` and entries by `contribuable`.
-- Includes source details (`json`, `rowNumber`) and `adresseContribuable` in list mode.
-- `numeroListe` cleaning:
-  - removes markdown strikeout segments like `~~720~~`
-  - trims leading/trailing whitespace
-
----
-
-## Data expectations
-
-- Annotation JSON files must be arrays of objects.
-- `bbox` format:
+Annotation JSON files must be arrays of objects. `bbox` shape:
 
 ```json
 {
@@ -136,4 +93,10 @@ Open: `http://127.0.0.1:8015`
 }
 ```
 
-Cluster endpoint: `/api/contribuable-clusters`
+API endpoints used by viewer include:
+
+- `/api/pairs`
+- `/api/save/<json-file>`
+- `/api/column-settings`
+- `/api/contribuable-clusters`
+- `/api/autocomplete-fields`
