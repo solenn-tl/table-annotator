@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>OCR Annotation Tool</title>
+  <title>Historical Table Annotator</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -145,6 +145,8 @@
       padding: 8px 10px;
       display: grid;
       gap: 6px;
+      height: 55vh;
+      overflow: auto;
       background: color-mix(in oklab, Canvas 97%, black 3%);
       font-size: 13px;
     }
@@ -395,7 +397,6 @@
       <button id="addRowBtn" type="button">Add row</button>
       <input id="addRowsCountInput" type="number" min="1" step="1" value="10" style="width:90px;" aria-label="Rows to add" />
       <button id="addRowsBatchBtn" type="button">Add rows</button>
-      <button id="addColumnBtn" type="button">Add column</button>
       <button id="deleteRowBtn" type="button" disabled>Delete row</button>
       <button id="fillSeriesBtn" type="button" disabled>Fill sequence</button>
       <button id="fillIdemBtn" type="button" disabled>Fill sequence with &lt;IDEM&gt;</button>
@@ -426,7 +427,6 @@
         <div class="panel-title panel-title-row">
           <span>Annotations</span>
           <div style="display:flex; gap:6px;">
-            <a href="/column-settings.html" style="text-decoration:none;"><button id="columnSettingsPageBtn" class="panel-title-btn" type="button">Setup JSON</button></a>
             <button id="columnTypesBtn" class="panel-title-btn" type="button">Show column settings</button>
           </div>
         </div>
@@ -473,7 +473,6 @@
     const addRowBtn = document.getElementById('addRowBtn');
     const addRowsCountInput = document.getElementById('addRowsCountInput');
     const addRowsBatchBtn = document.getElementById('addRowsBatchBtn');
-    const addColumnBtn = document.getElementById('addColumnBtn');
     const deleteRowBtn = document.getElementById('deleteRowBtn');
     const fillSeriesBtn = document.getElementById('fillSeriesBtn');
     const fillIdemBtn = document.getElementById('fillIdemBtn');
@@ -2543,42 +2542,6 @@
       renderTable();
       setSelectedRow(currentData.length - 1);
       setStatus(`${rowCount} row(s) added`);
-    });
-
-    addColumnBtn.addEventListener('click', () => {
-      const rawName = window.prompt('New column name:');
-      if (rawName == null) {
-        return;
-      }
-
-      const columnName = rawName.trim();
-      if (!columnName) {
-        setStatus('Column name cannot be empty');
-        return;
-      }
-
-      if (currentColumns.includes(columnName)) {
-        setStatus(`Column ${columnName} already exists`);
-        return;
-      }
-
-      if (currentData.length === 0) {
-        currentData.push({ [columnName]: '', bbox: null });
-      } else {
-        for (const row of currentData) {
-          if (!(columnName in row)) {
-            row[columnName] = '';
-          }
-        }
-      }
-
-      columnTypeByName[columnName] = 'both';
-      projectColumnTypeByName[columnName] = 'both';
-      clearSelectedRange();
-      clearSequenceSeeds();
-      setUnsaved(true);
-      renderTable();
-      setStatus(`Column ${columnName} added`);
     });
 
     deleteRowBtn.addEventListener('click', () => {
