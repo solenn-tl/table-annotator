@@ -1998,8 +1998,20 @@
       if (naturalWidth > 0) {
         imageView.style.width = `${Math.max(1, Math.round(naturalWidth * zoom))}px`;
       }
+      updateImageStageHorizontalAlignment();
       zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
       renderBboxes();
+    }
+
+    function updateImageStageHorizontalAlignment() {
+      if (!imageViewport || !imageStage || naturalWidth <= 0) {
+        return;
+      }
+
+      const viewportWidth = Math.max(0, imageViewport.clientWidth);
+      const stageWidth = Math.max(0, Math.round(naturalWidth * zoom));
+      const marginLeft = Math.max(0, Math.floor((viewportWidth - stageWidth) / 2));
+      imageStage.style.marginLeft = `${marginLeft}px`;
     }
 
     function setZoom(nextZoom) {
@@ -2027,10 +2039,12 @@
       const pointerX = clientX - viewportRect.left;
       const pointerY = clientY - viewportRect.top;
 
-      const contentXBefore = imageViewport.scrollLeft + pointerX;
-      const contentYBefore = imageViewport.scrollTop + pointerY;
-      const imageX = contentXBefore / zoom;
-      const imageY = contentYBefore / zoom;
+      const stageRectBefore = imageStage.getBoundingClientRect();
+      const stageLeftBefore = stageRectBefore.left - viewportRect.left;
+      const stageTopBefore = stageRectBefore.top - viewportRect.top;
+
+      const imageX = (pointerX - stageLeftBefore) / zoom;
+      const imageY = (pointerY - stageTopBefore) / zoom;
 
       const nextZoom = Math.max(0.2, Math.min(6, zoom * factor));
       if (nextZoom === zoom) {
@@ -2039,10 +2053,15 @@
 
       setZoom(nextZoom);
 
-      const contentXAfter = imageX * zoom;
-      const contentYAfter = imageY * zoom;
-      imageViewport.scrollLeft = Math.max(0, contentXAfter - pointerX);
-      imageViewport.scrollTop = Math.max(0, contentYAfter - pointerY);
+      const stageRectAfter = imageStage.getBoundingClientRect();
+      const stageLeftAfter = stageRectAfter.left - viewportRect.left;
+      const stageTopAfter = stageRectAfter.top - viewportRect.top;
+
+      const pointerXAfter = stageLeftAfter + (imageX * zoom);
+      const pointerYAfter = stageTopAfter + (imageY * zoom);
+
+      imageViewport.scrollLeft = Math.max(0, imageViewport.scrollLeft + (pointerXAfter - pointerX));
+      imageViewport.scrollTop = Math.max(0, imageViewport.scrollTop + (pointerYAfter - pointerY));
     }
 
     async function hasFileInDirectory(dirHandle, filename) {
@@ -3957,6 +3976,7 @@
     });
 
     window.addEventListener('resize', () => {
+      updateImageStageHorizontalAlignment();
       if (clustersChart) {
         clustersChart.resize();
         updateClusterChartCenter(clustersChart);

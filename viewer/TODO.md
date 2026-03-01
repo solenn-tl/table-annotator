@@ -2,6 +2,7 @@
 
 ## Initial register annotation
 - [ ] Train a YOLO model to pre-compute the rows bounding boxes
+- [ ] Add a model to perform named entity recognition on taxpayers
 - [ ] Deal with merged cells
 - [ ] Deal with braced cells
 - [ ] Deal with crossed out cells
