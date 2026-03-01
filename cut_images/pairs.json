@@ -1,0 +1,22 @@
+[
+    {
+        "name": "FRAD029_3P156_04_002_left",
+        "image": "FRAD029_3P156_04_002_left.jpg",
+        "json": "FRAD029_3P156_04_002_left.json"
+    },
+    {
+        "name": "FRAD029_3P156_04_002_right",
+        "image": "FRAD029_3P156_04_002_right.jpg",
+        "json": "FRAD029_3P156_04_002_right.json"
+    },
+    {
+        "name": "FRAD029_3P156_04_003_left",
+        "image": "FRAD029_3P156_04_003_left.jpg",
+        "json": "FRAD029_3P156_04_003_left.json"
+    },
+    {
+        "name": "FRAD029_3P156_04_003_right",
+        "image": "FRAD029_3P156_04_003_right.jpg",
+        "json": "FRAD029_3P156_04_003_right.json"
+    }
+]

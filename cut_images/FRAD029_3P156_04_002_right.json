@@ -1,0 +1,302 @@
+[
+    {
+        "contribuable": "Créac'h Ve et enf Jh, J.C.",
+        "adresseContribuable": "Feunten vélen",
+        "numeroListe": 255,
+        "numeroParcelle": 21,
+        "adresseParcelle": "Feunteun vélen",
+        "nomParcelle": "Pe ar cléguer",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 50,
+            "y": 403,
+            "width": 2155,
+            "height": 155
+        }
+    },
+    {
+        "contribuable": "Forjonel Jn Mie",
+        "adresseContribuable": "Bourg",
+        "numeroListe": 294,
+        "numeroParcelle": 22,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 45,
+            "y": 573,
+            "width": 2155,
+            "height": 155
+        }
+    },
+    {
+        "contribuable": "Stéphan Jn",
+        "adresseContribuable": "Kerlaouen",
+        "numeroListe": 816,
+        "numeroParcelle": 23,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 40,
+            "y": 725,
+            "width": 2145,
+            "height": 135
+        }
+    },
+    {
+        "contribuable": "Bon Louis",
+        "adresseContribuable": "Feunten vélen",
+        "numeroListe": 114,
+        "numeroParcelle": 24,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 45,
+            "y": 858,
+            "width": 2160,
+            "height": 135
+        }
+    },
+    {
+        "contribuable": "Pichon Louis",
+        "adresseContribuable": "Rumalic",
+        "numeroListe": 761,
+        "numeroParcelle": 25,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 45,
+            "y": 983,
+            "width": 2145,
+            "height": 155
+        }
+    },
+    {
+        "contribuable": "Jézéquel mathieu",
+        "adresseContribuable": "Frugulou",
+        "numeroListe": 428,
+        "numeroParcelle": 26,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 40,
+            "y": 1133,
+            "width": 2160,
+            "height": 170
+        }
+    },
+    {
+        "contribuable": "Créac'h alexandre",
+        "adresseContribuable": "Pen ar ruguel",
+        "numeroListe": 236,
+        "numeroParcelle": 27,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 35,
+            "y": 1308,
+            "width": 2165,
+            "height": 150
+        }
+    },
+    {
+        "contribuable": "Berthelé Ve et enf mtin",
+        "adresseContribuable": "Porsguen",
+        "numeroListe": 86,
+        "numeroParcelle": 28,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 35,
+            "y": 1463,
+            "width": 2160,
+            "height": 145
+        }
+    },
+    {
+        "contribuable": "~~Créac'h alexandre~~",
+        "adresseContribuable": "~~Pen ar ruguel~~",
+        "numeroListe": "410 ~~236~~",
+        "numeroParcelle": 29,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 40,
+            "y": 1608,
+            "width": 2150,
+            "height": 160
+        }
+    },
+    {
+        "contribuable": "Malgorn Ve et enf fois",
+        "adresseContribuable": "Kervéguen",
+        "numeroListe": 504,
+        "numeroParcelle": 30,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 35,
+            "y": 1763,
+            "width": 2140,
+            "height": 155
+        }
+    },
+    {
+        "contribuable": "Brunot Lassalle",
+        "adresseContribuable": "Conquet",
+        "numeroListe": 140,
+        "numeroParcelle": 31,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 30,
+            "y": 1923,
+            "width": 2160,
+            "height": 140
+        }
+    },
+    {
+        "contribuable": "Jaouen Jn Mie",
+        "adresseContribuable": "Bourg",
+        "numeroListe": 418,
+        "numeroParcelle": 32,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 20,
+            "y": 2058,
+            "width": 2180,
+            "height": 150
+        }
+    },
+    {
+        "contribuable": "Malgorn Jacques",
+        "adresseContribuable": "Bourg",
+        "numeroListe": 515,
+        "numeroParcelle": 33,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 25,
+            "y": 2208,
+            "width": 2160,
+            "height": 155
+        }
+    },
+    {
+        "contribuable": "Cozan Ve et enf Paul",
+        "adresseContribuable": "Porsguen",
+        "numeroListe": 230,
+        "numeroParcelle": 34,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 30,
+            "y": 2368,
+            "width": 2160,
+            "height": 145
+        }
+    },
+    {
+        "contribuable": "Berthelé crhistophe",
+        "adresseContribuable": "Porsguen",
+        "numeroListe": 52,
+        "numeroParcelle": 35,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "Jardin Coz",
+        "natureParcelle": "~~Pat~~ T Lab",
+        "bbox": {
+            "x": 30,
+            "y": 2508,
+            "width": 2145,
+            "height": 135
+        }
+    },
+    {
+        "contribuable": "Perrot Jn Fois",
+        "adresseContribuable": "Toul al lan",
+        "numeroListe": 742,
+        "numeroParcelle": 36,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "Liors milin",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 30,
+            "y": 2638,
+            "width": 2155,
+            "height": 170
+        }
+    },
+    {
+        "contribuable": "Malgorn Ve et enf Jérome",
+        "adresseContribuable": "Pen ar créac\"h",
+        "numeroListe": 542,
+        "numeroParcelle": 37,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 25,
+            "y": 2813,
+            "width": 2155,
+            "height": 155
+        }
+    },
+    {
+        "contribuable": "<EMPTY>",
+        "adresseContribuable": "<EMPTY>",
+        "numeroListe": "<EMPTY>",
+        "numeroParcelle": "38 nul",
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "<EMPTY>",
+        "natureParcelle": "<EMPTY>",
+        "bbox": {
+            "x": 25,
+            "y": 2968,
+            "width": 2150,
+            "height": 120
+        }
+    },
+    {
+        "contribuable": "Malgorn enf. ambroise",
+        "adresseContribuable": "Kernonen",
+        "numeroListe": "496",
+        "numeroParcelle": 39,
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "al Liors",
+        "natureParcelle": "Lab",
+        "bbox": {
+            "x": 25,
+            "y": 3088,
+            "width": 2145,
+            "height": 170
+        }
+    },
+    {
+        "contribuable": "Guen françois Ve et enft",
+        "adresseContribuable": "Poulbrac",
+        "numeroListe": "371",
+        "numeroParcelle": "40",
+        "adresseParcelle": "<IDEM>",
+        "nomParcelle": "vilouet",
+        "natureParcelle": "Pat",
+        "bbox": {
+            "x": 20,
+            "y": 3253,
+            "width": 2160,
+            "height": 140
+        }
+    }
+]
