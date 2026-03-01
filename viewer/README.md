@@ -2,6 +2,8 @@
 
 This app loads image/JSON pairs from `cut_images/`, lets you edit table annotations, manage bbox regions on image pages, and run clustering views.
 
+The code of this viewer has been produce using GPT-5.3-Codex.
+
 ## Prepare input files
 
 Use the CLI to split/prep images and create JSON + pairs manifest:

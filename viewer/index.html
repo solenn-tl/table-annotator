@@ -425,8 +425,8 @@
     .field-cluster-panel {
       margin: 12px;
       margin-top: 0;
-      min-height: 220px;
-      max-height: 34vh;
+      min-height: 280px;
+      max-height: none;
       display: grid;
       grid-template-rows: auto auto auto minmax(140px, 1fr);
     }
@@ -441,7 +441,8 @@
       font-size: 13px;
     }
 
-    .field-cluster-controls input {
+    .field-cluster-controls input,
+    .field-cluster-controls select {
       padding: 4px 8px;
       min-width: 220px;
       max-width: 360px;
@@ -464,7 +465,8 @@
     #fieldClusterResults {
       overflow: auto;
       padding: 8px 10px;
-      min-height: 140px;
+      min-height: 180px;
+      max-height: 52vh;
       font-size: 13px;
     }
   </style>
@@ -543,7 +545,9 @@
       <div class="panel-title">Cluster by custom field</div>
       <div class="field-cluster-controls">
         <label for="clusterFieldInput">Field</label>
-        <input id="clusterFieldInput" type="text" placeholder="ex: contribuable, numeroListe, profession" />
+        <select id="clusterFieldInput">
+          <option value="">Select a field…</option>
+        </select>
         <label for="fieldClusterThresholdInput">Threshold</label>
         <input id="fieldClusterThresholdInput" type="range" min="0" max="1" step="0.01" value="0.20" />
         <span id="fieldClusterThresholdValue" class="field-threshold-value">0.20</span>
@@ -1210,7 +1214,7 @@
     async function runFieldClustering() {
       const rawField = String(clusterFieldInput.value || '').trim();
       if (!rawField) {
-        fieldClusterMeta.textContent = 'Enter a field name first.';
+        fieldClusterMeta.textContent = 'Select a field first.';
         fieldClusterResults.innerHTML = '<div class="clusters-empty">No clustering results yet.</div>';
         return;
       }
@@ -1363,6 +1367,39 @@
     function updateFieldClusterThresholdLabel() {
       const threshold = getFieldClusterThreshold();
       fieldClusterThresholdValue.textContent = threshold.toFixed(2);
+    }
+
+    function refreshClusterFieldOptions() {
+      if (!clusterFieldInput) {
+        return;
+      }
+
+      const previous = String(clusterFieldInput.value || '');
+      const columns = Array.isArray(currentColumns)
+        ? currentColumns.filter((column) => column && column !== 'bbox' && column !== 'rowIndex')
+        : [];
+
+      clusterFieldInput.innerHTML = '';
+
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = columns.length ? 'Select a field…' : 'No field available';
+      clusterFieldInput.append(placeholder);
+
+      for (const column of columns) {
+        const option = document.createElement('option');
+        option.value = column;
+        option.textContent = column;
+        clusterFieldInput.append(option);
+      }
+
+      if (previous && columns.includes(previous)) {
+        clusterFieldInput.value = previous;
+      } else {
+        clusterFieldInput.value = '';
+      }
+
+      runFieldClusterBtn.disabled = columns.length === 0;
     }
 
     async function loadContribuableClusters() {
@@ -2906,6 +2943,7 @@
         }
         ensureColumnTypeConfig(currentColumns);
         renderColumnTypesPanel();
+        refreshClusterFieldOptions();
         clearSelectedRange();
         setRangeAnchor(0, 0, 'bbox');
         setSelectedRow(null);
@@ -2918,6 +2956,7 @@
       currentColumns = getColumns(currentData);
       ensureColumnTypeConfig(currentColumns);
       renderColumnTypesPanel();
+      refreshClusterFieldOptions();
       const listIdByColumn = rebuildColumnDatalists(currentColumns);
 
       const table = document.createElement('table');
@@ -3473,12 +3512,13 @@
       updateFieldClusterThresholdLabel();
     });
 
-    clusterFieldInput.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter') {
+    clusterFieldInput.addEventListener('change', () => {
+      if (!String(clusterFieldInput.value || '').trim()) {
+        fieldClusterMeta.textContent = 'Select a field and click Run clustering.';
+        fieldClusterResults.innerHTML = '<div class="clusters-empty">No clustering results yet.</div>';
         return;
       }
 
-      event.preventDefault();
       runFieldClustering();
     });
 
