@@ -286,8 +286,10 @@
     }
 
     table {
-      width: 100%;
+      width: max-content;
+      min-width: 100%;
       border-collapse: collapse;
+      table-layout: fixed;
       font-size: 14px;
     }
 
@@ -306,6 +308,36 @@
       background: color-mix(in oklab, Canvas 96%, black 4%);
     }
 
+    th.resizable-th {
+      position: sticky;
+      top: 0;
+      padding-right: 14px;
+    }
+
+    .th-text {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .column-resizer {
+      position: absolute;
+      top: 0;
+      right: -4px;
+      width: 8px;
+      height: 100%;
+      cursor: col-resize;
+      user-select: none;
+      touch-action: none;
+      z-index: 3;
+    }
+
+    .column-resizer:hover,
+    .column-resizer.active {
+      background: #4da3ff55;
+    }
+
     tr.selected {
       background: #4da3ff22;
     }
@@ -321,6 +353,11 @@
       font-weight: 600;
       text-align: center;
       width: 28px;
+    }
+
+    .drag-handle.locked {
+      cursor: not-allowed;
+      opacity: 0.45;
     }
 
     .cell-input {
@@ -483,6 +520,7 @@
       <input id="addRowsCountInput" type="number" min="1" step="1" value="10" style="width:90px;" aria-label="Rows to add" />
       <button id="addRowsBatchBtn" type="button">Add rows</button>
       <button id="deleteRowBtn" type="button" disabled>Delete row</button>
+      <label><input id="lockRowReorderChk" type="checkbox" checked /> Lock row reordering</label>
       <button id="fillSeriesBtn" type="button" disabled>Fill with numeric sequence</button>
       <button id="fillIdemBtn" type="button">Set batch &lt;IDEM&gt;</button>
       <button id="fillEmptyBtn" type="button">Set batch &lt;EMPTY&gt;</button>
@@ -588,6 +626,7 @@
     const addRowsCountInput = document.getElementById('addRowsCountInput');
     const addRowsBatchBtn = document.getElementById('addRowsBatchBtn');
     const deleteRowBtn = document.getElementById('deleteRowBtn');
+    const lockRowReorderChk = document.getElementById('lockRowReorderChk');
     const fillSeriesBtn = document.getElementById('fillSeriesBtn');
     const fillIdemBtn = document.getElementById('fillIdemBtn');
     const fillEmptyBtn = document.getElementById('fillEmptyBtn');
@@ -627,6 +666,7 @@
     let currentColumns = [];
     let selectedRowIndex = null;
     let dragRowIndex = null;
+    let rowReorderLocked = Boolean(lockRowReorderChk?.checked ?? true);
     let drawing = false;
     let drawMode = false;
     let bboxEditMode = false;
@@ -663,6 +703,12 @@
     let globalAutocompleteByNormalizedColumn = {};
     let lastFieldClusterRowsPayload = null;
     let lastFieldClusterField = '';
+    let columnWidthByName = {};
+    let columnResizeState = null;
+    let textMeasureCanvas = null;
+
+    const MIN_RESIZABLE_COLUMN_WIDTH = 70;
+    const MAX_AUTO_COLUMN_WIDTH = 720;
 
     function escapeHtml(value) {
       return String(value)
@@ -729,6 +775,163 @@
 
     function setStatus(message) {
       status.textContent = message;
+    }
+
+    function getColumnWidthStorageKey() {
+      return `ocr-annotator-column-widths::${window.location.pathname || '/'}`;
+    }
+
+    function loadColumnWidthsFromStorage() {
+      try {
+        const raw = window.localStorage.getItem(getColumnWidthStorageKey());
+        if (!raw) {
+          columnWidthByName = {};
+          return;
+        }
+
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') {
+          columnWidthByName = {};
+          return;
+        }
+
+        const next = {};
+        for (const [column, width] of Object.entries(parsed)) {
+          if (typeof column !== 'string') {
+            continue;
+          }
+
+          const numericWidth = Number(width);
+          if (!Number.isFinite(numericWidth) || numericWidth < MIN_RESIZABLE_COLUMN_WIDTH) {
+            continue;
+          }
+
+          next[column] = Math.round(numericWidth);
+        }
+
+        columnWidthByName = next;
+      } catch {
+        columnWidthByName = {};
+      }
+    }
+
+    function saveColumnWidthsToStorage() {
+      try {
+        window.localStorage.setItem(
+          getColumnWidthStorageKey(),
+          JSON.stringify(columnWidthByName),
+        );
+      } catch {
+      }
+    }
+
+    function getStoredColumnWidth(column) {
+      const width = Number(columnWidthByName[column]);
+      if (!Number.isFinite(width) || width < MIN_RESIZABLE_COLUMN_WIDTH) {
+        return null;
+      }
+      return Math.round(width);
+    }
+
+    function getTextMeasureContext() {
+      if (!textMeasureCanvas) {
+        textMeasureCanvas = document.createElement('canvas');
+      }
+
+      const context = textMeasureCanvas.getContext('2d');
+      if (!context) {
+        return null;
+      }
+
+      const styleTarget = tableContainer || document.body;
+      const computed = window.getComputedStyle(styleTarget);
+      const fontSize = computed.fontSize || '14px';
+      const fontFamily = computed.fontFamily || 'Segoe UI, system-ui, -apple-system, sans-serif';
+      const fontWeight = computed.fontWeight || '400';
+      context.font = `${fontWeight} ${fontSize} ${fontFamily}`;
+      return context;
+    }
+
+    function measureTextWidth(text) {
+      const context = getTextMeasureContext();
+      if (!context) {
+        return String(text || '').length * 8;
+      }
+
+      return context.measureText(String(text || '')).width;
+    }
+
+    function getDefaultColumnWidth(column) {
+      let widest = measureTextWidth(column);
+
+      for (const row of currentData) {
+        const display = getDisplayValue(row?.[column]);
+        const width = measureTextWidth(display);
+        if (width > widest) {
+          widest = width;
+        }
+      }
+
+      const withPadding = Math.ceil(widest + 28);
+      return Math.max(
+        MIN_RESIZABLE_COLUMN_WIDTH,
+        Math.min(MAX_AUTO_COLUMN_WIDTH, withPadding),
+      );
+    }
+
+    function startColumnResize(event, column, colElement, handleElement) {
+      if (event.button !== 0) {
+        return;
+      }
+
+      const startWidth = Math.round(colElement.getBoundingClientRect().width);
+      if (!Number.isFinite(startWidth) || startWidth <= 0) {
+        return;
+      }
+
+      columnResizeState = {
+        column,
+        colElement,
+        handleElement,
+        startClientX: event.clientX,
+        startWidth,
+      };
+
+      handleElement.classList.add('active');
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function applyColumnResize(clientX) {
+      if (!columnResizeState) {
+        return;
+      }
+
+      const deltaX = clientX - columnResizeState.startClientX;
+      const nextWidth = Math.max(
+        MIN_RESIZABLE_COLUMN_WIDTH,
+        Math.round(columnResizeState.startWidth + deltaX),
+      );
+
+      columnResizeState.colElement.style.width = `${nextWidth}px`;
+      columnWidthByName[columnResizeState.column] = nextWidth;
+    }
+
+    function finishColumnResize() {
+      if (!columnResizeState) {
+        return;
+      }
+
+      if (columnResizeState.handleElement) {
+        columnResizeState.handleElement.classList.remove('active');
+      }
+
+      columnResizeState = null;
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+      saveColumnWidthsToStorage();
     }
 
     function normalizeAutocompleteFieldName(value) {
@@ -2905,6 +3108,12 @@
         clearSelectedRange();
       });
 
+      input.addEventListener('dblclick', () => {
+        requestAnimationFrame(() => {
+          input.select();
+        });
+      });
+
       input.addEventListener('change', () => {
         const row = currentData[rowIndex];
         const prev = row?.[column] ?? null;
@@ -3015,6 +3224,27 @@
       const listIdByColumn = rebuildColumnDatalists(currentColumns);
 
       const table = document.createElement('table');
+      const colgroup = document.createElement('colgroup');
+
+      const dragCol = document.createElement('col');
+      dragCol.style.width = '36px';
+      colgroup.append(dragCol);
+
+      const rowIndexCol = document.createElement('col');
+      rowIndexCol.style.width = '52px';
+      colgroup.append(rowIndexCol);
+
+      const dataColByName = new Map();
+      for (const column of currentColumns) {
+        const col = document.createElement('col');
+        const storedWidth = getStoredColumnWidth(column);
+        const width = storedWidth != null ? storedWidth : getDefaultColumnWidth(column);
+        col.style.width = `${width}px`;
+        dataColByName.set(column, col);
+        colgroup.append(col);
+      }
+
+      table.append(colgroup);
       const thead = document.createElement('thead');
       const headRow = document.createElement('tr');
 
@@ -3028,7 +3258,23 @@
 
       for (const column of currentColumns) {
         const th = document.createElement('th');
-        th.textContent = column;
+        th.className = 'resizable-th';
+
+        const text = document.createElement('span');
+        text.className = 'th-text';
+        text.textContent = column;
+        th.append(text);
+
+        const handle = document.createElement('div');
+        handle.className = 'column-resizer';
+        const targetCol = dataColByName.get(column);
+        if (targetCol) {
+          handle.addEventListener('mousedown', (event) => {
+            startColumnResize(event, column, targetCol, handle);
+          });
+        }
+        th.append(handle);
+
         headRow.append(th);
       }
 
@@ -3040,16 +3286,24 @@
       currentData.forEach((row, rowIndex) => {
         const tr = document.createElement('tr');
         tr.dataset.rowIndex = String(rowIndex);
-        tr.draggable = true;
+        const rowReorderEnabled = !rowReorderLocked;
+        tr.draggable = rowReorderEnabled;
         tr.classList.toggle('selected', rowIndex === selectedRowIndex);
 
         tr.addEventListener('click', () => setSelectedRow(rowIndex));
 
         tr.addEventListener('dragstart', () => {
+          if (rowReorderLocked) {
+            dragRowIndex = null;
+            return;
+          }
           dragRowIndex = rowIndex;
         });
 
         tr.addEventListener('dragover', (event) => {
+          if (rowReorderLocked) {
+            return;
+          }
           event.preventDefault();
           tr.classList.add('drag-over');
         });
@@ -3059,6 +3313,9 @@
         });
 
         tr.addEventListener('drop', (event) => {
+          if (rowReorderLocked) {
+            return;
+          }
           event.preventDefault();
           tr.classList.remove('drag-over');
           const targetIndex = Number(tr.dataset.rowIndex);
@@ -3073,6 +3330,8 @@
 
         const dragCell = document.createElement('td');
         dragCell.className = 'drag-handle';
+        dragCell.classList.toggle('locked', rowReorderLocked);
+        dragCell.title = rowReorderLocked ? 'Row reordering is locked' : 'Drag to reorder row';
         dragCell.textContent = '⋮⋮';
         tr.append(dragCell);
 
@@ -3431,6 +3690,14 @@
       setStatus('Row deleted');
     });
 
+    lockRowReorderChk.addEventListener('change', () => {
+      rowReorderLocked = Boolean(lockRowReorderChk.checked);
+      dragRowIndex = null;
+      tableContainer.querySelectorAll('tbody tr').forEach((rowEl) => rowEl.classList.remove('drag-over'));
+      renderTable();
+      setStatus(rowReorderLocked ? 'Row reordering locked' : 'Row reordering unlocked');
+    });
+
     drawBboxBtn.addEventListener('click', () => {
       if (selectedRowIndex == null) {
         setStatus('Select a row first');
@@ -3517,6 +3784,12 @@
     });
 
     window.addEventListener('mousemove', (event) => {
+      if (columnResizeState) {
+        applyColumnResize(event.clientX);
+        event.preventDefault();
+        return;
+      }
+
       if (bboxCornerResize) {
         applyBboxCornerResize(event.clientX, event.clientY);
         event.preventDefault();
@@ -3535,6 +3808,7 @@
     });
 
     window.addEventListener('mouseup', () => {
+      finishColumnResize();
       finishBboxCornerResize();
       stopPanning();
     });
@@ -3688,6 +3962,8 @@
         updateClusterChartCenter(clustersChart);
       }
     });
+
+    loadColumnWidthsFromStorage();
 
     loadProjectColumnSettings()
       .then(() => loadPairs())

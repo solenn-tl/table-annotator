@@ -7,6 +7,8 @@
 - [ ] Deal with crossed out cells
 - [ ] Deal with abreviations
 
+Idea : add the possibility to add qualifiers to the cells (like for Wikidata triples)
+
 ## Application perspectives
 - [ ] Add a new page to deal with pages classification from a random folder
 - [ ] Adapt the annotation tool for regions dependency
