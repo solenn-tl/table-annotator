@@ -1,0 +1,2102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OCR Annotation Tool</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-bottom: 1px solid #7774;
+    }
+
+    .toolbar label {
+      font-weight: 600;
+    }
+
+    .toolbar select,
+    .toolbar button,
+    .toolbar input {
+      padding: 5px 8px;
+    }
+
+    .zoom-label {
+      min-width: 52px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toolbar select {
+      min-width: 320px;
+    }
+
+    .toolbar button.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .toolbar button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    #status {
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    .save-mode-badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #7776;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.3;
+      user-select: none;
+    }
+
+    .save-mode-badge.unknown {
+      color: GrayText;
+      background: #7772;
+    }
+
+    .save-mode-badge.server {
+      color: #0a6b2d;
+      background: #2ecc7126;
+    }
+
+    .save-mode-badge.local {
+      color: #8a5b00;
+      background: #ffb0202b;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 12px;
+      min-height: 0;
+    }
+
+    .panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: color-mix(in oklab, Canvas 95%, black 2%);
+    }
+
+    .panel-title {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-weight: 600;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .panel-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .panel-title-btn {
+      padding: 2px 8px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .panel-title-btn.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .column-types-panel {
+      border-bottom: 1px solid #7774;
+      padding: 8px 10px;
+      display: grid;
+      gap: 6px;
+      background: color-mix(in oklab, Canvas 97%, black 3%);
+      font-size: 13px;
+    }
+
+    .column-types-panel[hidden] {
+      display: none;
+    }
+
+    .column-types-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .column-types-row select {
+      padding: 3px 6px;
+      font: inherit;
+      color: inherit;
+      background: transparent;
+      border: 1px solid #7776;
+      border-radius: 4px;
+    }
+
+    #imageViewport {
+      overflow: auto;
+      background: #111;
+      position: relative;
+      min-height: 0;
+    }
+
+    #imageStage {
+      position: relative;
+      width: fit-content;
+      height: fit-content;
+    }
+
+    #imageView {
+      display: block;
+      max-width: none;
+    }
+
+    #bboxLayer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .bbox {
+      position: absolute;
+      border: 2px solid #ffb020;
+      background: #ffb02022;
+      box-sizing: border-box;
+    }
+
+    .bbox.selected {
+      border-color: #4da3ff;
+      background: #4da3ff22;
+    }
+
+    .bbox-label {
+      position: absolute;
+      left: 0;
+      top: -20px;
+      padding: 1px 4px;
+      font-size: 11px;
+      border-radius: 3px;
+      background: #000a;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    #drawRect {
+      position: absolute;
+      border: 2px dashed #4da3ff;
+      background: #4da3ff22;
+      pointer-events: none;
+      display: none;
+    }
+
+    #tableContainer {
+      overflow: auto;
+      min-height: 0;
+    }
+
+    .empty {
+      padding: 12px;
+      color: GrayText;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid #7774;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: color-mix(in oklab, Canvas 96%, black 4%);
+    }
+
+    tr.selected {
+      background: #4da3ff22;
+    }
+
+    tr.drag-over {
+      outline: 2px dashed #4da3ff;
+      outline-offset: -2px;
+    }
+
+    .drag-handle {
+      cursor: grab;
+      user-select: none;
+      font-weight: 600;
+      text-align: center;
+      width: 28px;
+    }
+
+    .cell-input {
+      width: 100%;
+      border: none;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      padding: 0;
+      margin: 0;
+    }
+
+    .cell-input:focus {
+      outline: 1px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .cell-input.sequence-seed {
+      background: #4da3ff22;
+    }
+
+    .cell-input.range-selected {
+      background: #ffb02026;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="toolbar">
+      <label for="pairSelect">Document</label>
+      <select id="pairSelect"></select>
+      <button id="zoomOutBtn" type="button">-</button>
+      <button id="zoomInBtn" type="button">+</button>
+      <span id="zoomLabel" class="zoom-label">100%</span>
+      <button id="addRowBtn" type="button">Add row</button>
+      <input id="addRowsCountInput" type="number" min="1" step="1" value="10" style="width:90px;" aria-label="Rows to add" />
+      <button id="addRowsBatchBtn" type="button">Add rows</button>
+      <button id="addColumnBtn" type="button">Add column</button>
+      <button id="deleteRowBtn" type="button" disabled>Delete row</button>
+      <button id="fillSeriesBtn" type="button" disabled>Fill sequence</button>
+      <button id="fillIdemBtn" type="button" disabled>Fill sequence with &lt;IDEM&gt;</button>
+      <button id="fillEmptyBtn" type="button" disabled>Fill sequence with &lt;EMPTY&gt;</button>
+      <input id="batchValueInput" type="text" placeholder="Batch value" />
+      <button id="applyRangeBtn" type="button" disabled>Apply to selected range</button>
+      <button id="convertIntWordsBtn" type="button" disabled>Integers → lettres</button>
+      <button id="drawBboxBtn" type="button" disabled>Draw bbox</button>
+      <label><input id="batchDrawBboxChk" type="checkbox" /> Batch draw bbox</label>
+      <button id="saveBtn" type="button" disabled>Save JSON</button>
+      <span id="saveModeBadge" class="save-mode-badge unknown">Save: unknown</span>
+      <span id="status"></span>
+    </div>
+
+    <div class="content">
+      <section class="panel">
+        <div class="panel-title">Page</div>
+        <div id="imageViewport">
+          <div id="imageStage">
+            <img id="imageView" alt="OCR page" />
+            <div id="bboxLayer"></div>
+            <div id="drawRect"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title panel-title-row">
+          <span>Annotations</span>
+          <div style="display:flex; gap:6px;">
+            <a href="/column-settings.html" style="text-decoration:none;"><button id="columnSettingsPageBtn" class="panel-title-btn" type="button">Setup JSON</button></a>
+            <button id="columnTypesBtn" class="panel-title-btn" type="button">Show column settings</button>
+          </div>
+        </div>
+        <div id="columnTypesPanel" class="column-types-panel" hidden></div>
+        <div id="tableContainer" class="empty">No data loaded.</div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const pairSelect = document.getElementById('pairSelect');
+    const imageViewport = document.getElementById('imageViewport');
+    const imageView = document.getElementById('imageView');
+    const imageStage = document.getElementById('imageStage');
+    const drawRect = document.getElementById('drawRect');
+    const bboxLayer = document.getElementById('bboxLayer');
+    const tableContainer = document.getElementById('tableContainer');
+    const columnTypesBtn = document.getElementById('columnTypesBtn');
+    const columnTypesPanel = document.getElementById('columnTypesPanel');
+    const saveModeBadge = document.getElementById('saveModeBadge');
+    const status = document.getElementById('status');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomLabel = document.getElementById('zoomLabel');
+    const addRowBtn = document.getElementById('addRowBtn');
+    const addRowsCountInput = document.getElementById('addRowsCountInput');
+    const addRowsBatchBtn = document.getElementById('addRowsBatchBtn');
+    const addColumnBtn = document.getElementById('addColumnBtn');
+    const deleteRowBtn = document.getElementById('deleteRowBtn');
+    const fillSeriesBtn = document.getElementById('fillSeriesBtn');
+    const fillIdemBtn = document.getElementById('fillIdemBtn');
+    const fillEmptyBtn = document.getElementById('fillEmptyBtn');
+    const batchValueInput = document.getElementById('batchValueInput');
+    const applyRangeBtn = document.getElementById('applyRangeBtn');
+    const convertIntWordsBtn = document.getElementById('convertIntWordsBtn');
+    const drawBboxBtn = document.getElementById('drawBboxBtn');
+    const batchDrawBboxChk = document.getElementById('batchDrawBboxChk');
+    const saveBtn = document.getElementById('saveBtn');
+
+    let pairs = [];
+    let pairSourceMode = 'api';
+    let currentSelection = null;
+    let currentData = [];
+    let currentColumns = [];
+    let selectedRowIndex = null;
+    let dragRowIndex = null;
+    let drawing = false;
+    let drawMode = false;
+    let drawStart = null;
+    let hasUnsavedChanges = false;
+    let sequenceSeeds = [];
+    let datalistCounter = 0;
+    let zoom = 1;
+    let naturalWidth = 0;
+    let cutImagesDirectoryHandle = null;
+    let columnTypeByName = {};
+    let projectColumnTypeByName = {};
+    let projectImageFormat = 'double';
+    let rangeAnchor = null;
+    let selectedRange = null;
+
+    function setStatus(message) {
+      status.textContent = message;
+    }
+
+    function setSaveModeBadge(mode) {
+      saveModeBadge.classList.remove('unknown', 'server', 'local');
+
+      if (mode === 'server') {
+        saveModeBadge.classList.add('server');
+        saveModeBadge.textContent = 'Save: server';
+        return;
+      }
+
+      if (mode === 'local') {
+        saveModeBadge.classList.add('local');
+        saveModeBadge.textContent = 'Save: local fallback';
+        return;
+      }
+
+      saveModeBadge.classList.add('unknown');
+      saveModeBadge.textContent = 'Save: unknown';
+    }
+
+    function setUnsaved(flag) {
+      hasUnsavedChanges = flag;
+      saveBtn.disabled = !flag || !currentSelection;
+      if (flag) {
+        setStatus('Unsaved changes');
+      }
+    }
+
+    function getDefaultColumnType(column) {
+      if (column === 'bbox') {
+        return 'none';
+      }
+      return 'both';
+    }
+
+    function getColumnType(column) {
+      return columnTypeByName[column] || getDefaultColumnType(column);
+    }
+
+    function allowsSequence(column) {
+      const type = getColumnType(column);
+      return type === 'sequence' || type === 'both';
+    }
+
+    function allowsAutocomplete(column) {
+      const type = getColumnType(column);
+      return type === 'autocomplete' || type === 'both';
+    }
+
+    function ensureColumnTypeConfig(columns) {
+      for (const column of columns) {
+        if (!columnTypeByName[column]) {
+          if (projectColumnTypeByName[column]) {
+            columnTypeByName[column] = projectColumnTypeByName[column];
+          } else {
+            columnTypeByName[column] = getDefaultColumnType(column);
+          }
+        }
+      }
+    }
+
+    function getConfiguredColumns() {
+      return Object.keys(projectColumnTypeByName);
+    }
+
+    async function loadProjectColumnSettings() {
+      const candidates = [
+        '/api/column-settings',
+        '/column-settings.json',
+        'column-settings.json',
+        './column-settings.json',
+      ];
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          if (!payload || typeof payload !== 'object') {
+            continue;
+          }
+
+          const columnTypes = payload.columnTypes && typeof payload.columnTypes === 'object'
+            ? payload.columnTypes
+            : {};
+
+          const imageFormat = typeof payload.imageFormat === 'string'
+            ? payload.imageFormat
+            : 'double';
+
+          projectColumnTypeByName = { ...columnTypes };
+          columnTypeByName = { ...columnTypes };
+          projectImageFormat = imageFormat;
+          setStatus(`Loaded ${Object.keys(projectColumnTypeByName).length} column setting(s), imageFormat=${projectImageFormat}`);
+          return;
+        } catch {
+          // try next source
+        }
+      }
+
+      projectColumnTypeByName = {};
+      projectImageFormat = 'double';
+      setStatus('Column settings not found, using defaults');
+    }
+
+    function normalizeSequenceSeeds() {
+      sequenceSeeds = sequenceSeeds.filter((seed) => (
+        seed.rowIndex >= 0 &&
+        seed.rowIndex < currentData.length &&
+        allowsSequence(seed.column)
+      ));
+
+      if (sequenceSeeds.length > 2) {
+        sequenceSeeds = sequenceSeeds.slice(sequenceSeeds.length - 2);
+      }
+    }
+
+    function renderColumnTypesPanel() {
+      columnTypesPanel.innerHTML = '';
+
+      const panelColumns = [];
+      const panelSeen = new Set();
+
+      for (const column of currentColumns) {
+        if (!panelSeen.has(column)) {
+          panelSeen.add(column);
+          panelColumns.push(column);
+        }
+      }
+
+      for (const column of Object.keys(projectColumnTypeByName)) {
+        if (!panelSeen.has(column)) {
+          panelSeen.add(column);
+          panelColumns.push(column);
+        }
+      }
+
+      if (!panelColumns.length) {
+        const empty = document.createElement('div');
+        empty.textContent = 'No columns available.';
+        columnTypesPanel.append(empty);
+        return;
+      }
+
+      const options = [
+        { value: 'none', label: 'None' },
+        { value: 'sequence', label: 'Fill sequence only' },
+        { value: 'autocomplete', label: 'Autocomplete only' },
+        { value: 'both', label: 'Fill sequence + Autocomplete' },
+      ];
+
+      for (const column of panelColumns) {
+        const row = document.createElement('div');
+        row.className = 'column-types-row';
+
+        const label = document.createElement('label');
+        label.textContent = column;
+        row.append(label);
+
+        const select = document.createElement('select');
+        for (const optionData of options) {
+          const option = document.createElement('option');
+          option.value = optionData.value;
+          option.textContent = optionData.label;
+          select.append(option);
+        }
+
+        select.value = getColumnType(column);
+        select.addEventListener('change', () => {
+          columnTypeByName[column] = select.value;
+          normalizeSequenceSeeds();
+          renderTable();
+          setStatus(`Column type set: ${column} -> ${select.value}`);
+        });
+        row.append(select);
+
+        columnTypesPanel.append(row);
+      }
+    }
+
+    function setColumnTypesPanelVisible(visible) {
+      columnTypesPanel.hidden = !visible;
+      columnTypesBtn.classList.toggle('active', visible);
+      columnTypesBtn.textContent = visible ? 'Hide column settings' : 'Show column settings';
+      if (visible) {
+        renderColumnTypesPanel();
+      }
+    }
+
+    function applyZoom() {
+      if (naturalWidth > 0) {
+        imageView.style.width = `${Math.max(1, Math.round(naturalWidth * zoom))}px`;
+      }
+      zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+      renderBboxes();
+    }
+
+    function setZoom(nextZoom) {
+      zoom = Math.max(0.2, Math.min(6, nextZoom));
+      applyZoom();
+    }
+
+    function zoomAtViewportPoint(clientX, clientY, factor) {
+      if (naturalWidth <= 0) {
+        return;
+      }
+
+      const viewportRect = imageViewport.getBoundingClientRect();
+      const pointerX = clientX - viewportRect.left;
+      const pointerY = clientY - viewportRect.top;
+
+      const contentXBefore = imageViewport.scrollLeft + pointerX;
+      const contentYBefore = imageViewport.scrollTop + pointerY;
+      const imageX = contentXBefore / zoom;
+      const imageY = contentYBefore / zoom;
+
+      const nextZoom = Math.max(0.2, Math.min(6, zoom * factor));
+      if (nextZoom === zoom) {
+        return;
+      }
+
+      setZoom(nextZoom);
+
+      const contentXAfter = imageX * zoom;
+      const contentYAfter = imageY * zoom;
+      imageViewport.scrollLeft = Math.max(0, contentXAfter - pointerX);
+      imageViewport.scrollTop = Math.max(0, contentYAfter - pointerY);
+    }
+
+    async function hasFileInDirectory(dirHandle, filename) {
+      try {
+        await dirHandle.getFileHandle(filename);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    async function ensureCutImagesDirectoryHandle() {
+      if (cutImagesDirectoryHandle) {
+        return cutImagesDirectoryHandle;
+      }
+
+      if (!window.showDirectoryPicker) {
+        throw new Error('Save endpoint unavailable and local-write API is not supported in this browser.');
+      }
+
+      cutImagesDirectoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      return cutImagesDirectoryHandle;
+    }
+
+    async function saveViaLocalFolder(payloadText) {
+      if (!currentSelection?.json) {
+        throw new Error('No JSON file selected.');
+      }
+
+      const dirHandle = await ensureCutImagesDirectoryHandle();
+      const jsonFilename = currentSelection.json;
+
+      if (!(await hasFileInDirectory(dirHandle, jsonFilename))) {
+        throw new Error(`Selected folder does not contain ${jsonFilename}. Choose cut_images.`);
+      }
+
+      const targetHandle = await dirHandle.getFileHandle(jsonFilename);
+
+      const targetWriter = await targetHandle.createWritable();
+      await targetWriter.write(payloadText + '\n');
+      await targetWriter.close();
+
+      return { saved: jsonFilename };
+    }
+
+    function normalizeManifestPairs(data) {
+      if (!Array.isArray(data)) {
+        return [];
+      }
+
+      return data
+        .map((item) => {
+          if (!item || typeof item !== 'object' || !item.image || !item.json) {
+            return null;
+          }
+
+          return {
+            name: item.name || item.image.replace(/\.[^.]+$/, ''),
+            image: item.image,
+            json: item.json,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function buildDataUrl(fileName) {
+      if (/^(https?:|\/|\.\/|\.\.\/)/.test(fileName)) {
+        return fileName;
+      }
+      return pairSourceMode === 'api'
+        ? `/data/${encodeURIComponent(fileName)}`
+        : `../cut_images/${encodeURIComponent(fileName)}`;
+    }
+
+    function withCacheBust(url) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}t=${Date.now()}`;
+    }
+
+    function getColumns(dataRows) {
+      const configuredColumns = getConfiguredColumns();
+      if (configuredColumns.length) {
+        const seen = new Set(configuredColumns);
+        const columns = [...configuredColumns];
+        if (!seen.has('bbox')) {
+          columns.push('bbox');
+        }
+        return columns;
+      }
+
+      const columns = [];
+      const seen = new Set();
+
+      for (const row of dataRows) {
+        for (const key of Object.keys(row || {})) {
+          if (key === 'rowIndex') {
+            continue;
+          }
+          if (!seen.has(key)) {
+            seen.add(key);
+            columns.push(key);
+          }
+        }
+      }
+
+      if (!seen.has('bbox')) {
+        columns.push('bbox');
+      }
+
+      return columns;
+    }
+
+    function getColumnsForNewRow() {
+      const configuredColumns = getConfiguredColumns();
+      const columnsForNewRow = configuredColumns.length
+        ? [...configuredColumns]
+        : (currentColumns.length ? currentColumns : ['bbox']);
+
+      if (!columnsForNewRow.includes('bbox')) {
+        columnsForNewRow.push('bbox');
+      }
+
+      return columnsForNewRow;
+    }
+
+    function createEmptyRow() {
+      const row = {};
+      for (const column of getColumnsForNewRow()) {
+        row[column] = column === 'bbox' ? null : '';
+      }
+
+      if (!('bbox' in row)) {
+        row.bbox = null;
+      }
+
+      return row;
+    }
+
+    function syncRowIndexes() {
+      if (!Array.isArray(currentData)) {
+        return;
+      }
+
+      for (let rowIndex = 0; rowIndex < currentData.length; rowIndex += 1) {
+        if (!currentData[rowIndex] || typeof currentData[rowIndex] !== 'object') {
+          currentData[rowIndex] = {};
+        }
+        currentData[rowIndex].rowIndex = rowIndex + 1;
+      }
+    }
+
+    function getDisplayValue(value) {
+      if (value == null) {
+        return '';
+      }
+      if (typeof value === 'object') {
+        return JSON.stringify(value);
+      }
+      return String(value);
+    }
+
+    function parseCellValue(rawValue, previousValue, column) {
+      if (column === 'bbox') {
+        const trimmed = rawValue.trim();
+        if (!trimmed) {
+          return null;
+        }
+        try {
+          return JSON.parse(trimmed);
+        } catch {
+          return previousValue;
+        }
+      }
+
+      if (typeof previousValue === 'number') {
+        const numeric = Number(rawValue);
+        return Number.isNaN(numeric) ? rawValue : numeric;
+      }
+
+      if (typeof previousValue === 'boolean') {
+        return rawValue.toLowerCase() === 'true';
+      }
+
+      if (previousValue == null && rawValue.trim() === '') {
+        return null;
+      }
+
+      return rawValue;
+    }
+
+    function asNumber(value) {
+      if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : null;
+      }
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return null;
+        }
+        const parsed = Number(trimmed);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+
+      return null;
+    }
+
+    function clearSequenceSeeds() {
+      sequenceSeeds = [];
+      fillSeriesBtn.disabled = true;
+      fillIdemBtn.disabled = true;
+      fillEmptyBtn.disabled = true;
+      updateSequenceSeedHighlight();
+    }
+
+    function clearSelectedRange() {
+      selectedRange = null;
+      applyRangeBtn.disabled = true;
+      convertIntWordsBtn.disabled = true;
+      updateRangeHighlight();
+    }
+
+    function setRangeAnchor(rowIndex, colIndex, column) {
+      rangeAnchor = { rowIndex, colIndex, column };
+    }
+
+    function updateRangeHighlight() {
+      tableContainer.querySelectorAll('input.cell-input').forEach((input) => {
+        if (!selectedRange) {
+          input.classList.remove('range-selected');
+          return;
+        }
+
+        const rowIndex = Number(input.dataset.rowIndex);
+        const colIndex = Number(input.dataset.colIndex);
+        const inRange = (
+          colIndex === selectedRange.colIndex &&
+          rowIndex >= selectedRange.startRow &&
+          rowIndex <= selectedRange.endRow
+        );
+
+        input.classList.toggle('range-selected', inRange);
+      });
+    }
+
+    function trySelectRange(rowIndex, colIndex, column) {
+      if (!rangeAnchor) {
+        return false;
+      }
+
+      if (rangeAnchor.column !== column) {
+        setStatus('Range selection must stay in the same column');
+        return false;
+      }
+
+      selectedRange = {
+        column,
+        colIndex,
+        startRow: Math.min(rangeAnchor.rowIndex, rowIndex),
+        endRow: Math.max(rangeAnchor.rowIndex, rowIndex),
+      };
+
+      const canApply = selectedRange.startRow !== selectedRange.endRow;
+      applyRangeBtn.disabled = !canApply;
+      convertIntWordsBtn.disabled = !canApply;
+      updateRangeHighlight();
+      return canApply;
+    }
+
+    function parseStrictInteger(value) {
+      if (typeof value === 'number') {
+        return Number.isInteger(value) ? value : null;
+      }
+
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!/^[-+]?\d+$/.test(trimmed)) {
+          return null;
+        }
+        const parsed = Number.parseInt(trimmed, 10);
+        return Number.isInteger(parsed) ? parsed : null;
+      }
+
+      return null;
+    }
+
+    function toFrenchUnderHundred(value) {
+      const units = [
+        'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf',
+        'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize',
+      ];
+      const tens = ['', 'dix', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante'];
+
+      if (value < 17) {
+        return units[value];
+      }
+
+      if (value < 20) {
+        return `dix-${units[value - 10]}`;
+      }
+
+      if (value < 70) {
+        const ten = Math.floor(value / 10);
+        const unit = value % 10;
+
+        if (unit === 0) {
+          return tens[ten];
+        }
+
+        if (unit === 1) {
+          return `${tens[ten]}-et-un`;
+        }
+
+        return `${tens[ten]}-${units[unit]}`;
+      }
+
+      if (value < 80) {
+        const remainder = value - 60;
+        if (remainder === 11) {
+          return 'soixante-et-onze';
+        }
+        return `soixante-${toFrenchUnderHundred(remainder)}`;
+      }
+
+      if (value === 80) {
+        return 'quatre-vingts';
+      }
+
+      return `quatre-vingt-${toFrenchUnderHundred(value - 80)}`;
+    }
+
+    function toFrenchUnderThousand(value) {
+      if (value < 100) {
+        return toFrenchUnderHundred(value);
+      }
+
+      const units = ['zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+      const hundreds = Math.floor(value / 100);
+      const remainder = value % 100;
+
+      let prefix = hundreds === 1 ? 'cent' : `${units[hundreds]} cent`;
+      if (remainder === 0 && hundreds > 1) {
+        prefix += 's';
+      }
+
+      if (remainder === 0) {
+        return prefix;
+      }
+
+      return `${prefix} ${toFrenchUnderHundred(remainder)}`;
+    }
+
+    function integerToFrenchWords(value) {
+      if (value === 0) {
+        return 'zéro';
+      }
+
+      if (value < 0) {
+        return `moins ${integerToFrenchWords(Math.abs(value))}`;
+      }
+
+      const scales = [
+        { amount: 1_000_000_000, singular: 'milliard', plural: 'milliards' },
+        { amount: 1_000_000, singular: 'million', plural: 'millions' },
+        { amount: 1_000, singular: 'mille', plural: 'mille' },
+      ];
+
+      let remainder = value;
+      const parts = [];
+
+      for (const scale of scales) {
+        const quotient = Math.floor(remainder / scale.amount);
+        if (quotient === 0) {
+          continue;
+        }
+
+        if (scale.amount === 1_000) {
+          if (quotient === 1) {
+            parts.push('mille');
+          } else {
+            parts.push(`${toFrenchUnderThousand(quotient)} mille`);
+          }
+        } else {
+          const label = quotient > 1 ? scale.plural : scale.singular;
+          parts.push(`${toFrenchUnderThousand(quotient)} ${label}`);
+        }
+
+        remainder %= scale.amount;
+      }
+
+      if (remainder > 0) {
+        parts.push(toFrenchUnderThousand(remainder));
+      }
+
+      return parts.join(' ').replace(/\s+/g, ' ').trim();
+    }
+
+    function convertRangeIntegersToLetters() {
+      if (!selectedRange) {
+        setStatus('Select a range first (Shift+click in the same column)');
+        return;
+      }
+
+      const sourceColumn = selectedRange.column;
+      const defaultTargetColumn = /chiffres/i.test(sourceColumn)
+        ? sourceColumn.replace(/chiffres/ig, 'lettres')
+        : `${sourceColumn} lettres`;
+
+      const rawTarget = window.prompt('Target column for lettres:', defaultTargetColumn);
+      if (rawTarget == null) {
+        return;
+      }
+
+      const targetColumn = rawTarget.trim();
+      if (!targetColumn) {
+        setStatus('Target column name cannot be empty');
+        return;
+      }
+
+      if (!currentColumns.includes(targetColumn)) {
+        for (const row of currentData) {
+          if (row && !(targetColumn in row)) {
+            row[targetColumn] = '';
+          }
+        }
+        if (targetColumn !== 'bbox') {
+          columnTypeByName[targetColumn] = 'autocomplete';
+        }
+      }
+
+      let convertedCount = 0;
+      for (let rowIndex = selectedRange.startRow; rowIndex <= selectedRange.endRow; rowIndex += 1) {
+        if (!currentData[rowIndex]) {
+          continue;
+        }
+
+        const rawValue = currentData[rowIndex][sourceColumn];
+        const parsed = parseStrictInteger(rawValue);
+        if (parsed == null) {
+          continue;
+        }
+
+        currentData[rowIndex][targetColumn] = integerToFrenchWords(parsed);
+        convertedCount += 1;
+      }
+
+      if (convertedCount === 0) {
+        setStatus('No integer values found in selected range');
+        return;
+      }
+
+      setUnsaved(true);
+      renderTable();
+      setStatus(`Converted ${convertedCount} value(s): ${sourceColumn} → ${targetColumn}`);
+    }
+
+    function applyBatchValueToRange() {
+      if (!selectedRange) {
+        setStatus('Select a range first (Shift+click in the same column)');
+        return;
+      }
+
+      const rawValue = batchValueInput.value;
+      for (let rowIndex = selectedRange.startRow; rowIndex <= selectedRange.endRow; rowIndex += 1) {
+        if (!currentData[rowIndex]) {
+          currentData[rowIndex] = {};
+        }
+
+        const previousValue = currentData[rowIndex][selectedRange.column] ?? null;
+        currentData[rowIndex][selectedRange.column] = parseCellValue(rawValue, previousValue, selectedRange.column);
+      }
+
+      setUnsaved(true);
+      renderTable();
+      setStatus(`Applied value to rows ${selectedRange.startRow + 1}-${selectedRange.endRow + 1} in ${selectedRange.column}`);
+    }
+
+    function updateSequenceSeedHighlight() {
+      const seedKeySet = new Set(
+        sequenceSeeds.map((seed) => `${seed.rowIndex}::${seed.column}`),
+      );
+
+      tableContainer.querySelectorAll('input.cell-input').forEach((input) => {
+        const key = `${input.dataset.rowIndex}::${input.dataset.column}`;
+        input.classList.toggle('sequence-seed', seedKeySet.has(key));
+      });
+    }
+
+    function hasValidSeriesSelection() {
+      if (sequenceSeeds.length !== 2) {
+        return false;
+      }
+
+      const [a, b] = sequenceSeeds;
+      if (a.column !== b.column) {
+        return false;
+      }
+
+      if (!allowsSequence(a.column)) {
+        return false;
+      }
+
+      return Math.abs(a.rowIndex - b.rowIndex) === 1;
+    }
+
+    function getLatestSequenceSeed() {
+      if (!sequenceSeeds.length) {
+        return null;
+      }
+      return sequenceSeeds[sequenceSeeds.length - 1];
+    }
+
+    function canFillTextSequenceFromRange() {
+      return Boolean(
+        selectedRange &&
+        allowsSequence(selectedRange.column) &&
+        selectedRange.startRow <= selectedRange.endRow,
+      );
+    }
+
+    function canFillTextSequenceFromSeed() {
+      const latestSeed = getLatestSequenceSeed();
+      if (!latestSeed) {
+        return false;
+      }
+
+      if (!allowsSequence(latestSeed.column)) {
+        return false;
+      }
+
+      return latestSeed.rowIndex + 1 < currentData.length;
+    }
+
+    function getTextSequenceTarget() {
+      if (canFillTextSequenceFromRange()) {
+        return {
+          column: selectedRange.column,
+          startRow: selectedRange.startRow,
+          endRow: selectedRange.endRow,
+          source: 'range',
+        };
+      }
+
+      const latestSeed = getLatestSequenceSeed();
+      if (!latestSeed) {
+        return null;
+      }
+
+      if (!allowsSequence(latestSeed.column)) {
+        return null;
+      }
+
+      const startRow = latestSeed.rowIndex + 1;
+      if (startRow >= currentData.length) {
+        return null;
+      }
+
+      return {
+        column: latestSeed.column,
+        startRow,
+        endRow: currentData.length - 1,
+        source: 'seed',
+      };
+    }
+
+    function updateFillSeriesState() {
+      normalizeSequenceSeeds();
+      const canFillNumber = hasValidSeriesSelection() && currentData.length >= 3;
+      const canFillText = canFillTextSequenceFromRange() || canFillTextSequenceFromSeed();
+      fillSeriesBtn.disabled = !canFillNumber;
+      fillIdemBtn.disabled = !canFillText;
+      fillEmptyBtn.disabled = !canFillText;
+      updateSequenceSeedHighlight();
+      updateRangeHighlight();
+    }
+
+    function trackSequenceSeed(rowIndex, column) {
+      const existingIndex = sequenceSeeds.findIndex((seed) => seed.rowIndex === rowIndex && seed.column === column);
+      if (existingIndex >= 0) {
+        sequenceSeeds.splice(existingIndex, 1);
+      }
+
+      sequenceSeeds.push({ rowIndex, column });
+      if (sequenceSeeds.length > 2) {
+        sequenceSeeds = sequenceSeeds.slice(sequenceSeeds.length - 2);
+      }
+
+      updateFillSeriesState();
+    }
+
+    function buildColumnSuggestions(column) {
+      const seen = new Set();
+      const values = [];
+
+      for (const row of currentData) {
+        const value = row?.[column];
+        if (value == null || typeof value === 'object') {
+          continue;
+        }
+
+        const text = String(value).trim();
+        if (!text || seen.has(text)) {
+          continue;
+        }
+
+        seen.add(text);
+        values.push(text);
+      }
+
+      return values;
+    }
+
+    function rebuildColumnDatalists(columns) {
+      document.querySelectorAll('datalist[data-annotation-list="1"]').forEach((node) => node.remove());
+
+      const listIdByColumn = new Map();
+
+      columns.forEach((column) => {
+        if (!allowsAutocomplete(column)) {
+          return;
+        }
+
+        const suggestions = buildColumnSuggestions(column);
+        if (!suggestions.length) {
+          return;
+        }
+
+        datalistCounter += 1;
+        const listId = `col-suggest-${datalistCounter}`;
+        const datalist = document.createElement('datalist');
+        datalist.id = listId;
+        datalist.dataset.annotationList = '1';
+
+        for (const item of suggestions) {
+          const option = document.createElement('option');
+          option.value = item;
+          datalist.append(option);
+        }
+
+        document.body.append(datalist);
+        listIdByColumn.set(column, listId);
+      });
+
+      return listIdByColumn;
+    }
+
+    function fillNumberSeries() {
+      if (!hasValidSeriesSelection()) {
+        setStatus('Pick 2 successive cells in the same column first');
+        return;
+      }
+
+      syncDataFromTable();
+
+      const [seedA, seedB] = sequenceSeeds;
+      const orderedSeeds = [...sequenceSeeds].sort((left, right) => left.rowIndex - right.rowIndex);
+      const firstSeed = orderedSeeds[0];
+      const secondSeed = orderedSeeds[1];
+      const column = firstSeed.column;
+
+      if (!allowsSequence(column)) {
+        setStatus(`Fill sequence is disabled for column ${column}`);
+        return;
+      }
+
+      const firstValue = asNumber(currentData[firstSeed.rowIndex]?.[column]);
+      const secondValue = asNumber(currentData[secondSeed.rowIndex]?.[column]);
+
+      if (firstValue == null || secondValue == null) {
+        setStatus('Series seeds must be numbers (for example 1 and 2)');
+        return;
+      }
+
+      const step = secondValue - firstValue;
+      if (!Number.isFinite(step)) {
+        setStatus('Invalid series step');
+        return;
+      }
+
+      const startRow = secondSeed.rowIndex + 1;
+      if (startRow >= currentData.length) {
+        setStatus('No rows below selected cells to fill');
+        return;
+      }
+
+      let previous = secondValue;
+      for (let rowIndex = startRow; rowIndex < currentData.length; rowIndex += 1) {
+        previous += step;
+        if (!currentData[rowIndex]) {
+          currentData[rowIndex] = {};
+        }
+        currentData[rowIndex][column] = previous;
+      }
+
+      setUnsaved(true);
+      renderTable();
+      sequenceSeeds = [seedA, seedB];
+      updateFillSeriesState();
+      setStatus(`Filled ${column} from row ${startRow + 1} to ${currentData.length}`);
+    }
+
+    function fillSequenceWithIdem() {
+      syncDataFromTable();
+
+      const target = getTextSequenceTarget();
+      if (!target) {
+        setStatus('Click a cell (or Shift+select a range) in the same column first');
+        return;
+      }
+
+      for (let rowIndex = target.startRow; rowIndex <= target.endRow; rowIndex += 1) {
+        if (!currentData[rowIndex]) {
+          currentData[rowIndex] = {};
+        }
+        currentData[rowIndex][target.column] = '<IDEM>';
+      }
+
+      setUnsaved(true);
+      renderTable();
+      updateFillSeriesState();
+      setStatus(`Filled ${target.column} with <IDEM> from row ${target.startRow + 1} to ${target.endRow + 1}`);
+    }
+
+    function fillSequenceWithEmpty() {
+      syncDataFromTable();
+
+      const target = getTextSequenceTarget();
+      if (!target) {
+        setStatus('Click a cell (or Shift+select a range) in the same column first');
+        return;
+      }
+
+      for (let rowIndex = target.startRow; rowIndex <= target.endRow; rowIndex += 1) {
+        if (!currentData[rowIndex]) {
+          currentData[rowIndex] = {};
+        }
+        currentData[rowIndex][target.column] = '<EMPTY>';
+      }
+
+      setUnsaved(true);
+      renderTable();
+      updateFillSeriesState();
+      setStatus(`Filled ${target.column} with <EMPTY> from row ${target.startRow + 1} to ${target.endRow + 1}`);
+    }
+
+    function isBboxObject(value) {
+      return (
+        value &&
+        typeof value === 'object' &&
+        Number.isFinite(value.x) &&
+        Number.isFinite(value.y) &&
+        Number.isFinite(value.width) &&
+        Number.isFinite(value.height)
+      );
+    }
+
+    function setSelectedRow(index) {
+      selectedRowIndex = Number.isInteger(index) ? index : null;
+      deleteRowBtn.disabled = selectedRowIndex == null;
+      drawBboxBtn.disabled = selectedRowIndex == null;
+
+      for (const tr of tableContainer.querySelectorAll('tbody tr')) {
+        const rowIndex = Number(tr.dataset.rowIndex);
+        tr.classList.toggle('selected', rowIndex === selectedRowIndex);
+      }
+
+      renderBboxes();
+    }
+
+    function syncDataFromTable() {
+      const table = tableContainer.querySelector('table');
+      if (!table) {
+        return;
+      }
+
+      const rows = table.querySelectorAll('tbody tr');
+      const nextData = [];
+
+      rows.forEach((rowElement, rowIndex) => {
+        const previousRow = currentData[rowIndex] || {};
+        const nextRow = { ...previousRow };
+
+        rowElement.querySelectorAll('input.cell-input').forEach((input) => {
+          const column = input.dataset.column;
+          if (!column) {
+            return;
+          }
+
+          const prev = nextRow[column] ?? null;
+          nextRow[column] = parseCellValue(input.value, prev, column);
+        });
+
+        nextData.push(nextRow);
+      });
+
+      currentData = nextData;
+      syncRowIndexes();
+    }
+
+    function renderBboxes() {
+      bboxLayer.innerHTML = '';
+
+      for (let i = 0; i < currentData.length; i += 1) {
+        const bbox = currentData[i]?.bbox;
+        if (!isBboxObject(bbox)) {
+          continue;
+        }
+
+        if (bbox.width <= 0 || bbox.height <= 0) {
+          continue;
+        }
+
+        const box = document.createElement('div');
+        box.className = 'bbox';
+        if (i === selectedRowIndex) {
+          box.classList.add('selected');
+        }
+
+        box.style.left = `${bbox.x * zoom}px`;
+        box.style.top = `${bbox.y * zoom}px`;
+        box.style.width = `${bbox.width * zoom}px`;
+        box.style.height = `${bbox.height * zoom}px`;
+
+        const label = document.createElement('div');
+        label.className = 'bbox-label';
+        label.textContent = `Row ${i + 1}`;
+        box.append(label);
+
+        bboxLayer.append(box);
+      }
+    }
+
+    function createCellInput(rowIndex, colIndex, column, value, listIdByColumn) {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'cell-input';
+      input.dataset.column = column;
+      input.dataset.rowIndex = String(rowIndex);
+      input.dataset.colIndex = String(colIndex);
+      input.value = getDisplayValue(value);
+
+      const listId = listIdByColumn.get(column);
+      if (listId) {
+        input.setAttribute('list', listId);
+      }
+
+      input.addEventListener('focus', () => {
+        setSelectedRow(rowIndex);
+        if (allowsSequence(column)) {
+          trackSequenceSeed(rowIndex, column);
+        }
+      });
+
+      input.addEventListener('click', (event) => {
+        if (event.shiftKey) {
+          const rangeWasSet = trySelectRange(rowIndex, colIndex, column);
+          if (rangeWasSet) {
+            batchValueInput.focus();
+            batchValueInput.select();
+          }
+          return;
+        }
+
+        setRangeAnchor(rowIndex, colIndex, column);
+        clearSelectedRange();
+      });
+
+      input.addEventListener('change', () => {
+        const row = currentData[rowIndex];
+        const prev = row?.[column] ?? null;
+        if (!row) {
+          return;
+        }
+
+        row[column] = parseCellValue(input.value, prev, column);
+        if (column === 'bbox') {
+          input.value = getDisplayValue(row[column]);
+          renderBboxes();
+        }
+        updateFillSeriesState();
+        setUnsaved(true);
+      });
+
+      input.addEventListener('keydown', (event) => {
+        const keyToDelta = {
+          ArrowUp: [-1, 0],
+          ArrowDown: [1, 0],
+          ArrowLeft: [0, -1],
+          ArrowRight: [0, 1],
+        };
+
+        const delta = keyToDelta[event.key];
+        if (!delta) {
+          return;
+        }
+
+        event.preventDefault();
+
+        const targetRowIndex = rowIndex + delta[0];
+        const targetColIndex = colIndex + delta[1];
+
+        if (targetRowIndex < 0 || targetRowIndex >= currentData.length) {
+          return;
+        }
+
+        if (targetColIndex < 0 || targetColIndex >= currentColumns.length) {
+          return;
+        }
+
+        const target = tableContainer.querySelector(
+          `input.cell-input[data-row-index="${targetRowIndex}"][data-col-index="${targetColIndex}"]`,
+        );
+
+        if (target) {
+          target.focus();
+          target.select();
+        }
+      });
+
+      return input;
+    }
+
+    function applyRowReorder(fromIndex, toIndex) {
+      if (fromIndex === toIndex || fromIndex == null || toIndex == null) {
+        return;
+      }
+
+      const [moved] = currentData.splice(fromIndex, 1);
+      currentData.splice(toIndex, 0, moved);
+
+      if (selectedRowIndex === fromIndex) {
+        selectedRowIndex = toIndex;
+      } else if (selectedRowIndex != null) {
+        if (fromIndex < selectedRowIndex && toIndex >= selectedRowIndex) {
+          selectedRowIndex -= 1;
+        } else if (fromIndex > selectedRowIndex && toIndex <= selectedRowIndex) {
+          selectedRowIndex += 1;
+        }
+      }
+
+      setUnsaved(true);
+      renderTable();
+      setStatus(`Moved row ${fromIndex + 1} to ${toIndex + 1}`);
+    }
+
+    function renderTable() {
+      if (!Array.isArray(currentData) || currentData.length === 0) {
+        tableContainer.className = 'empty';
+        tableContainer.textContent = 'No annotations yet. Use Add row to create one.';
+        const configuredColumns = getConfiguredColumns();
+        currentColumns = configuredColumns.length ? [...configuredColumns] : ['bbox'];
+        if (!currentColumns.includes('bbox')) {
+          currentColumns.push('bbox');
+        }
+        ensureColumnTypeConfig(currentColumns);
+        renderColumnTypesPanel();
+        clearSelectedRange();
+        setRangeAnchor(0, 0, 'bbox');
+        setSelectedRow(null);
+        renderBboxes();
+        return;
+      }
+
+      syncRowIndexes();
+
+      currentColumns = getColumns(currentData);
+      ensureColumnTypeConfig(currentColumns);
+      renderColumnTypesPanel();
+      const listIdByColumn = rebuildColumnDatalists(currentColumns);
+
+      const table = document.createElement('table');
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+
+      const dragHeader = document.createElement('th');
+      dragHeader.textContent = '↕';
+      headRow.append(dragHeader);
+
+      const rowHeader = document.createElement('th');
+      rowHeader.textContent = '#';
+      headRow.append(rowHeader);
+
+      for (const column of currentColumns) {
+        const th = document.createElement('th');
+        th.textContent = column;
+        headRow.append(th);
+      }
+
+      thead.append(headRow);
+      table.append(thead);
+
+      const tbody = document.createElement('tbody');
+
+      currentData.forEach((row, rowIndex) => {
+        const tr = document.createElement('tr');
+        tr.dataset.rowIndex = String(rowIndex);
+        tr.draggable = true;
+        tr.classList.toggle('selected', rowIndex === selectedRowIndex);
+
+        tr.addEventListener('click', () => setSelectedRow(rowIndex));
+
+        tr.addEventListener('dragstart', () => {
+          dragRowIndex = rowIndex;
+        });
+
+        tr.addEventListener('dragover', (event) => {
+          event.preventDefault();
+          tr.classList.add('drag-over');
+        });
+
+        tr.addEventListener('dragleave', () => {
+          tr.classList.remove('drag-over');
+        });
+
+        tr.addEventListener('drop', (event) => {
+          event.preventDefault();
+          tr.classList.remove('drag-over');
+          const targetIndex = Number(tr.dataset.rowIndex);
+          applyRowReorder(dragRowIndex, targetIndex);
+          dragRowIndex = null;
+        });
+
+        tr.addEventListener('dragend', () => {
+          dragRowIndex = null;
+          tableContainer.querySelectorAll('tbody tr').forEach((rowEl) => rowEl.classList.remove('drag-over'));
+        });
+
+        const dragCell = document.createElement('td');
+        dragCell.className = 'drag-handle';
+        dragCell.textContent = '⋮⋮';
+        tr.append(dragCell);
+
+        const rowCell = document.createElement('td');
+        rowCell.textContent = String(rowIndex + 1);
+        tr.append(rowCell);
+
+        for (let colIndex = 0; colIndex < currentColumns.length; colIndex += 1) {
+          const column = currentColumns[colIndex];
+          const td = document.createElement('td');
+          td.append(createCellInput(rowIndex, colIndex, column, row[column] ?? null, listIdByColumn));
+          tr.append(td);
+        }
+
+        tbody.append(tr);
+      });
+
+      table.append(tbody);
+      tableContainer.className = '';
+      tableContainer.innerHTML = '';
+      tableContainer.append(table);
+
+      if (selectedRowIndex != null && selectedRowIndex >= currentData.length) {
+        setSelectedRow(currentData.length - 1);
+      } else {
+        setSelectedRow(selectedRowIndex);
+      }
+
+      updateFillSeriesState();
+      updateRangeHighlight();
+    }
+
+    function setDrawMode(enabled) {
+      drawMode = Boolean(enabled);
+      drawBboxBtn.classList.toggle('active', drawMode);
+      drawBboxBtn.textContent = drawMode ? 'Drawing…' : 'Draw bbox';
+      imageStage.style.cursor = drawMode ? 'crosshair' : 'default';
+
+      if (!drawMode) {
+        drawing = false;
+        drawStart = null;
+        drawRect.style.display = 'none';
+      }
+    }
+
+    function toStagePoint(event) {
+      const rect = imageStage.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+      const y = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+      return { x, y };
+    }
+
+    function updateDrawRect(x, y, width, height) {
+      drawRect.style.display = 'block';
+      drawRect.style.left = `${x}px`;
+      drawRect.style.top = `${y}px`;
+      drawRect.style.width = `${width}px`;
+      drawRect.style.height = `${height}px`;
+    }
+
+    function applyDrawnBbox(x, y, width, height) {
+      if (selectedRowIndex == null || !currentData[selectedRowIndex]) {
+        return false;
+      }
+
+      const rowIndexAtDrawTime = selectedRowIndex;
+
+      currentData[selectedRowIndex].bbox = {
+        x: Math.round(x / zoom),
+        y: Math.round(y / zoom),
+        width: Math.round(width / zoom),
+        height: Math.round(height / zoom),
+      };
+
+      setUnsaved(true);
+      renderTable();
+
+      if (batchDrawBboxChk.checked && rowIndexAtDrawTime + 1 < currentData.length) {
+        setSelectedRow(rowIndexAtDrawTime + 1);
+        setStatus(`BBox set for row ${rowIndexAtDrawTime + 1}. Ready for row ${rowIndexAtDrawTime + 2}`);
+        return true;
+      }
+
+      setSelectedRow(rowIndexAtDrawTime);
+      setStatus(`BBox set for row ${rowIndexAtDrawTime + 1}`);
+      return false;
+    }
+
+    async function saveCurrentJson() {
+      if (!currentSelection) {
+        return;
+      }
+
+      syncDataFromTable();
+
+      const payloadText = JSON.stringify(currentData, null, 4);
+
+      let savedViaServer = false;
+      let message = `Saved ${currentSelection.json}`;
+      let serverFailureMessage = '';
+
+      try {
+        const response = await fetch(`/api/save/${encodeURIComponent(currentSelection.json)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payloadText,
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result?.ok) {
+            savedViaServer = true;
+            message = `Saved ${result.saved}`;
+          }
+        } else {
+          serverFailureMessage = `Server save unavailable (${response.status})`;
+        }
+      } catch {
+        serverFailureMessage = 'Server save unavailable';
+      }
+
+      if (!savedViaServer) {
+        const localResult = await saveViaLocalFolder(payloadText);
+        message = `Saved ${localResult.saved} in selected folder`;
+        if (serverFailureMessage) {
+          message = `${message} | ${serverFailureMessage}`;
+        }
+        setSaveModeBadge('local');
+      } else {
+        setSaveModeBadge('server');
+      }
+
+      setUnsaved(false);
+      setStatus(message);
+    }
+
+    async function renderSelection(name) {
+      const selected = pairs.find((pair) => pair.name === name);
+      if (!selected) {
+        return;
+      }
+
+      currentSelection = selected;
+      selectedRowIndex = null;
+      columnTypeByName = { ...projectColumnTypeByName };
+      clearSequenceSeeds();
+      rangeAnchor = null;
+      clearSelectedRange();
+      setDrawMode(false);
+      setSaveModeBadge('unknown');
+      naturalWidth = 0;
+      zoom = 1;
+      applyZoom();
+
+      imageView.src = withCacheBust(buildDataUrl(selected.image));
+
+      const response = await fetch(withCacheBust(buildDataUrl(selected.json)), { cache: 'no-store' });
+      if (!response.ok) {
+        currentData = [];
+        renderTable();
+        setStatus(`Failed to load ${selected.json}`);
+        return;
+      }
+
+      const payload = await response.json();
+      currentData = Array.isArray(payload) ? payload : [];
+      renderTable();
+      renderBboxes();
+      setUnsaved(false);
+      setStatus(`Loaded ${selected.name}`);
+    }
+
+    async function loadPairs() {
+      let loaded = [];
+
+      try {
+        const apiResponse = await fetch('/api/pairs', { cache: 'no-store' });
+        if (apiResponse.ok) {
+          loaded = await apiResponse.json();
+          pairSourceMode = 'api';
+        }
+      } catch {}
+
+      if (!loaded.length) {
+        const manifestResponse = await fetch(withCacheBust('../cut_images/pairs.json'), { cache: 'no-store' });
+        if (!manifestResponse.ok) {
+          throw new Error('No pair source found. Add /api/pairs or cut_images/pairs.json');
+        }
+        loaded = normalizeManifestPairs(await manifestResponse.json());
+        pairSourceMode = 'manifest';
+      }
+
+      pairs = loaded;
+      pairSelect.innerHTML = '';
+
+      if (!pairs.length) {
+        const option = document.createElement('option');
+        option.textContent = 'No image/json pair found';
+        pairSelect.append(option);
+        setStatus('0 pair');
+        return;
+      }
+
+      for (const pair of pairs) {
+        const option = document.createElement('option');
+        option.value = pair.name;
+        option.textContent = pair.name;
+        pairSelect.append(option);
+      }
+
+      await renderSelection(pairs[0].name);
+    }
+
+    pairSelect.addEventListener('change', async (event) => {
+      if (hasUnsavedChanges) {
+        const shouldContinue = window.confirm('You have unsaved changes. Discard them and continue?');
+        if (!shouldContinue) {
+          pairSelect.value = currentSelection?.name || pairSelect.value;
+          return;
+        }
+      }
+
+      await renderSelection(event.target.value);
+    });
+
+    addRowBtn.addEventListener('click', () => {
+      const row = createEmptyRow();
+      currentData.push(row);
+      setUnsaved(true);
+      renderTable();
+      setSelectedRow(currentData.length - 1);
+      setStatus(`Row ${currentData.length} added`);
+    });
+
+    addRowsBatchBtn.addEventListener('click', () => {
+      const requestedCount = Number.parseInt(addRowsCountInput.value, 10);
+      if (!Number.isFinite(requestedCount) || requestedCount < 1) {
+        setStatus('Enter a valid row count (>= 1)');
+        return;
+      }
+
+      const rowCount = Math.min(requestedCount, 1000);
+      for (let index = 0; index < rowCount; index += 1) {
+        currentData.push(createEmptyRow());
+      }
+
+      setUnsaved(true);
+      renderTable();
+      setSelectedRow(currentData.length - 1);
+      setStatus(`${rowCount} row(s) added`);
+    });
+
+    addColumnBtn.addEventListener('click', () => {
+      const rawName = window.prompt('New column name:');
+      if (rawName == null) {
+        return;
+      }
+
+      const columnName = rawName.trim();
+      if (!columnName) {
+        setStatus('Column name cannot be empty');
+        return;
+      }
+
+      if (currentColumns.includes(columnName)) {
+        setStatus(`Column ${columnName} already exists`);
+        return;
+      }
+
+      if (currentData.length === 0) {
+        currentData.push({ [columnName]: '', bbox: null });
+      } else {
+        for (const row of currentData) {
+          if (!(columnName in row)) {
+            row[columnName] = '';
+          }
+        }
+      }
+
+      columnTypeByName[columnName] = 'both';
+      projectColumnTypeByName[columnName] = 'both';
+      clearSelectedRange();
+      clearSequenceSeeds();
+      setUnsaved(true);
+      renderTable();
+      setStatus(`Column ${columnName} added`);
+    });
+
+    deleteRowBtn.addEventListener('click', () => {
+      if (selectedRowIndex == null) {
+        return;
+      }
+
+      currentData.splice(selectedRowIndex, 1);
+      setUnsaved(true);
+      renderTable();
+      clearSequenceSeeds();
+
+      if (currentData.length > 0) {
+        setSelectedRow(Math.min(selectedRowIndex, currentData.length - 1));
+      }
+
+      setStatus('Row deleted');
+    });
+
+    drawBboxBtn.addEventListener('click', () => {
+      if (selectedRowIndex == null) {
+        setStatus('Select a row first');
+        return;
+      }
+      setDrawMode(!drawMode);
+    });
+
+    fillSeriesBtn.addEventListener('click', () => {
+      fillNumberSeries();
+    });
+
+    fillIdemBtn.addEventListener('click', () => {
+      fillSequenceWithIdem();
+    });
+
+    fillEmptyBtn.addEventListener('click', () => {
+      fillSequenceWithEmpty();
+    });
+
+    applyRangeBtn.addEventListener('click', () => {
+      applyBatchValueToRange();
+    });
+
+    convertIntWordsBtn.addEventListener('click', () => {
+      convertRangeIntegersToLetters();
+    });
+
+    columnTypesBtn.addEventListener('click', () => {
+      setColumnTypesPanelVisible(columnTypesPanel.hidden);
+    });
+
+    zoomInBtn.addEventListener('click', () => {
+      setZoom(zoom * 1.2);
+    });
+
+    zoomOutBtn.addEventListener('click', () => {
+      setZoom(zoom / 1.2);
+    });
+
+    imageViewport.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      const factor = event.deltaY < 0 ? 1.1 : 0.9;
+      zoomAtViewportPoint(event.clientX, event.clientY, factor);
+    }, { passive: false });
+
+    saveBtn.addEventListener('click', async () => {
+      try {
+        await saveCurrentJson();
+      } catch (error) {
+        setStatus(error.message || 'Save failed');
+      }
+    });
+
+    imageStage.addEventListener('mousedown', (event) => {
+      if (!drawMode || selectedRowIndex == null) {
+        return;
+      }
+
+      drawStart = toStagePoint(event);
+      drawing = true;
+      updateDrawRect(drawStart.x, drawStart.y, 0, 0);
+      event.preventDefault();
+    });
+
+    imageStage.addEventListener('mousemove', (event) => {
+      if (!drawing || !drawStart) {
+        return;
+      }
+
+      const point = toStagePoint(event);
+      const x = Math.min(drawStart.x, point.x);
+      const y = Math.min(drawStart.y, point.y);
+      const width = Math.abs(point.x - drawStart.x);
+      const height = Math.abs(point.y - drawStart.y);
+      updateDrawRect(x, y, width, height);
+    });
+
+    imageStage.addEventListener('mouseup', (event) => {
+      if (!drawing || !drawStart) {
+        return;
+      }
+
+      const point = toStagePoint(event);
+      const x = Math.min(drawStart.x, point.x);
+      const y = Math.min(drawStart.y, point.y);
+      const width = Math.abs(point.x - drawStart.x);
+      const height = Math.abs(point.y - drawStart.y);
+
+      drawing = false;
+      drawStart = null;
+      let keepDrawing = false;
+
+      if (width > 2 && height > 2) {
+        keepDrawing = applyDrawnBbox(x, y, width, height);
+      }
+
+      if (!keepDrawing) {
+        setDrawMode(false);
+      }
+    });
+
+    imageStage.addEventListener('mouseleave', () => {
+      if (!drawing) {
+        return;
+      }
+
+      drawing = false;
+      drawStart = null;
+      drawRect.style.display = 'none';
+      setDrawMode(false);
+    });
+
+    imageView.addEventListener('load', () => {
+      naturalWidth = imageView.naturalWidth || 0;
+      applyZoom();
+    });
+
+    imageView.addEventListener('error', () => {
+      setStatus('Image load error');
+    });
+
+    loadProjectColumnSettings()
+      .then(() => loadPairs())
+      .catch((error) => {
+        tableContainer.className = 'empty';
+        tableContainer.textContent = error.message;
+        setSaveModeBadge('unknown');
+        setStatus('Error loading data');
+      });
+  </script>
+</body>
+</html>

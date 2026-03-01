@@ -1,0 +1,24 @@
+{   
+    "imageFormat":"double",
+    "columnTypes": {
+        "contribuable": "autocomplete",
+        "adresseContribuable": "autocomplete",
+        "numeroListe": "autocomplete",
+        "numeroParcelle": "sequence",
+        "adresseParcelle": "autocomplete",
+        "nomParcelle": "autocomplete",
+        "natureParcelle": "autocomplete",
+        "contenanceHect": "autocomplete",
+        "contenanceAres": "autocomplete",
+        "contenanceCent": "autocomplete",
+        "classementChiffres": "autocomplete",
+        "classementLettres": "autocomplete",
+        "revenus": "autocomplete",
+        "ouvPortes": "both",
+        "ouvRdcEtages12": "both",
+        "ouvEtage3": "both",
+        "mais1Porte1Fen": "both",
+        "mais1Porte": "both",
+        "bbox": "none"
+    }
+}
