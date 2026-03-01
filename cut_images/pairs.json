@@ -2,21 +2,25 @@
     {
         "name": "FRAD029_3P156_04_002_left",
         "image": "FRAD029_3P156_04_002_left.jpg",
-        "json": "FRAD029_3P156_04_002_left.json"
+        "json": "FRAD029_3P156_04_002_left.json",
+        "status": "done"
     },
     {
         "name": "FRAD029_3P156_04_002_right",
         "image": "FRAD029_3P156_04_002_right.jpg",
-        "json": "FRAD029_3P156_04_002_right.json"
+        "json": "FRAD029_3P156_04_002_right.json",
+        "status": "done"
     },
     {
         "name": "FRAD029_3P156_04_003_left",
         "image": "FRAD029_3P156_04_003_left.jpg",
-        "json": "FRAD029_3P156_04_003_left.json"
+        "json": "FRAD029_3P156_04_003_left.json",
+        "status": "done"
     },
     {
         "name": "FRAD029_3P156_04_003_right",
         "image": "FRAD029_3P156_04_003_right.jpg",
-        "json": "FRAD029_3P156_04_003_right.json"
+        "json": "FRAD029_3P156_04_003_right.json",
+        "status": "done"
     }
 ]

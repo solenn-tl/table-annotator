@@ -12,7 +12,19 @@
             "y": 403,
             "width": 2155,
             "height": 155
-        }
+        },
+        "rowIndex": 1,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Forjonel Jn Mie",
@@ -27,7 +39,19 @@
             "y": 573,
             "width": 2155,
             "height": 155
-        }
+        },
+        "rowIndex": 2,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Stéphan Jn",
@@ -42,7 +66,19 @@
             "y": 725,
             "width": 2145,
             "height": 135
-        }
+        },
+        "rowIndex": 3,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Bon Louis",
@@ -57,7 +93,19 @@
             "y": 858,
             "width": 2160,
             "height": 135
-        }
+        },
+        "rowIndex": 4,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Pichon Louis",
@@ -72,7 +120,19 @@
             "y": 983,
             "width": 2145,
             "height": 155
-        }
+        },
+        "rowIndex": 5,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Jézéquel mathieu",
@@ -87,7 +147,19 @@
             "y": 1133,
             "width": 2160,
             "height": 170
-        }
+        },
+        "rowIndex": 6,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Créac'h alexandre",
@@ -102,7 +174,19 @@
             "y": 1308,
             "width": 2165,
             "height": 150
-        }
+        },
+        "rowIndex": 7,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Berthelé Ve et enf mtin",
@@ -117,7 +201,19 @@
             "y": 1463,
             "width": 2160,
             "height": 145
-        }
+        },
+        "rowIndex": 8,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "~~Créac'h alexandre~~",
@@ -132,7 +228,19 @@
             "y": 1608,
             "width": 2150,
             "height": 160
-        }
+        },
+        "rowIndex": 9,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Malgorn Ve et enf fois",
@@ -147,7 +255,19 @@
             "y": 1763,
             "width": 2140,
             "height": 155
-        }
+        },
+        "rowIndex": 10,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Brunot Lassalle",
@@ -162,7 +282,19 @@
             "y": 1923,
             "width": 2160,
             "height": 140
-        }
+        },
+        "rowIndex": 11,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Jaouen Jn Mie",
@@ -177,7 +309,19 @@
             "y": 2058,
             "width": 2180,
             "height": 150
-        }
+        },
+        "rowIndex": 12,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Malgorn Jacques",
@@ -192,7 +336,19 @@
             "y": 2208,
             "width": 2160,
             "height": 155
-        }
+        },
+        "rowIndex": 13,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Cozan Ve et enf Paul",
@@ -207,10 +363,22 @@
             "y": 2368,
             "width": 2160,
             "height": 145
-        }
+        },
+        "rowIndex": 14,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
-        "contribuable": "Berthelé crhistophe",
+        "contribuable": "Berthelé christophe",
         "adresseContribuable": "Porsguen",
         "numeroListe": 52,
         "numeroParcelle": 35,
@@ -222,7 +390,19 @@
             "y": 2508,
             "width": 2145,
             "height": 135
-        }
+        },
+        "rowIndex": 15,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Perrot Jn Fois",
@@ -237,7 +417,19 @@
             "y": 2638,
             "width": 2155,
             "height": 170
-        }
+        },
+        "rowIndex": 16,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Malgorn Ve et enf Jérome",
@@ -252,7 +444,19 @@
             "y": 2813,
             "width": 2155,
             "height": 155
-        }
+        },
+        "rowIndex": 17,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "<EMPTY>",
@@ -267,7 +471,19 @@
             "y": 2968,
             "width": 2150,
             "height": 120
-        }
+        },
+        "rowIndex": 18,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Malgorn enf. ambroise",
@@ -282,7 +498,19 @@
             "y": 3088,
             "width": 2145,
             "height": 170
-        }
+        },
+        "rowIndex": 19,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     },
     {
         "contribuable": "Guen françois Ve et enft",
@@ -297,6 +525,18 @@
             "y": 3253,
             "width": 2160,
             "height": 140
-        }
+        },
+        "rowIndex": 20,
+        "contenanceHect": null,
+        "contenanceAres": null,
+        "contenanceCent": null,
+        "classementChiffres": null,
+        "classementLettres": null,
+        "revenus": null,
+        "ouvPortes": null,
+        "ouvRdcEtages12": null,
+        "ouvEtage3": null,
+        "mais1Porte1Fen": null,
+        "mais1Porte": null
     }
 ]

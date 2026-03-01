@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+from collections import defaultdict
 import json
 import mimetypes
+import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -16,6 +18,42 @@ IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".bmp"}
 ALLOWED_COLUMN_TYPES = {"none", "sequence", "autocomplete", "both"}
 ALLOWED_IMAGE_FORMATS = {"single", "double"}
 DEFAULT_IMAGE_FORMAT = "double"
+
+
+def normalize_field_name(value: str) -> str:
+    return "".join(char for char in value.lower() if char.isalnum())
+
+
+def as_non_empty_text(value: object) -> str | None:
+    if value is None:
+        return None
+
+    text = str(value).strip()
+    return text if text else None
+
+
+def clean_numero_liste(value: object) -> str | None:
+    text = as_non_empty_text(value)
+    if text is None:
+        return None
+
+    without_strike = re.sub(r"~~.*?~~", "", text)
+    cleaned = without_strike.strip()
+    return cleaned if cleaned else None
+
+
+def get_row_field_value(row: dict[str, object], normalized_field: str) -> object | None:
+    for key, value in row.items():
+        if isinstance(key, str) and normalize_field_name(key) == normalized_field:
+            return value
+    return None
+
+
+def numero_liste_sort_key(value: str) -> tuple[int, object]:
+    try:
+        return (0, int(value))
+    except ValueError:
+        return (1, value.casefold())
 
 
 def build_pairs() -> list[dict[str, str]]:
@@ -78,6 +116,114 @@ def load_column_settings() -> dict[str, object]:
             normalized[key] = value
 
     return {"imageFormat": image_format, "columnTypes": normalized}
+
+
+def build_contribuable_clusters() -> dict[str, object]:
+    grouped: dict[str, dict[str, dict[str, object]]] = defaultdict(dict)
+    scanned_files = 0
+    used_files = 0
+    row_count = 0
+    matched_rows = 0
+
+    if not CUT_IMAGES_DIR.exists():
+        return {
+            "scannedFiles": 0,
+            "usedFiles": 0,
+            "rows": 0,
+            "matchedRows": 0,
+            "groups": [],
+        }
+
+    for json_path in sorted(CUT_IMAGES_DIR.glob("*.json")):
+        scanned_files += 1
+
+        try:
+            payload = json.loads(json_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+
+        if not isinstance(payload, list):
+            continue
+
+        file_used = False
+
+        for row_number, row in enumerate(payload, start=1):
+            if not isinstance(row, dict):
+                continue
+
+            row_count += 1
+
+            numero_liste_raw = get_row_field_value(row, "numeroliste")
+            contribuable_raw = get_row_field_value(row, "contribuable")
+            adresse_contribuable_raw = get_row_field_value(row, "adressecontribuable")
+
+            numero_liste = clean_numero_liste(numero_liste_raw)
+            contribuable = as_non_empty_text(contribuable_raw)
+            adresse_contribuable = as_non_empty_text(adresse_contribuable_raw)
+
+            if not numero_liste or not contribuable:
+                continue
+
+            contributors = grouped[numero_liste]
+            contributor_entry = contributors.get(contribuable)
+            if not contributor_entry:
+                contributor_entry = {"count": 0, "sources": [], "adresseContribuable": []}
+                contributors[contribuable] = contributor_entry
+
+            contributor_entry["count"] = int(contributor_entry["count"]) + 1
+            addresses = contributor_entry.get("adresseContribuable")
+            if isinstance(addresses, list) and adresse_contribuable and adresse_contribuable not in addresses:
+                addresses.append(adresse_contribuable)
+            sources = contributor_entry["sources"]
+            if isinstance(sources, list):
+                sources.append({
+                    "json": json_path.name,
+                    "rowNumber": row_number,
+                })
+            matched_rows += 1
+            file_used = True
+
+        if file_used:
+            used_files += 1
+
+    groups = []
+    total_contribuables = 0
+
+    for numero_liste in sorted(grouped.keys(), key=numero_liste_sort_key):
+        contributors = grouped[numero_liste]
+        sorted_contributors = sorted(
+            contributors.items(),
+            key=lambda item: (-int(item[1].get("count", 0)), item[0].casefold()),
+        )
+
+        total = sum(int(data.get("count", 0)) for _, data in sorted_contributors)
+        total_contribuables += len(sorted_contributors)
+
+        groups.append(
+            {
+                "numeroListe": numero_liste,
+                "total": total,
+                "contributors": [
+                    {
+                        "contribuable": name,
+                        "count": int(data.get("count", 0)),
+                        "sources": data.get("sources", []),
+                        "adresseContribuable": data.get("adresseContribuable", []),
+                    }
+                    for name, data in sorted_contributors
+                ],
+            }
+        )
+
+    return {
+        "scannedFiles": scanned_files,
+        "usedFiles": used_files,
+        "rows": row_count,
+        "matchedRows": matched_rows,
+        "totalGroups": len(groups),
+        "totalContribuables": total_contribuables,
+        "groups": groups,
+    }
 
 
 def validate_column_settings_payload(payload: object) -> tuple[bool, str, dict[str, object]]:
@@ -266,6 +412,10 @@ class ViewerHandler(BaseHTTPRequestHandler):
 
         if route == "/api/column-settings":
             self._send_json(load_column_settings())
+            return
+
+        if route == "/api/contribuable-clusters":
+            self._send_json(build_contribuable_clusters())
             return
 
         if route.startswith("/data/"):

@@ -18,7 +18,7 @@
 
     .app {
       display: grid;
-      grid-template-rows: auto 1fr;
+      grid-template-rows: auto minmax(0, 1fr) auto;
       height: 100vh;
     }
 
@@ -96,6 +96,7 @@
       grid-template-columns: 1fr 1fr;
       gap: 12px;
       padding: 12px;
+      padding-bottom: 0;
       min-height: 0;
     }
 
@@ -173,6 +174,12 @@
       background: #111;
       position: relative;
       min-height: 0;
+      cursor: grab;
+      user-select: none;
+    }
+
+    #imageViewport.panning {
+      cursor: grabbing;
     }
 
     #imageStage {
@@ -197,6 +204,8 @@
       border: 2px solid #ffb020;
       background: #ffb02022;
       box-sizing: border-box;
+      cursor: zoom-in;
+      pointer-events: auto;
     }
 
     .bbox.selected {
@@ -206,14 +215,17 @@
 
     .bbox-label {
       position: absolute;
-      left: 0;
-      top: -20px;
+      left: auto;
+      right: calc(100% + 6px);
+      top: 50%;
+      transform: translateY(-50%);
       padding: 1px 4px;
       font-size: 11px;
       border-radius: 3px;
       background: #000a;
       color: #fff;
       white-space: nowrap;
+      pointer-events: none;
     }
 
     #drawRect {
@@ -294,6 +306,82 @@
     .cell-input.range-selected {
       background: #ffb02026;
     }
+
+    .clusters-panel {
+      margin: 12px;
+      margin-top: 10px;
+      min-height: 260px;
+      max-height: 34vh;
+      display: grid;
+      grid-template-rows: auto auto minmax(180px, 1fr);
+    }
+
+    .clusters-panel.collapsed {
+      min-height: 0;
+      max-height: none;
+      grid-template-rows: auto;
+    }
+
+    .clusters-panel.collapsed .clusters-meta,
+    .clusters-panel.collapsed #clustersChart,
+    .clusters-panel.collapsed #clustersList {
+      display: none;
+    }
+
+    .clusters-meta {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    #clustersChart {
+      width: 100%;
+      height: 100%;
+      min-height: 180px;
+    }
+
+    #clustersList {
+      overflow: auto;
+      padding: 8px 10px;
+      min-height: 180px;
+      font-size: 13px;
+    }
+
+    .cluster-group {
+      border: 1px solid #7774;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      padding: 8px;
+      background: color-mix(in oklab, Canvas 97%, black 3%);
+    }
+
+    .cluster-group h4 {
+      margin: 0 0 6px 0;
+      font-size: 13px;
+    }
+
+    .cluster-contrib {
+      margin: 0;
+      padding-left: 16px;
+    }
+
+    .cluster-sources {
+      margin: 4px 0 0 0;
+      padding-left: 16px;
+      color: GrayText;
+    }
+
+    .cluster-address {
+      margin-top: 4px;
+      color: GrayText;
+      font-size: 12px;
+    }
+
+    .clusters-empty {
+      padding: 12px;
+      color: GrayText;
+    }
   </style>
 </head>
 <body>
@@ -346,8 +434,27 @@
         <div id="tableContainer" class="empty">No data loaded.</div>
       </section>
     </div>
+
+    <section class="panel clusters-panel">
+      <div class="panel-title panel-title-row">
+        <span>Contribuable clusters by numeroListe</span>
+        <div style="display:flex; gap:6px;">
+          <button id="toggleClustersBtn" class="panel-title-btn" type="button">Expand</button>
+          <button id="clusterZoomOutBtn" class="panel-title-btn" type="button">-</button>
+          <span id="clusterZoomLabel" class="zoom-label">100%</span>
+          <button id="clusterZoomInBtn" class="panel-title-btn" type="button">+</button>
+          <button id="clusterChartModeBtn" class="panel-title-btn active" type="button">Chart</button>
+          <button id="clusterListModeBtn" class="panel-title-btn" type="button">List</button>
+          <button id="refreshClustersBtn" class="panel-title-btn" type="button">Refresh clusters</button>
+        </div>
+      </div>
+      <div id="clustersMeta" class="clusters-meta">Loading clusters…</div>
+      <div id="clustersChart"></div>
+      <div id="clustersList" hidden></div>
+    </section>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
   <script>
     const pairSelect = document.getElementById('pairSelect');
     const imageViewport = document.getElementById('imageViewport');
@@ -377,6 +484,17 @@
     const drawBboxBtn = document.getElementById('drawBboxBtn');
     const batchDrawBboxChk = document.getElementById('batchDrawBboxChk');
     const saveBtn = document.getElementById('saveBtn');
+    const toggleClustersBtn = document.getElementById('toggleClustersBtn');
+    const clusterZoomOutBtn = document.getElementById('clusterZoomOutBtn');
+    const clusterZoomInBtn = document.getElementById('clusterZoomInBtn');
+    const clusterZoomLabel = document.getElementById('clusterZoomLabel');
+    const clusterChartModeBtn = document.getElementById('clusterChartModeBtn');
+    const clusterListModeBtn = document.getElementById('clusterListModeBtn');
+    const refreshClustersBtn = document.getElementById('refreshClustersBtn');
+    const clustersMeta = document.getElementById('clustersMeta');
+    const clustersChartElement = document.getElementById('clustersChart');
+    const clustersListElement = document.getElementById('clustersList');
+    const clustersPanel = document.querySelector('.clusters-panel');
 
     let pairs = [];
     let pairSourceMode = 'api';
@@ -388,20 +506,445 @@
     let drawing = false;
     let drawMode = false;
     let drawStart = null;
+    let panning = false;
+    let panStartX = 0;
+    let panStartY = 0;
+    let panStartScrollLeft = 0;
+    let panStartScrollTop = 0;
     let hasUnsavedChanges = false;
     let sequenceSeeds = [];
     let datalistCounter = 0;
     let zoom = 1;
     let naturalWidth = 0;
+    let shouldAutoFitImageOnLoad = false;
     let cutImagesDirectoryHandle = null;
     let columnTypeByName = {};
     let projectColumnTypeByName = {};
     let projectImageFormat = 'double';
     let rangeAnchor = null;
     let selectedRange = null;
+    let clustersChart = null;
+    let clusterViewMode = 'chart';
+    let clustersCollapsed = true;
+    let clusterChartZoom = 1;
+    let latestClustersPayload = null;
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function setClusterViewMode(mode) {
+      clusterViewMode = mode === 'list' ? 'list' : 'chart';
+
+      const showChart = clusterViewMode === 'chart';
+      clustersChartElement.hidden = !showChart;
+      clustersListElement.hidden = showChart;
+      clusterChartModeBtn.classList.toggle('active', showChart);
+      clusterListModeBtn.classList.toggle('active', !showChart);
+      clusterZoomInBtn.disabled = !showChart;
+      clusterZoomOutBtn.disabled = !showChart;
+      clusterZoomLabel.style.opacity = showChart ? '1' : '0.6';
+
+      if (showChart && clustersChart) {
+        clustersChart.resize();
+      }
+    }
+
+    function getClusterChartRadii(zoomLevel) {
+      const inner = Math.max(4, 8 * zoomLevel);
+      const mid = Math.max(inner + 8, 45 * zoomLevel);
+      const outer = Math.max(mid + 8, 95 * zoomLevel);
+      return {
+        inner: `${inner}%`,
+        mid: `${mid}%`,
+        outer: `${outer}%`,
+      };
+    }
+
+    function updateClusterZoomLabel() {
+      clusterZoomLabel.textContent = `${Math.round(clusterChartZoom * 100)}%`;
+    }
+
+    function setClusterChartZoom(nextZoom) {
+      clusterChartZoom = Math.max(0.6, Math.min(2.4, nextZoom));
+      updateClusterZoomLabel();
+
+      if (latestClustersPayload) {
+        renderContribuableClusters(latestClustersPayload);
+      }
+    }
+
+    function setClustersCollapsed(collapsed) {
+      clustersCollapsed = Boolean(collapsed);
+      clustersPanel.classList.toggle('collapsed', clustersCollapsed);
+      toggleClustersBtn.textContent = clustersCollapsed ? 'Expand' : 'Reduce';
+
+      if (!clustersCollapsed && clusterViewMode === 'chart' && clustersChart) {
+        clustersChart.resize();
+      }
+    }
 
     function setStatus(message) {
       status.textContent = message;
+    }
+
+    function ensureClustersChart() {
+      if (!clustersChartElement || !window.echarts) {
+        return null;
+      }
+
+      if (!clustersChart) {
+        clustersChart = window.echarts.init(clustersChartElement);
+      }
+
+      return clustersChart;
+    }
+
+    function renderContribuableClusters(payload) {
+      latestClustersPayload = payload;
+      const chart = ensureClustersChart();
+      if (!chart) {
+        clustersMeta.textContent = 'Cluster chart unavailable (ECharts not loaded).';
+        return;
+      }
+
+      const radii = getClusterChartRadii(clusterChartZoom);
+
+      const groups = Array.isArray(payload?.groups) ? payload.groups : [];
+
+      if (!groups.length) {
+        clustersMeta.textContent = 'No contribuable/numeroListe matches found in cut_images JSON files.';
+        chart.clear();
+        clustersListElement.innerHTML = '<div class="clusters-empty">No data to list.</div>';
+        return;
+      }
+
+      const seriesData = groups.map((group) => ({
+        name: String(group.numeroListe),
+        value: Number(group.total) || 0,
+        children: (Array.isArray(group.contributors) ? group.contributors : [])
+          .map((entry) => ({
+            name: String(entry.contribuable),
+            value: Number(entry.count) || 0,
+          })),
+      }));
+
+      const scannedFiles = Number(payload.scannedFiles) || 0;
+      const matchedRows = Number(payload.matchedRows) || 0;
+      const totalGroups = Number(payload.totalGroups) || 0;
+      const totalContribuables = Number(payload.totalContribuables) || 0;
+
+      clustersMeta.textContent = `${scannedFiles} file(s) scanned · ${matchedRows} matched row(s) · ${totalGroups} numeroListe group(s) · ${totalContribuables} unique contribuable value(s)`;
+
+      chart.setOption({
+        tooltip: {
+          trigger: 'item',
+          formatter(params) {
+            const path = (params.treePathInfo || []).map((item) => item.name).filter(Boolean);
+            const label = path.join(' › ') || params.name;
+            return `${label}<br/>Count: ${params.value}`;
+          },
+        },
+        series: [
+          {
+            type: 'sunburst',
+            radius: [radii.inner, radii.outer],
+            sort: null,
+            nodeClick: 'zoomToNode',
+            emphasis: {
+              focus: 'ancestor',
+            },
+            label: {
+              rotate: 'radial',
+              overflow: 'truncate',
+            },
+            data: seriesData,
+            levels: [
+              {},
+              {
+                r0: radii.inner,
+                r: radii.mid,
+                itemStyle: {
+                  borderWidth: 2,
+                },
+              },
+              {
+                r0: radii.mid,
+                r: radii.outer,
+                itemStyle: {
+                  borderWidth: 1,
+                },
+              },
+            ],
+          },
+        ],
+      });
+
+      chart.resize();
+
+      const listChunks = groups.map((group) => {
+        const contributors = Array.isArray(group.contributors) ? group.contributors : [];
+        const contributorItems = contributors.map((entry) => {
+          const count = Number(entry.count) || 0;
+          const addresses = Array.isArray(entry.adresseContribuable)
+            ? entry.adresseContribuable.filter((value) => String(value || '').trim())
+            : [];
+          const addressLabel = addresses.length > 1 ? 'Adresses' : 'Adresse';
+          const addressBlock = addresses.length
+            ? `<div class="cluster-address">${addressLabel}: ${addresses.map((value) => escapeHtml(value)).join(' | ')}</div>`
+            : '';
+          const sources = Array.isArray(entry.sources) ? entry.sources : [];
+          const sourceItems = sources.length
+            ? `<ul class="cluster-sources">${sources.map((source) => {
+              const jsonName = escapeHtml(source?.json || '?');
+              const rowNumber = Number(source?.rowNumber) || 0;
+              return `<li>${jsonName} · row ${rowNumber > 0 ? rowNumber : '?'}</li>`;
+            }).join('')}</ul>`
+            : '<ul class="cluster-sources"><li>No source row</li></ul>';
+
+          return `<li><strong>${escapeHtml(entry.contribuable || '')}</strong> (${count})${addressBlock}${sourceItems}</li>`;
+        }).join('');
+
+        return `
+          <section class="cluster-group">
+            <h4>numeroListe ${escapeHtml(group.numeroListe || '')} · total ${Number(group.total) || 0}</h4>
+            <ol class="cluster-contrib">${contributorItems || '<li>No contribuable</li>'}</ol>
+          </section>
+        `;
+      });
+
+      clustersListElement.innerHTML = listChunks.join('');
+    }
+
+    function normalizeClusterFieldName(value) {
+      return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    }
+
+    function getClusterFieldValue(row, normalizedField) {
+      if (!row || typeof row !== 'object') {
+        return null;
+      }
+
+      for (const [key, value] of Object.entries(row)) {
+        if (normalizeClusterFieldName(key) === normalizedField) {
+          return value;
+        }
+      }
+
+      return null;
+    }
+
+    function asClusterText(value) {
+      if (value == null) {
+        return null;
+      }
+
+      const text = String(value).trim();
+      return text || null;
+    }
+
+    function cleanClusterNumeroListeText(value) {
+      const text = asClusterText(value);
+      if (!text) {
+        return null;
+      }
+
+      const cleaned = text.replace(/~~.*?~~/g, '').trim();
+      return cleaned || null;
+    }
+
+    function compareNumeroListeValues(left, right) {
+      const leftNumber = Number.parseInt(left, 10);
+      const rightNumber = Number.parseInt(right, 10);
+      const leftNumeric = Number.isFinite(leftNumber) && String(leftNumber) === String(left).trim();
+      const rightNumeric = Number.isFinite(rightNumber) && String(rightNumber) === String(right).trim();
+
+      if (leftNumeric && rightNumeric) {
+        return leftNumber - rightNumber;
+      }
+
+      if (leftNumeric) {
+        return -1;
+      }
+
+      if (rightNumeric) {
+        return 1;
+      }
+
+      return String(left).localeCompare(String(right), undefined, { sensitivity: 'base' });
+    }
+
+    function buildClusterPayloadFromRows(allRows, scannedFiles, usedFiles) {
+      const grouped = new Map();
+      let matchedRows = 0;
+
+      for (const entry of allRows) {
+        const row = entry && typeof entry === 'object' && Object.prototype.hasOwnProperty.call(entry, 'row')
+          ? entry.row
+          : entry;
+
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+
+        const jsonName = entry && typeof entry === 'object' && typeof entry.jsonName === 'string'
+          ? entry.jsonName
+          : null;
+        const rowNumber = entry && typeof entry === 'object' && Number.isInteger(entry.rowNumber)
+          ? entry.rowNumber
+          : null;
+
+        const numeroListe = cleanClusterNumeroListeText(getClusterFieldValue(row, 'numeroliste'));
+        const contribuable = asClusterText(getClusterFieldValue(row, 'contribuable'));
+        const adresseContribuable = asClusterText(getClusterFieldValue(row, 'adressecontribuable'));
+        if (!numeroListe || !contribuable) {
+          continue;
+        }
+
+        if (!grouped.has(numeroListe)) {
+          grouped.set(numeroListe, new Map());
+        }
+
+        const contributors = grouped.get(numeroListe);
+        if (!contributors.has(contribuable)) {
+          contributors.set(contribuable, { count: 0, sources: [], adresseContribuable: [] });
+        }
+
+        const contributorData = contributors.get(contribuable);
+        contributorData.count += 1;
+        if (adresseContribuable && !contributorData.adresseContribuable.includes(adresseContribuable)) {
+          contributorData.adresseContribuable.push(adresseContribuable);
+        }
+        if (jsonName && rowNumber != null) {
+          contributorData.sources.push({
+            json: jsonName,
+            rowNumber,
+          });
+        }
+        matchedRows += 1;
+      }
+
+      const groups = [...grouped.entries()]
+        .sort((a, b) => compareNumeroListeValues(a[0], b[0]))
+        .map(([numeroListe, contributorsMap]) => {
+          const contributors = [...contributorsMap.entries()]
+            .sort((a, b) => {
+              if (b[1].count !== a[1].count) {
+                return b[1].count - a[1].count;
+              }
+              return a[0].localeCompare(b[0], undefined, { sensitivity: 'base' });
+            })
+            .map(([contribuable, data]) => ({
+              contribuable,
+              count: data.count,
+              sources: data.sources,
+              adresseContribuable: data.adresseContribuable,
+            }));
+
+          return {
+            numeroListe,
+            total: contributors.reduce((acc, item) => acc + item.count, 0),
+            contributors,
+          };
+        });
+
+      const totalContribuables = groups.reduce((acc, group) => acc + group.contributors.length, 0);
+
+      return {
+        scannedFiles,
+        usedFiles,
+        rows: allRows.length,
+        matchedRows,
+        totalGroups: groups.length,
+        totalContribuables,
+        groups,
+      };
+    }
+
+    async function loadContribuableClustersClientSide() {
+      const sourcePairs = Array.isArray(pairs) ? pairs : [];
+      if (!sourcePairs.length) {
+        return {
+          scannedFiles: 0,
+          usedFiles: 0,
+          rows: 0,
+          matchedRows: 0,
+          totalGroups: 0,
+          totalContribuables: 0,
+          groups: [],
+        };
+      }
+
+      const allRows = [];
+      let usedFiles = 0;
+
+      for (const pair of sourcePairs) {
+        if (!pair?.json) {
+          continue;
+        }
+
+        try {
+          const response = await fetch(withCacheBust(buildDataUrl(pair.json)), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            continue;
+          }
+
+          usedFiles += 1;
+          payload.forEach((row, index) => {
+            allRows.push({
+              row,
+              jsonName: pair.json,
+              rowNumber: index + 1,
+            });
+          });
+        } catch {
+          // ignore per-file error, keep processing
+        }
+      }
+
+      return buildClusterPayloadFromRows(allRows, sourcePairs.length, usedFiles);
+    }
+
+    async function loadContribuableClusters() {
+      clustersMeta.textContent = 'Loading clusters…';
+
+      try {
+        const response = await fetch('/api/contribuable-clusters', { cache: 'no-store' });
+        if (response.ok) {
+          const payload = await response.json();
+          renderContribuableClusters(payload);
+          return;
+        }
+
+        const fallbackPayload = await loadContribuableClustersClientSide();
+        renderContribuableClusters(fallbackPayload);
+        clustersMeta.textContent = `${clustersMeta.textContent} · Source: browser fallback (API ${response.status})`;
+      } catch (error) {
+        try {
+          const fallbackPayload = await loadContribuableClustersClientSide();
+          renderContribuableClusters(fallbackPayload);
+          clustersMeta.textContent = `${clustersMeta.textContent} · Source: browser fallback`;
+          return;
+        } catch {
+          const chart = ensureClustersChart();
+          if (chart) {
+            chart.clear();
+          }
+
+          const message = error?.message || 'Failed to load clusters';
+          clustersMeta.textContent = message;
+        }
+      }
     }
 
     function setSaveModeBadge(mode) {
@@ -606,6 +1149,17 @@
     function setZoom(nextZoom) {
       zoom = Math.max(0.2, Math.min(6, nextZoom));
       applyZoom();
+    }
+
+    function fitImageToViewportWidth() {
+      if (naturalWidth <= 0) {
+        return;
+      }
+
+      const viewportWidth = Math.max(1, imageViewport.clientWidth);
+      setZoom(viewportWidth / naturalWidth);
+      imageViewport.scrollLeft = 0;
+      imageViewport.scrollTop = 0;
     }
 
     function zoomAtViewportPoint(clientX, clientY, factor) {
@@ -1389,6 +1943,51 @@
       );
     }
 
+    function keepSelectedRowVisibleInImage() {
+      if (selectedRowIndex == null) {
+        return;
+      }
+
+      const bbox = currentData[selectedRowIndex]?.bbox;
+      if (!isBboxObject(bbox) || bbox.height <= 0) {
+        return;
+      }
+
+      const margin = 24;
+      const boxTop = bbox.y * zoom;
+      const boxBottom = (bbox.y + bbox.height) * zoom;
+
+      const viewportTop = imageViewport.scrollTop;
+      const viewportBottom = viewportTop + imageViewport.clientHeight;
+
+      if (boxTop < viewportTop + margin) {
+        imageViewport.scrollTop = Math.max(0, boxTop - margin);
+        return;
+      }
+
+      if (boxBottom > viewportBottom - margin) {
+        imageViewport.scrollTop = Math.max(0, boxBottom - imageViewport.clientHeight + margin);
+      }
+    }
+
+    function zoomToRowBbox(rowIndex) {
+      const bbox = currentData[rowIndex]?.bbox;
+      if (!isBboxObject(bbox) || bbox.width <= 0 || bbox.height <= 0) {
+        return;
+      }
+
+      const padding = 24;
+      const availableWidth = Math.max(40, imageViewport.clientWidth - (padding * 2));
+      const targetZoom = Math.max(0.2, Math.min(6, availableWidth / bbox.width));
+
+      setZoom(targetZoom);
+
+      const targetLeft = Math.max(0, (bbox.x * zoom) - padding);
+      const targetTop = Math.max(0, (bbox.y * zoom) - padding);
+      imageViewport.scrollLeft = targetLeft;
+      imageViewport.scrollTop = targetTop;
+    }
+
     function setSelectedRow(index) {
       selectedRowIndex = Number.isInteger(index) ? index : null;
       deleteRowBtn.disabled = selectedRowIndex == null;
@@ -1400,6 +1999,7 @@
       }
 
       renderBboxes();
+      keepSelectedRowVisibleInImage();
     }
 
     function syncDataFromTable() {
@@ -1456,9 +2056,20 @@
         box.style.width = `${bbox.width * zoom}px`;
         box.style.height = `${bbox.height * zoom}px`;
 
+        box.addEventListener('click', (event) => {
+          if (drawMode) {
+            return;
+          }
+
+          event.preventDefault();
+          event.stopPropagation();
+          setSelectedRow(i);
+          zoomToRowBbox(i);
+        });
+
         const label = document.createElement('div');
         label.className = 'bbox-label';
-        label.textContent = `Row ${i + 1}`;
+        label.textContent = String(i + 1);
         box.append(label);
 
         bboxLayer.append(box);
@@ -1526,6 +2137,10 @@
 
         const delta = keyToDelta[event.key];
         if (!delta) {
+          return;
+        }
+
+        if (!event.shiftKey) {
           return;
         }
 
@@ -1699,12 +2314,26 @@
       drawBboxBtn.classList.toggle('active', drawMode);
       drawBboxBtn.textContent = drawMode ? 'Drawing…' : 'Draw bbox';
       imageStage.style.cursor = drawMode ? 'crosshair' : 'default';
+      imageViewport.style.cursor = drawMode ? 'crosshair' : '';
 
       if (!drawMode) {
         drawing = false;
         drawStart = null;
         drawRect.style.display = 'none';
       }
+
+      if (drawMode) {
+        stopPanning();
+      }
+    }
+
+    function stopPanning() {
+      if (!panning) {
+        return;
+      }
+
+      panning = false;
+      imageViewport.classList.remove('panning');
     }
 
     function toStagePoint(event) {
@@ -1796,6 +2425,7 @@
 
       setUnsaved(false);
       setStatus(message);
+      loadContribuableClusters();
     }
 
     async function renderSelection(name) {
@@ -1815,6 +2445,7 @@
       naturalWidth = 0;
       zoom = 1;
       applyZoom();
+      shouldAutoFitImageOnLoad = true;
 
       imageView.src = withCacheBust(buildDataUrl(selected.image));
 
@@ -2013,12 +2644,66 @@
       zoomAtViewportPoint(event.clientX, event.clientY, factor);
     }, { passive: false });
 
+    imageViewport.addEventListener('mousedown', (event) => {
+      if (drawMode || event.button !== 0) {
+        return;
+      }
+
+      panning = true;
+      panStartX = event.clientX;
+      panStartY = event.clientY;
+      panStartScrollLeft = imageViewport.scrollLeft;
+      panStartScrollTop = imageViewport.scrollTop;
+      imageViewport.classList.add('panning');
+      event.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!panning) {
+        return;
+      }
+
+      const deltaX = event.clientX - panStartX;
+      const deltaY = event.clientY - panStartY;
+      imageViewport.scrollLeft = panStartScrollLeft - deltaX;
+      imageViewport.scrollTop = panStartScrollTop - deltaY;
+      event.preventDefault();
+    });
+
+    window.addEventListener('mouseup', () => {
+      stopPanning();
+    });
+
     saveBtn.addEventListener('click', async () => {
       try {
         await saveCurrentJson();
       } catch (error) {
         setStatus(error.message || 'Save failed');
       }
+    });
+
+    refreshClustersBtn.addEventListener('click', () => {
+      loadContribuableClusters();
+    });
+
+    toggleClustersBtn.addEventListener('click', () => {
+      setClustersCollapsed(!clustersCollapsed);
+    });
+
+    clusterZoomInBtn.addEventListener('click', () => {
+      setClusterChartZoom(clusterChartZoom * 1.15);
+    });
+
+    clusterZoomOutBtn.addEventListener('click', () => {
+      setClusterChartZoom(clusterChartZoom / 1.15);
+    });
+
+    clusterChartModeBtn.addEventListener('click', () => {
+      setClusterViewMode('chart');
+    });
+
+    clusterListModeBtn.addEventListener('click', () => {
+      setClusterViewMode('list');
     });
 
     imageStage.addEventListener('mousedown', (event) => {
@@ -2082,21 +2767,37 @@
 
     imageView.addEventListener('load', () => {
       naturalWidth = imageView.naturalWidth || 0;
-      applyZoom();
+      if (shouldAutoFitImageOnLoad) {
+        fitImageToViewportWidth();
+        shouldAutoFitImageOnLoad = false;
+      } else {
+        applyZoom();
+      }
     });
 
     imageView.addEventListener('error', () => {
       setStatus('Image load error');
     });
 
+    window.addEventListener('resize', () => {
+      if (clustersChart) {
+        clustersChart.resize();
+      }
+    });
+
     loadProjectColumnSettings()
       .then(() => loadPairs())
+      .then(() => loadContribuableClusters())
       .catch((error) => {
         tableContainer.className = 'empty';
         tableContainer.textContent = error.message;
         setSaveModeBadge('unknown');
         setStatus('Error loading data');
       });
+
+    setClusterViewMode('chart');
+    updateClusterZoomLabel();
+    setClustersCollapsed(true);
   </script>
 </body>
 </html>

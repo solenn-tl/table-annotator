@@ -24,6 +24,7 @@ Open `http://127.0.0.1:8015`.
 - Reorder rows with drag and drop.
 - Generate numeric sequences in a column: focus 2 successive cells (e.g. `1`, `2`) then click `Fill sequence`.
 - Autocomplete while typing using previous values from the same column.
+- Display contribuable clusters grouped by `numeroListe` across all `cut_images/*.json` files (Sunburst chart).
 
 ## Notes
 
@@ -40,6 +41,7 @@ Open `http://127.0.0.1:8015`.
 ```
 
 - Click a table row to select it before deleting or drawing a bbox.
+- Cluster data is available from `/api/contribuable-clusters`.
 
 How to use
 
