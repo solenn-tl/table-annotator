@@ -551,6 +551,16 @@
         <label for="fieldClusterThresholdInput">Threshold</label>
         <input id="fieldClusterThresholdInput" type="range" min="0" max="1" step="0.01" value="0.20" />
         <span id="fieldClusterThresholdValue" class="field-threshold-value">0.20</span>
+        <label for="fieldClusterSortType">Sort</label>
+        <select id="fieldClusterSortType">
+          <option value="alpha">Alphabetical</option>
+          <option value="numeric">Numerical</option>
+        </select>
+        <label for="fieldClusterSortDirection">Order</label>
+        <select id="fieldClusterSortDirection">
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
         <button id="runFieldClusterBtn" class="panel-title-btn" type="button">Run clustering</button>
       </div>
       <div id="fieldClusterMeta" class="clusters-meta">Choose a field and click Run clustering.</div>
@@ -604,6 +614,8 @@
     const clusterFieldInput = document.getElementById('clusterFieldInput');
     const fieldClusterThresholdInput = document.getElementById('fieldClusterThresholdInput');
     const fieldClusterThresholdValue = document.getElementById('fieldClusterThresholdValue');
+    const fieldClusterSortType = document.getElementById('fieldClusterSortType');
+    const fieldClusterSortDirection = document.getElementById('fieldClusterSortDirection');
     const runFieldClusterBtn = document.getElementById('runFieldClusterBtn');
     const fieldClusterMeta = document.getElementById('fieldClusterMeta');
     const fieldClusterResults = document.getElementById('fieldClusterResults');
@@ -1211,6 +1223,47 @@
       return levenshteinDistance(a, b) / maxLength;
     }
 
+    function getFieldClusterSortType() {
+      const mode = String(fieldClusterSortType?.value || 'alpha');
+      return mode === 'numeric' ? 'numeric' : 'alpha';
+    }
+
+    function getFieldClusterSortDirection() {
+      const direction = String(fieldClusterSortDirection?.value || 'asc');
+      return direction === 'desc' ? 'desc' : 'asc';
+    }
+
+    function compareFieldClusterLabels(leftLabel, rightLabel, sortType, sortDirection) {
+      const left = String(leftLabel ?? '').trim();
+      const right = String(rightLabel ?? '').trim();
+      let comparison = 0;
+
+      if (sortType === 'numeric') {
+        const leftNumber = Number.parseFloat(left.replace(',', '.'));
+        const rightNumber = Number.parseFloat(right.replace(',', '.'));
+        const leftIsNumber = Number.isFinite(leftNumber);
+        const rightIsNumber = Number.isFinite(rightNumber);
+
+        if (leftIsNumber && rightIsNumber) {
+          comparison = leftNumber - rightNumber;
+        } else if (leftIsNumber) {
+          comparison = -1;
+        } else if (rightIsNumber) {
+          comparison = 1;
+        } else {
+          comparison = left.localeCompare(right, undefined, { sensitivity: 'base' });
+        }
+      } else {
+        comparison = left.localeCompare(right, undefined, { sensitivity: 'base' });
+      }
+
+      if (sortDirection === 'desc') {
+        comparison *= -1;
+      }
+
+      return comparison;
+    }
+
     async function runFieldClustering() {
       const rawField = String(clusterFieldInput.value || '').trim();
       if (!rawField) {
@@ -1227,6 +1280,8 @@
       }
 
       const threshold = getFieldClusterThreshold();
+      const sortType = getFieldClusterSortType();
+      const sortDirection = getFieldClusterSortDirection();
       fieldClusterMeta.textContent = `Running clustering for "${rawField}" (threshold ${threshold.toFixed(2)})…`;
 
       const rowsPayload = await loadAllRowsFromPairs();
@@ -1259,7 +1314,7 @@
       }
 
       const uniqueValues = [...valueBuckets.keys()]
-        .sort((left, right) => left.localeCompare(right, undefined, { sensitivity: 'base' }));
+        .sort((left, right) => compareFieldClusterLabels(left, right, sortType, sortDirection));
 
       const parent = uniqueValues.map((_, index) => index);
       const findRoot = (index) => {
@@ -1320,9 +1375,9 @@
           cluster.label = cluster.variants[0] || cluster.label;
           return cluster;
         })
-        .sort((left, right) => left.label.localeCompare(right.label, undefined, { sensitivity: 'base' }));
+        .sort((left, right) => compareFieldClusterLabels(left.label, right.label, sortType, sortDirection));
 
-      fieldClusterMeta.textContent = `${rowsPayload.scannedFiles} file(s) scanned · ${rowsPayload.usedFiles} file(s) loaded · ${matchedRows} matched row(s) · ${sortedGroups.length} cluster(s) for "${rawField}" · threshold ${threshold.toFixed(2)}`;
+      fieldClusterMeta.textContent = `${rowsPayload.scannedFiles} file(s) scanned · ${rowsPayload.usedFiles} file(s) loaded · ${matchedRows} matched row(s) · ${sortedGroups.length} cluster(s) for "${rawField}" · threshold ${threshold.toFixed(2)} · sort ${sortType}/${sortDirection}`;
 
       if (!sortedGroups.length) {
         fieldClusterResults.innerHTML = '<div class="clusters-empty">No matching values for this field.</div>';
@@ -3510,6 +3565,18 @@
 
     fieldClusterThresholdInput.addEventListener('change', () => {
       updateFieldClusterThresholdLabel();
+    });
+
+    fieldClusterSortType.addEventListener('change', () => {
+      if (String(clusterFieldInput.value || '').trim()) {
+        runFieldClustering();
+      }
+    });
+
+    fieldClusterSortDirection.addEventListener('change', () => {
+      if (String(clusterFieldInput.value || '').trim()) {
+        runFieldClustering();
+      }
     });
 
     clusterFieldInput.addEventListener('change', () => {
