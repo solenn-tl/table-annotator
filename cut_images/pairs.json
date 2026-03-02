@@ -28,5 +28,25 @@
         "name": "FRAD029_3P156_04_004_right",
         "image": "FRAD029_3P156_04_004_right.jpg",
         "json": "FRAD029_3P156_04_004_right.json"
+    },
+    {
+        "name": "FRAD029_3P156_04_005_left",
+        "image": "FRAD029_3P156_04_005_left.jpg",
+        "json": "FRAD029_3P156_04_005_left.json"
+    },
+    {
+        "name": "FRAD029_3P156_04_005_right",
+        "image": "FRAD029_3P156_04_005_right.jpg",
+        "json": "FRAD029_3P156_04_005_right.json"
+    },
+    {
+        "name": "FRAD029_3P156_04_006_left",
+        "image": "FRAD029_3P156_04_006_left.jpg",
+        "json": "FRAD029_3P156_04_006_left.json"
+    },
+    {
+        "name": "FRAD029_3P156_04_006_right",
+        "image": "FRAD029_3P156_04_006_right.jpg",
+        "json": "FRAD029_3P156_04_006_right.json"
     }
 ]

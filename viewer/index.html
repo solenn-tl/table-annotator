@@ -468,6 +468,18 @@
       grid-template-rows: auto auto auto minmax(140px, 1fr);
     }
 
+    .field-cluster-panel.collapsed {
+      min-height: 0;
+      max-height: none;
+      grid-template-rows: auto;
+    }
+
+    .field-cluster-panel.collapsed .field-cluster-controls,
+    .field-cluster-panel.collapsed #fieldClusterMeta,
+    .field-cluster-panel.collapsed #fieldClusterResults {
+      display: none;
+    }
+
     .field-cluster-controls {
       display: flex;
       align-items: center;
@@ -505,6 +517,62 @@
       min-height: 180px;
       max-height: 52vh;
       font-size: 13px;
+    }
+
+    .field-graph-panel {
+      margin: 12px;
+      margin-top: 0;
+      min-height: 280px;
+      max-height: none;
+      display: grid;
+      grid-template-rows: auto auto auto minmax(180px, 1fr);
+    }
+
+    .field-graph-panel.collapsed {
+      min-height: 0;
+      max-height: none;
+      grid-template-rows: auto;
+    }
+
+    .field-graph-panel.collapsed .field-graph-controls,
+    .field-graph-panel.collapsed #fieldGraphMeta,
+    .field-graph-panel.collapsed #fieldGraphChart {
+      display: none;
+    }
+
+    .field-graph-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-size: 13px;
+    }
+
+    .field-graph-controls select {
+      padding: 4px 8px;
+      min-width: 220px;
+      max-width: 360px;
+      width: 32vw;
+    }
+
+    .field-graph-controls input[type="range"] {
+      min-width: 160px;
+      width: 200px;
+      max-width: none;
+      padding: 0;
+    }
+
+    .field-graph-height-value {
+      min-width: 52px;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    #fieldGraphChart {
+      min-height: 220px;
+      width: 100%;
     }
   </style>
 </head>
@@ -580,7 +648,12 @@
     </section>
 
     <section class="panel field-cluster-panel">
-      <div class="panel-title">Cluster by custom field</div>
+      <div class="panel-title panel-title-row">
+        <span>Cluster by custom field</span>
+        <div style="display:flex; gap:6px;">
+          <button id="toggleFieldClusterBtn" class="panel-title-btn" type="button">Reduce</button>
+        </div>
+      </div>
       <div class="field-cluster-controls">
         <label for="clusterFieldInput">Field</label>
         <select id="clusterFieldInput">
@@ -603,6 +676,29 @@
       </div>
       <div id="fieldClusterMeta" class="clusters-meta">Choose a field and click Run clustering.</div>
       <div id="fieldClusterResults"><div class="clusters-empty">No clustering results yet.</div></div>
+    </section>
+
+    <section class="panel field-graph-panel">
+      <div class="panel-title panel-title-row">
+        <span>Field histogram</span>
+        <div style="display:flex; gap:6px;">
+          <button id="toggleFieldGraphBtn" class="panel-title-btn" type="button">Reduce</button>
+        </div>
+      </div>
+      <div class="field-graph-controls">
+        <label for="graphFieldInput">Field</label>
+        <select id="graphFieldInput">
+          <option value="">Select a field…</option>
+        </select>
+        <label><input id="graphAllJsonsChk" type="checkbox" /> Search in all JSON files</label>
+        <label><input id="graphNumericCleanChk" type="checkbox" /> Remove non-numeric characters</label>
+        <label for="graphHeightInput">Height</label>
+        <input id="graphHeightInput" type="range" min="180" max="700" step="10" value="320" />
+        <span id="graphHeightValue" class="field-graph-height-value">320px</span>
+        <button id="runFieldGraphBtn" class="panel-title-btn" type="button">Generate histogram</button>
+      </div>
+      <div id="fieldGraphMeta" class="clusters-meta">Choose a field and click Generate histogram.</div>
+      <div id="fieldGraphChart"></div>
     </section>
   </div>
 
@@ -651,6 +747,8 @@
     const clustersListElement = document.getElementById('clustersList');
     const clustersPanel = document.querySelector('.clusters-panel');
     const clusterFieldInput = document.getElementById('clusterFieldInput');
+    const toggleFieldClusterBtn = document.getElementById('toggleFieldClusterBtn');
+    const fieldClusterPanel = document.querySelector('.field-cluster-panel');
     const fieldClusterThresholdInput = document.getElementById('fieldClusterThresholdInput');
     const fieldClusterThresholdValue = document.getElementById('fieldClusterThresholdValue');
     const fieldClusterSortType = document.getElementById('fieldClusterSortType');
@@ -658,6 +756,16 @@
     const runFieldClusterBtn = document.getElementById('runFieldClusterBtn');
     const fieldClusterMeta = document.getElementById('fieldClusterMeta');
     const fieldClusterResults = document.getElementById('fieldClusterResults');
+    const graphFieldInput = document.getElementById('graphFieldInput');
+    const toggleFieldGraphBtn = document.getElementById('toggleFieldGraphBtn');
+    const fieldGraphPanel = document.querySelector('.field-graph-panel');
+    const graphAllJsonsChk = document.getElementById('graphAllJsonsChk');
+    const graphNumericCleanChk = document.getElementById('graphNumericCleanChk');
+    const graphHeightInput = document.getElementById('graphHeightInput');
+    const graphHeightValue = document.getElementById('graphHeightValue');
+    const runFieldGraphBtn = document.getElementById('runFieldGraphBtn');
+    const fieldGraphMeta = document.getElementById('fieldGraphMeta');
+    const fieldGraphChartElement = document.getElementById('fieldGraphChart');
 
     let pairs = [];
     let pairSourceMode = 'api';
@@ -703,12 +811,17 @@
     let globalAutocompleteByNormalizedColumn = {};
     let lastFieldClusterRowsPayload = null;
     let lastFieldClusterField = '';
+    let fieldClusterCollapsed = false;
+    let fieldGraphCollapsed = false;
+    let fieldGraphChart = null;
     let columnWidthByName = {};
     let columnResizeState = null;
     let textMeasureCanvas = null;
 
     const MIN_RESIZABLE_COLUMN_WIDTH = 70;
     const MAX_AUTO_COLUMN_WIDTH = 720;
+    const MIN_FIELD_GRAPH_HEIGHT = 180;
+    const MAX_FIELD_GRAPH_HEIGHT = 700;
 
     function escapeHtml(value) {
       return String(value)
@@ -770,6 +883,22 @@
       if (!clustersCollapsed && clusterViewMode === 'chart' && clustersChart) {
         clustersChart.resize();
         updateClusterChartCenter(clustersChart);
+      }
+    }
+
+    function setFieldClusterCollapsed(collapsed) {
+      fieldClusterCollapsed = Boolean(collapsed);
+      fieldClusterPanel.classList.toggle('collapsed', fieldClusterCollapsed);
+      toggleFieldClusterBtn.textContent = fieldClusterCollapsed ? 'Expand' : 'Reduce';
+    }
+
+    function setFieldGraphCollapsed(collapsed) {
+      fieldGraphCollapsed = Boolean(collapsed);
+      fieldGraphPanel.classList.toggle('collapsed', fieldGraphCollapsed);
+      toggleFieldGraphBtn.textContent = fieldGraphCollapsed ? 'Expand' : 'Reduce';
+
+      if (!fieldGraphCollapsed && fieldGraphChart) {
+        fieldGraphChart.resize();
       }
     }
 
@@ -1660,6 +1789,236 @@
       runFieldClusterBtn.disabled = columns.length === 0;
     }
 
+    function normalizeGraphValue(value, removeNonNumeric) {
+      const rawText = asClusterText(value);
+      if (!rawText) {
+        return null;
+      }
+
+      if (!removeNonNumeric) {
+        return rawText;
+      }
+
+      const cleaned = rawText.replace(/\D+/g, '');
+      return cleaned || null;
+    }
+
+    function ensureFieldGraphChart() {
+      if (!window.echarts || !fieldGraphChartElement) {
+        return null;
+      }
+
+      if (!fieldGraphChart) {
+        fieldGraphChart = window.echarts.init(fieldGraphChartElement);
+      }
+
+      return fieldGraphChart;
+    }
+
+    function getFieldGraphHeight() {
+      const raw = Number.parseInt(String(graphHeightInput?.value ?? ''), 10);
+      if (!Number.isFinite(raw)) {
+        return 320;
+      }
+
+      return Math.max(MIN_FIELD_GRAPH_HEIGHT, Math.min(MAX_FIELD_GRAPH_HEIGHT, raw));
+    }
+
+    function applyFieldGraphHeight() {
+      const height = getFieldGraphHeight();
+      if (fieldGraphChartElement) {
+        fieldGraphChartElement.style.height = `${height}px`;
+      }
+      if (graphHeightValue) {
+        graphHeightValue.textContent = `${height}px`;
+      }
+
+      if (fieldGraphChart) {
+        fieldGraphChart.resize();
+      }
+    }
+
+    function clearFieldGraph(message) {
+      const chart = ensureFieldGraphChart();
+      if (chart) {
+        chart.clear();
+      }
+
+      if (fieldGraphMeta && typeof message === 'string') {
+        fieldGraphMeta.textContent = message;
+      }
+    }
+
+    function refreshGraphFieldOptions() {
+      if (!graphFieldInput) {
+        return;
+      }
+
+      const previous = String(graphFieldInput.value || '');
+      const columns = Array.isArray(currentColumns)
+        ? currentColumns.filter((column) => column && column !== 'bbox' && column !== 'rowIndex')
+        : [];
+
+      graphFieldInput.innerHTML = '';
+
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = columns.length ? 'Select a field…' : 'No field available';
+      graphFieldInput.append(placeholder);
+
+      for (const column of columns) {
+        const option = document.createElement('option');
+        option.value = column;
+        option.textContent = column;
+        graphFieldInput.append(option);
+      }
+
+      if (previous && columns.includes(previous)) {
+        graphFieldInput.value = previous;
+      } else {
+        graphFieldInput.value = '';
+      }
+
+      runFieldGraphBtn.disabled = columns.length === 0;
+
+      if (!columns.length) {
+        clearFieldGraph('No data loaded for charting.');
+      }
+    }
+
+    async function runFieldHistogram() {
+      applyFieldGraphHeight();
+
+      const rawField = String(graphFieldInput?.value || '').trim();
+      if (!rawField) {
+        clearFieldGraph('Select a field and click Generate histogram.');
+        return;
+      }
+
+      const normalizedField = normalizeClusterFieldName(rawField);
+      if (!normalizedField) {
+        clearFieldGraph('Select a valid field.');
+        return;
+      }
+
+      const useAllJsons = Boolean(graphAllJsonsChk?.checked);
+      let rows = [];
+      let scannedRowsCount = 0;
+      let sourceText = 'Current page';
+
+      if (useAllJsons) {
+        fieldGraphMeta.textContent = `Loading rows for "${rawField}" from all JSON files…`;
+        try {
+          const rowsPayload = await loadAllRowsFromPairs();
+          rows = rowsPayload.allRows
+            .map((entry) => entry?.row)
+            .filter((row) => row && typeof row === 'object');
+          scannedRowsCount = rows.length;
+          sourceText = `All JSON files (${rowsPayload.usedFiles}/${rowsPayload.scannedFiles} loaded)`;
+        } catch {
+          clearFieldGraph('Failed to load rows from all JSON files.');
+          return;
+        }
+      } else {
+        rows = Array.isArray(currentData) ? currentData : [];
+        scannedRowsCount = rows.length;
+      }
+
+      const removeNonNumeric = Boolean(graphNumericCleanChk?.checked);
+      const buckets = new Map();
+      let matchedRows = 0;
+
+      for (const row of rows) {
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+
+        const value = normalizeGraphValue(getClusterFieldValue(row, normalizedField), removeNonNumeric);
+        if (!value) {
+          continue;
+        }
+
+        const previous = Number(buckets.get(value) || 0);
+        buckets.set(value, previous + 1);
+        matchedRows += 1;
+      }
+
+      const categories = [...buckets.keys()].sort((left, right) => {
+        if (removeNonNumeric) {
+          const leftNumber = Number.parseInt(left, 10);
+          const rightNumber = Number.parseInt(right, 10);
+          if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber) && leftNumber !== rightNumber) {
+            return leftNumber - rightNumber;
+          }
+        }
+
+        return String(left).localeCompare(String(right), undefined, { sensitivity: 'base' });
+      });
+
+      const chart = ensureFieldGraphChart();
+      if (!chart) {
+        fieldGraphMeta.textContent = 'Chart library unavailable.';
+        return;
+      }
+
+      if (!categories.length) {
+        chart.clear();
+        fieldGraphMeta.textContent = `No usable values found for "${rawField}".`;
+        return;
+      }
+
+      const seriesData = categories.map((category) => Number(buckets.get(category) || 0));
+
+      chart.setOption({
+        animation: false,
+        grid: {
+          left: 50,
+          right: 20,
+          top: 24,
+          bottom: 80,
+          containLabel: true,
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+        },
+        xAxis: {
+          type: 'category',
+          data: categories,
+          axisLabel: {
+            interval: 0,
+            rotate: categories.length > 16 ? 45 : 0,
+          },
+        },
+        yAxis: {
+          type: 'value',
+          minInterval: 1,
+          name: 'Rows',
+        },
+        dataZoom: categories.length > 25
+          ? [
+            {
+              type: 'inside',
+              xAxisIndex: 0,
+            },
+            {
+              type: 'slider',
+              xAxisIndex: 0,
+              bottom: 28,
+            },
+          ]
+          : [],
+        series: [
+          {
+            type: 'bar',
+            data: seriesData,
+          },
+        ],
+      });
+
+      fieldGraphMeta.textContent = `${sourceText} · ${scannedRowsCount} row(s) scanned · ${matchedRows} matched value(s) · ${categories.length} bar(s) for "${rawField}"${removeNonNumeric ? ' · non-numeric characters removed' : ''}`;
+    }
+
     async function loadContribuableClusters() {
       clustersMeta.textContent = 'Loading clusters…';
 
@@ -2464,9 +2823,9 @@
       }
 
       const sourceColumn = selectedRange.column;
-      const defaultTargetColumn = /chiffres/i.test(sourceColumn)
-        ? sourceColumn.replace(/chiffres/ig, 'lettres')
-        : `${sourceColumn} lettres`;
+      const defaultTargetColumn = /Chiffres/i.test(sourceColumn)
+        ? sourceColumn.replace(/Chiffres/ig, 'Lettres')
+        : `${sourceColumn}`;
 
       const rawTarget = window.prompt('Target column for lettres:', defaultTargetColumn);
       if (rawTarget == null) {
@@ -3227,6 +3586,7 @@
         ensureColumnTypeConfig(currentColumns);
         renderColumnTypesPanel();
         refreshClusterFieldOptions();
+        refreshGraphFieldOptions();
         clearSelectedRange();
         setRangeAnchor(0, 0, 'bbox');
         setSelectedRow(null);
@@ -3240,6 +3600,7 @@
       ensureColumnTypeConfig(currentColumns);
       renderColumnTypesPanel();
       refreshClusterFieldOptions();
+      refreshGraphFieldOptions();
       const listIdByColumn = rebuildColumnDatalists(currentColumns);
 
       const table = document.createElement('table');
@@ -3848,6 +4209,39 @@
       runFieldClustering();
     });
 
+    runFieldGraphBtn.addEventListener('click', () => {
+      runFieldHistogram();
+    });
+
+    graphNumericCleanChk.addEventListener('change', () => {
+      if (String(graphFieldInput.value || '').trim()) {
+        runFieldHistogram();
+      }
+    });
+
+    graphAllJsonsChk.addEventListener('change', () => {
+      if (String(graphFieldInput.value || '').trim()) {
+        runFieldHistogram();
+      }
+    });
+
+    graphHeightInput.addEventListener('input', () => {
+      applyFieldGraphHeight();
+    });
+
+    graphHeightInput.addEventListener('change', () => {
+      applyFieldGraphHeight();
+    });
+
+    graphFieldInput.addEventListener('change', () => {
+      if (!String(graphFieldInput.value || '').trim()) {
+        clearFieldGraph('Choose a field and click Generate histogram.');
+        return;
+      }
+
+      runFieldHistogram();
+    });
+
     fieldClusterThresholdInput.addEventListener('input', () => {
       updateFieldClusterThresholdLabel();
 
@@ -3884,6 +4278,14 @@
 
     toggleClustersBtn.addEventListener('click', () => {
       setClustersCollapsed(!clustersCollapsed);
+    });
+
+    toggleFieldClusterBtn.addEventListener('click', () => {
+      setFieldClusterCollapsed(!fieldClusterCollapsed);
+    });
+
+    toggleFieldGraphBtn.addEventListener('click', () => {
+      setFieldGraphCollapsed(!fieldGraphCollapsed);
     });
 
     clusterZoomInBtn.addEventListener('click', () => {
@@ -3981,6 +4383,9 @@
         clustersChart.resize();
         updateClusterChartCenter(clustersChart);
       }
+      if (fieldGraphChart) {
+        fieldGraphChart.resize();
+      }
     });
 
     loadColumnWidthsFromStorage();
@@ -3998,7 +4403,11 @@
     setClusterViewMode('chart');
     updateClusterZoomLabel();
     setClustersCollapsed(true);
+    setFieldClusterCollapsed(true);
+    setFieldGraphCollapsed(true);
     updateFieldClusterThresholdLabel();
+    refreshGraphFieldOptions();
+    applyFieldGraphHeight();
   </script>
 </body>
 </html>
