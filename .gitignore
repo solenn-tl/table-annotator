@@ -2,3 +2,5 @@
 apis/
 ocr-test/
 NOTES.md
+__pycache__/
+models/

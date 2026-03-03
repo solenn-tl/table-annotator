@@ -817,11 +817,15 @@
     let columnWidthByName = {};
     let columnResizeState = null;
     let textMeasureCanvas = null;
+    let pairCompletionByName = {};
 
     const MIN_RESIZABLE_COLUMN_WIDTH = 70;
     const MAX_AUTO_COLUMN_WIDTH = 720;
     const MIN_FIELD_GRAPH_HEIGHT = 180;
     const MAX_FIELD_GRAPH_HEIGHT = 700;
+    const PAIR_STATUS_DONE = '✅';
+    const PAIR_STATUS_MISSING = '➡️';
+    const PAIR_STATUS_TODO = '⚠️';
 
     function escapeHtml(value) {
       return String(value)
@@ -908,6 +912,171 @@
 
     function getColumnWidthStorageKey() {
       return `ocr-annotator-column-widths::${window.location.pathname || '/'}`;
+    }
+
+    function getLastSelectionStorageKey() {
+      return `ocr-annotator-last-selection::${window.location.pathname || '/'}`;
+    }
+
+    function formatPairLabel(name, status) {
+      if (!status) {
+        return String(name ?? '');
+      }
+      return `${name} (${status})`;
+    }
+
+    function getPairOptionByName(name) {
+      for (const option of pairSelect.options) {
+        if (option.value === name) {
+          return option;
+        }
+      }
+      return null;
+    }
+
+    function setPairCompletionStatus(name, status) {
+      if (!name) {
+        return;
+      }
+
+      const normalizedStatus = (
+        status === PAIR_STATUS_DONE || status === PAIR_STATUS_MISSING || status === PAIR_STATUS_TODO
+      )
+        ? status
+        : PAIR_STATUS_MISSING;
+
+      pairCompletionByName[name] = normalizedStatus;
+
+      const option = getPairOptionByName(name);
+      if (option) {
+        option.textContent = formatPairLabel(name, normalizedStatus);
+      }
+    }
+
+    function isCompletedFieldValue(column, value) {
+      if (column === 'bbox') {
+        return isBboxObject(value) && value.width > 0 && value.height > 0;
+      }
+
+      if (value == null) {
+        return false;
+      }
+
+      if (typeof value === 'string') {
+        return value.trim().length > 0;
+      }
+
+      if (typeof value === 'number') {
+        return Number.isFinite(value);
+      }
+
+      if (typeof value === 'boolean') {
+        return true;
+      }
+
+      return false;
+    }
+
+    function evaluatePairCompletionStatus(rows) {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return PAIR_STATUS_TODO;
+      }
+
+      const expectedFields = new Set();
+      for (const row of rows) {
+        if (!row || typeof row !== 'object' || Array.isArray(row)) {
+          continue;
+        }
+
+        for (const key of Object.keys(row)) {
+          if (key !== 'rowIndex') {
+            expectedFields.add(key);
+          }
+        }
+      }
+
+      if (!expectedFields.size) {
+        return PAIR_STATUS_TODO;
+      }
+
+      let hasMissing = false;
+      let hasCompletedNonBbox = false;
+
+      for (const row of rows) {
+        if (!row || typeof row !== 'object' || Array.isArray(row)) {
+          hasMissing = true;
+          continue;
+        }
+
+        for (const field of expectedFields) {
+          const hasField = Object.prototype.hasOwnProperty.call(row, field);
+          if (!hasField) {
+            hasMissing = true;
+            continue;
+          }
+
+          const completed = isCompletedFieldValue(field, row[field]);
+          if (!completed) {
+            hasMissing = true;
+            continue;
+          }
+
+          if (field !== 'bbox') {
+            hasCompletedNonBbox = true;
+          }
+        }
+      }
+
+      if (!hasCompletedNonBbox) {
+        return PAIR_STATUS_TODO;
+      }
+
+      return hasMissing ? PAIR_STATUS_MISSING : PAIR_STATUS_DONE;
+    }
+
+    async function loadPairCompletionStatuses() {
+      const results = await Promise.all(
+        pairs.map(async (pair) => {
+          try {
+            const response = await fetch(withCacheBust(buildDataUrl(pair.json)), { cache: 'no-store' });
+            if (!response.ok) {
+              return { name: pair.name, status: PAIR_STATUS_MISSING };
+            }
+
+            const payload = await response.json();
+            const rows = Array.isArray(payload) ? payload : [];
+            return { name: pair.name, status: evaluatePairCompletionStatus(rows) };
+          } catch {
+            return { name: pair.name, status: PAIR_STATUS_MISSING };
+          }
+        }),
+      );
+
+      for (const result of results) {
+        setPairCompletionStatus(result.name, result.status);
+      }
+    }
+
+    function loadLastSelectionFromStorage() {
+      try {
+        const value = window.localStorage.getItem(getLastSelectionStorageKey());
+        const normalized = typeof value === 'string' ? value.trim() : '';
+        return normalized || null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveLastSelectionToStorage(name) {
+      const normalized = String(name || '').trim();
+      if (!normalized) {
+        return;
+      }
+
+      try {
+        window.localStorage.setItem(getLastSelectionStorageKey(), normalized);
+      } catch {
+      }
     }
 
     function loadColumnWidthsFromStorage() {
@@ -3930,6 +4099,7 @@
       }
 
       setUnsaved(false);
+      setPairCompletionStatus(currentSelection.name, evaluatePairCompletionStatus(currentData));
       setStatus(message);
       await loadGlobalAutocompleteFields();
       loadContribuableClusters();
@@ -3969,6 +4139,7 @@
       renderTable();
       renderBboxes();
       setUnsaved(false);
+      saveLastSelectionToStorage(selected.name);
       setStatus(`Loaded ${selected.name}`);
     }
 
@@ -3993,6 +4164,7 @@
       }
 
       pairs = loaded;
+      pairCompletionByName = {};
       await loadGlobalAutocompleteFields();
       pairSelect.innerHTML = '';
 
@@ -4007,11 +4179,16 @@
       for (const pair of pairs) {
         const option = document.createElement('option');
         option.value = pair.name;
-        option.textContent = pair.name;
+        option.textContent = formatPairLabel(pair.name, pairCompletionByName[pair.name]);
         pairSelect.append(option);
       }
 
-      await renderSelection(pairs[0].name);
+      await loadPairCompletionStatuses();
+
+      const storedSelectionName = loadLastSelectionFromStorage();
+      const initialSelection = pairs.find((pair) => pair.name === storedSelectionName)?.name || pairs[0].name;
+      pairSelect.value = initialSelection;
+      await renderSelection(initialSelection);
     }
 
     pairSelect.addEventListener('change', async (event) => {
