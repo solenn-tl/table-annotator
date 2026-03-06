@@ -271,14 +271,14 @@
     let projectsSettings = [];
     let currentProject = null;
     let currentSubproject = null;
-    let pairs = [];
+    let elements = [];
     let classificationRows = [];
     let classificationByName = new Map();
     let verifyClassByName = new Map();
     let initialVerifyClassByName = new Map();
     let classOptions = [];
     let proposedClassOptions = new Set();
-    let pairsLoadError = '';
+    let elementsLoadError = '';
 
     function setStatus(message) {
       status.textContent = message;
@@ -567,16 +567,16 @@
 
     async function loadPairs() {
       loadProposedClassOptions();
-      pairs = [];
+      elements = [];
       classificationRows = [];
       classificationByName = new Map();
       verifyClassByName = new Map();
       initialVerifyClassByName = new Map();
       classOptions = [];
-      pairsLoadError = '';
+      elementsLoadError = '';
       const candidates = [
-        buildScopedApiUrl('/data/pairs.json'),
-        buildScopedApiUrl('/api/pairs'),
+        buildScopedApiUrl('/data/elements.json'),
+        buildScopedApiUrl('/api/elements'),
       ];
       let lastError = '';
 
@@ -594,7 +594,7 @@
             continue;
           }
 
-          pairs = payload
+          elements = payload
             .filter((item) => item && typeof item === 'object')
             .map((item) => ({
               name: String(item.name || '').trim(),
@@ -613,12 +613,12 @@
       await loadClassification();
 
       renderGrid();
-      if (!pairs.length && lastError) {
-        pairsLoadError = lastError;
+      if (!elements.length && lastError) {
+        elementsLoadError = lastError;
         setStatus('Viewer backend is unreachable. Start server.py and open page via http://127.0.0.1:8000/page-classification.html');
       } else {
         const modified = countModified();
-        setStatus(`Loaded ${pairs.length} document(s) · ${classificationByName.size} classification(s) · modified ${modified}`);
+        setStatus(`Loaded ${elements.length} document(s) · ${classificationByName.size} classification(s) · modified ${modified}`);
       }
     }
 
@@ -686,7 +686,7 @@
         }
       }
 
-      for (const pair of pairs) {
+      for (const pair of elements) {
         const pairName = sanitizeClassValue(pair.name);
         if (!pairName || verifyClassByName.has(pairName)) {
           continue;
@@ -715,11 +715,11 @@
     }
 
     function renderGrid() {
-      if (!pairs.length) {
-        if (pairsLoadError) {
-          gridWrap.innerHTML = `<div class="empty">Could not load pairs for this subproject. ${pairsLoadError}</div>`;
+      if (!elements.length) {
+        if (elementsLoadError) {
+          gridWrap.innerHTML = `<div class="empty">Could not load elements for this subproject. ${elementsLoadError}</div>`;
         } else {
-          gridWrap.innerHTML = '<div class="empty">No pairs found for this subproject.</div>';
+          gridWrap.innerHTML = '<div class="empty">No elements found for this subproject.</div>';
         }
         selectionInfo.textContent = '0 cards';
         return;
@@ -728,7 +728,7 @@
       const grid = document.createElement('div');
       grid.className = 'grid';
 
-      for (const pair of pairs) {
+      for (const pair of elements) {
         const topClass = getTopClassInfo(pair.name);
         const currentVerify = verifyClassByName.get(pair.name) || '';
         const initialVerify = initialVerifyClassByName.get(pair.name) || '';
@@ -798,7 +798,7 @@
           verifyClassByName.set(pair.name, nextValue);
           dirty.textContent = nextValue !== initialVerify ? 'Modified' : '';
           const modified = countModified();
-          selectionInfo.textContent = `${pairs.length} cards · ${modified} modified`;
+          selectionInfo.textContent = `${elements.length} cards · ${modified} modified`;
         });
 
         meta.append(nameEl, predicted, label, select, dirty);
@@ -808,11 +808,11 @@
 
       gridWrap.innerHTML = '';
       gridWrap.append(grid);
-      selectionInfo.textContent = `${pairs.length} cards · ${countModified()} modified`;
+      selectionInfo.textContent = `${elements.length} cards · ${countModified()} modified`;
     }
 
     async function saveVerifiedClasses() {
-      if (!pairs.length) {
+      if (!elements.length) {
         setStatus('Nothing to save.');
         return;
       }
@@ -828,7 +828,7 @@
         }
       }
 
-      for (const pair of pairs) {
+      for (const pair of elements) {
         const name = sanitizeClassValue(pair.name);
         if (!name) {
           continue;
@@ -867,8 +867,8 @@
           initialVerifyClassByName.set(name, value || '');
         }
 
-        selectionInfo.textContent = `${pairs.length} cards · ${countModified()} modified`;
-        setStatus(`Saved verify_class for ${pairs.length} documents.`);
+        selectionInfo.textContent = `${elements.length} cards · ${countModified()} modified`;
+        setStatus(`Saved verify_class for ${elements.length} documents.`);
       } catch (error) {
         setStatus(error?.message || 'Save failed');
       } finally {

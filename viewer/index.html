@@ -805,7 +805,7 @@
     const fieldGraphMeta = document.getElementById('fieldGraphMeta');
     const fieldGraphChartElement = document.getElementById('fieldGraphChart');
 
-    let pairs = [];
+    let elements = [];
     let pairSourceMode = 'api';
     let currentSelection = null;
     let currentData = [];
@@ -1117,7 +1117,7 @@
 
     async function loadPairCompletionStatuses() {
       const results = await Promise.all(
-        pairs.map(async (pair) => {
+        elements.map(async (pair) => {
           try {
             const response = await fetch(withCacheBust(buildDataUrl(pair.json)), { cache: 'no-store' });
             if (!response.ok) {
@@ -1703,7 +1703,7 @@
     }
 
     async function loadAllRowsFromPairs() {
-      const sourcePairs = Array.isArray(pairs) ? pairs : [];
+      const sourcePairs = Array.isArray(elements) ? elements : [];
       if (!sourcePairs.length) {
         return {
           allRows: [],
@@ -2348,7 +2348,7 @@
     }
 
     async function loadAutocompleteFieldsClientSide() {
-      const sourcePairs = Array.isArray(pairs) ? pairs : [];
+      const sourcePairs = Array.isArray(elements) ? elements : [];
       if (!sourcePairs.length) {
         return {
           scannedFiles: 0,
@@ -3161,7 +3161,7 @@
       const imgUrlPath = String(currentSubproject?.imgUrlPath || '').trim();
       const imgSuffix = String(currentSubproject?.imgSuffix || '').trim();
       const iiifEndpoint = buildScopedApiUrl(
-        `/api/iiif-pairs?manifest=${encodeURIComponent(manifestUrl)}${imgNamePath ? `&imgNamePath=${encodeURIComponent(imgNamePath)}` : ''}${imgUrlPath ? `&imgUrlPath=${encodeURIComponent(imgUrlPath)}` : ''}${imgSuffix ? `&imgSuffix=${encodeURIComponent(imgSuffix)}` : ''}`,
+        `/api/iiif-elements?manifest=${encodeURIComponent(manifestUrl)}${imgNamePath ? `&imgNamePath=${encodeURIComponent(imgNamePath)}` : ''}${imgUrlPath ? `&imgUrlPath=${encodeURIComponent(imgUrlPath)}` : ''}${imgSuffix ? `&imgSuffix=${encodeURIComponent(imgSuffix)}` : ''}`,
       );
 
       try {
@@ -4738,7 +4738,7 @@
     }
 
     async function renderSelection(name) {
-      const selected = pairs.find((pair) => pair.name === name);
+      const selected = elements.find((pair) => pair.name === name);
       if (!selected) {
         return;
       }
@@ -4846,7 +4846,7 @@
           pairSourceMode = 'api';
           apiLoaded = true;
         } catch (error) {
-          pairs = [];
+          elements = [];
           pairCompletionByName = {};
           pairSelect.innerHTML = '';
           const option = document.createElement('option');
@@ -4857,7 +4857,7 @@
         }
       } else {
         try {
-          const apiResponse = await fetch(buildScopedApiUrl('/api/pairs'), { cache: 'no-store' });
+          const apiResponse = await fetch(buildScopedApiUrl('/api/elements'), { cache: 'no-store' });
           if (apiResponse.ok) {
             loaded = await apiResponse.json();
             pairSourceMode = 'api';
@@ -4867,10 +4867,10 @@
       }
 
       if (!apiLoaded && !loaded.length) {
-        const manifestUrl = `${getManifestBasePath()}/pairs.json`;
+        const manifestUrl = `${getManifestBasePath()}/elements.json`;
         const manifestResponse = await fetch(withCacheBust(manifestUrl), { cache: 'no-store' });
         if (!manifestResponse.ok) {
-          throw new Error(`No pair source found for ${getCurrentScopeLabel()} (API /api/pairs failed and ${manifestUrl} returned ${manifestResponse.status})`);
+          throw new Error(`No pair source found for ${getCurrentScopeLabel()} (API /api/elements failed and ${manifestUrl} returned ${manifestResponse.status})`);
         }
         loaded = normalizeManifestPairs(await manifestResponse.json());
         pairSourceMode = 'manifest';
@@ -4882,12 +4882,12 @@
         ? sourcePairs.filter((pair) => classFilter.allowedNames.has(String(pair?.name || '').trim()))
         : sourcePairs;
 
-      pairs = filteredPairs;
+      elements = filteredPairs;
       pairCompletionByName = {};
       await loadGlobalAutocompleteFields();
       pairSelect.innerHTML = '';
 
-      if (!pairs.length) {
+      if (!elements.length) {
         const option = document.createElement('option');
         option.textContent = 'No image/json pair found';
         pairSelect.append(option);
@@ -4897,7 +4897,7 @@
         return;
       }
 
-      for (const pair of pairs) {
+      for (const pair of elements) {
         const option = document.createElement('option');
         option.value = pair.name;
         option.textContent = formatPairLabel(pair.name, pairCompletionByName[pair.name]);
@@ -4907,7 +4907,7 @@
       await loadPairCompletionStatuses();
 
       const storedSelectionName = loadLastSelectionFromStorage();
-      const initialSelection = pairs.find((pair) => pair.name === storedSelectionName)?.name || pairs[0].name;
+      const initialSelection = elements.find((pair) => pair.name === storedSelectionName)?.name || elements[0].name;
       pairSelect.value = initialSelection;
       await renderSelection(initialSelection);
     }

@@ -1,0 +1,17 @@
+[
+    {
+        "name": "FRAD078_000-180_3P3_2215_00001_left",
+        "image": "http://87.252.16.28:8182/iiif/2/filer2%2Fdepot_ad78%2Fv7prod%2Fimages%2Fdepot%2Ffonds%2FImages01%2FFoncier%2FFoncier_Outils%2FCadastre%2FCN_MatricesCadastrales%2F3P3_2215%2FFRAD078_000-180_3P3_2215_00001.jpg/0,0,1400,2159/full/0/default.jpg",
+        "json": "FRAD078_000-180_3P3_2215_00001_left.json"
+    },
+    {
+        "name": "FRAD078_000-180_3P3_2215_00001_right",
+        "image": "http://87.252.16.28:8182/iiif/2/filer2%2Fdepot_ad78%2Fv7prod%2Fimages%2Fdepot%2Ffonds%2FImages01%2FFoncier%2FFoncier_Outils%2FCadastre%2FCN_MatricesCadastrales%2F3P3_2215%2FFRAD078_000-180_3P3_2215_00001.jpg/1400,0,2800,2159/full/0/default.jpg",
+        "json": "FRAD078_000-180_3P3_2215_00001_right.json"
+    },
+    {
+        "name": "FRAD078_000-180_3P3_2215_00002",
+        "image": "http://87.252.16.28:8182/iiif/2/filer2%2Fdepot_ad78%2Fv7prod%2Fimages%2Fdepot%2Ffonds%2FImages01%2FFoncier%2FFoncier_Outils%2FCadastre%2FCN_MatricesCadastrales%2F3P3_2215%2FFRAD078_000-180_3P3_2215_00002.jpg/full/full/0/default.jpg",
+        "json": "FRAD078_000-180_3P3_2215_00002.json"
+    }
+]

@@ -61,11 +61,11 @@ def numero_liste_sort_key(value: str) -> tuple[int, object]:
         return (1, value.casefold())
 
 
-def build_pairs(cut_images_dir: Path = CUT_IMAGES_DIR) -> list[dict[str, str]]:
-    pairs: list[dict[str, str]] = []
+def build_elements(cut_images_dir: Path = CUT_IMAGES_DIR) -> list[dict[str, str]]:
+    elements: list[dict[str, str]] = []
 
     if not cut_images_dir.exists():
-        return pairs
+        return elements
 
     json_by_stem = {path.stem: path for path in cut_images_dir.glob("*.json")}
 
@@ -77,7 +77,7 @@ def build_pairs(cut_images_dir: Path = CUT_IMAGES_DIR) -> list[dict[str, str]]:
         if not json_path:
             continue
 
-        pairs.append(
+        elements.append(
             {
                 "name": image_path.stem,
                 "image": image_path.name,
@@ -85,7 +85,7 @@ def build_pairs(cut_images_dir: Path = CUT_IMAGES_DIR) -> list[dict[str, str]]:
             }
         )
 
-    return pairs
+    return elements
 
 
 def sanitize_pair_base_name(value: object) -> str:
@@ -267,33 +267,33 @@ def get_manifest_canvases(manifest: object) -> list[object]:
     return []
 
 
-def sync_pairs_manifest(cut_images_dir: Path, pairs: list[dict[str, str]]) -> None:
-    cache_path = cut_images_dir / "pairs.json"
+def sync_elements_manifest(cut_images_dir: Path, elements: list[dict[str, str]]) -> None:
+    cache_path = cut_images_dir / "elements.json"
 
-    existing_pairs: list[dict[str, str]] | None = None
+    existing_elements: list[dict[str, str]] | None = None
     try:
         if cache_path.exists():
             payload = json.loads(cache_path.read_text(encoding="utf-8"))
             if isinstance(payload, list):
-                existing_pairs = payload
+                existing_elements = payload
     except (OSError, json.JSONDecodeError):
-        existing_pairs = None
+        existing_elements = None
 
-    if existing_pairs == pairs:
+    if existing_elements == elements:
         return
 
     cut_images_dir.mkdir(parents=True, exist_ok=True)
     cache_path.write_text(
-        json.dumps(pairs, ensure_ascii=False, indent=4) + "\n",
+        json.dumps(elements, ensure_ascii=False, indent=4) + "\n",
         encoding="utf-8",
     )
 
 
-def ensure_pair_json_files(cut_images_dir: Path, pairs: list[dict[str, str]]) -> int:
+def ensure_pair_json_files(cut_images_dir: Path, elements: list[dict[str, str]]) -> int:
     cut_images_dir.mkdir(parents=True, exist_ok=True)
     created_count = 0
 
-    for pair in pairs:
+    for pair in elements:
         json_name = pair.get("json") if isinstance(pair, dict) else None
         json_text = as_non_empty_text(json_name)
         if json_text is None:
@@ -312,8 +312,8 @@ def ensure_pair_json_files(cut_images_dir: Path, pairs: list[dict[str, str]]) ->
     return created_count
 
 
-def load_pairs_manifest(cut_images_dir: Path) -> list[dict[str, object]]:
-    manifest_path = cut_images_dir / "pairs.json"
+def load_elements_manifest(cut_images_dir: Path) -> list[dict[str, object]]:
+    manifest_path = cut_images_dir / "elements.json"
     if manifest_path.exists():
         try:
             payload = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -326,15 +326,15 @@ def load_pairs_manifest(cut_images_dir: Path) -> list[dict[str, object]]:
         except (OSError, json.JSONDecodeError):
             pass
 
-    generated = build_pairs(cut_images_dir)
+    generated = build_elements(cut_images_dir)
     return [dict(item) for item in generated]
 
 
-def save_pairs_manifest(cut_images_dir: Path, pairs: list[dict[str, object]]) -> Path:
+def save_elements_manifest(cut_images_dir: Path, elements: list[dict[str, object]]) -> Path:
     cut_images_dir.mkdir(parents=True, exist_ok=True)
-    manifest_path = cut_images_dir / "pairs.json"
+    manifest_path = cut_images_dir / "elements.json"
     manifest_path.write_text(
-        json.dumps(pairs, ensure_ascii=False, indent=4) + "\n",
+        json.dumps(elements, ensure_ascii=False, indent=4) + "\n",
         encoding="utf-8",
     )
     return manifest_path
@@ -375,7 +375,7 @@ def extract_top_class_name(result: object, model: object) -> str | None:
     return str(top_index)
 
 
-def classify_pairs_with_yolo(
+def classify_elements_with_yolo(
     cut_images_dir: Path,
     pair_names: list[str] | None,
     model_path_text: str,
@@ -390,7 +390,7 @@ def classify_pairs_with_yolo(
     if not model_path.exists():
         raise FileNotFoundError(f"Model file not found: {model_path}")
 
-    pairs = load_pairs_manifest(cut_images_dir)
+    elements = load_elements_manifest(cut_images_dir)
     selected_names = {
         text
         for text in (as_non_empty_text(name) for name in (pair_names or []))
@@ -398,18 +398,18 @@ def classify_pairs_with_yolo(
     }
 
     if selected_names:
-        target_pairs = [
-            pair for pair in pairs
+        target_elements = [
+            pair for pair in elements
             if as_non_empty_text(pair.get("name")) in selected_names
         ]
     else:
-        target_pairs = pairs
+        target_elements = elements
 
     model = YOLO(str(model_path))
     classified_count = 0
     failed: list[dict[str, str]] = []
 
-    for pair in target_pairs:
+    for pair in target_elements:
         pair_name = as_non_empty_text(pair.get("name")) or "(unknown)"
         image_value = as_non_empty_text(pair.get("image"))
         if image_value is None:
@@ -444,18 +444,18 @@ def classify_pairs_with_yolo(
         pair["class"] = class_name
         classified_count += 1
 
-    manifest_path = save_pairs_manifest(cut_images_dir, pairs)
+    manifest_path = save_elements_manifest(cut_images_dir, elements)
     return {
         "ok": True,
         "classified": classified_count,
         "failed": failed,
-        "totalSelected": len(target_pairs),
-        "pairsPath": str(manifest_path),
+        "totalSelected": len(target_elements),
+        "elementsPath": str(manifest_path),
         "modelPath": str(model_path),
     }
 
 
-def build_iiif_pairs(
+def build_iiif_elements(
     manifest_url: str,
     image_name_path: str | None = None,
     image_url_path: str | None = None,
@@ -490,7 +490,7 @@ def build_iiif_pairs(
     if not canvases:
         return []
 
-    pairs: list[dict[str, str]] = []
+    elements: list[dict[str, str]] = []
 
     for index, canvas in enumerate(canvases):
         label = extract_iiif_label(canvas, index)
@@ -535,25 +535,25 @@ def build_iiif_pairs(
             left_url = build_iiif_region_url(image_url, "pct:0,0,50,100")
             right_url = build_iiif_region_url(image_url, "pct:50,0,50,100")
 
-            pairs.append({
+            elements.append({
                 "name": f"{base_name}_left",
                 "image": left_url,
                 "json": f"{base_name}_left.json",
             })
-            pairs.append({
+            elements.append({
                 "name": f"{base_name}_right",
                 "image": right_url,
                 "json": f"{base_name}_right.json",
             })
             continue
 
-        pairs.append({
+        elements.append({
             "name": base_name,
             "image": image_url,
             "json": f"{base_name}.json",
         })
 
-    return pairs
+    return elements
 
 
 def normalize_projects_settings(payload: object) -> list[dict[str, object]]:
@@ -1227,7 +1227,7 @@ class ViewerHandler(BaseHTTPRequestHandler):
             self._send_json({"ok": True, "saved": str(settings_path), "settingsPath": str(settings_path)})
             return
 
-        if route == "/api/classify-pairs":
+        if route == "/api/classify-elements":
             try:
                 content_length = int(self.headers.get("Content-Length", "0"))
             except ValueError:
@@ -1265,7 +1265,7 @@ class ViewerHandler(BaseHTTPRequestHandler):
             confidence = max(0.0, min(1.0, confidence))
 
             try:
-                result = classify_pairs_with_yolo(scoped_dir, pair_names, model_path_text, confidence)
+                result = classify_elements_with_yolo(scoped_dir, pair_names, model_path_text, confidence)
             except Exception as error:
                 self.send_error(500, f"Classification failed: {error}")
                 return
@@ -1378,11 +1378,11 @@ class ViewerHandler(BaseHTTPRequestHandler):
             self.send_error(404, "projects-settings.json not found")
             return
 
-        if route == "/api/pairs":
-            self._send_json(load_pairs_manifest(scoped_dir))
+        if route == "/api/elements":
+            self._send_json(load_elements_manifest(scoped_dir))
             return
 
-        if route == "/api/iiif-pairs":
+        if route == "/api/iiif-elements":
             manifest_url = get_query_first(parsed.query, "manifest")
             manifest_text = as_non_empty_text(manifest_url)
             if manifest_text is None:
@@ -1394,14 +1394,14 @@ class ViewerHandler(BaseHTTPRequestHandler):
             image_suffix = as_non_empty_text(get_query_first(parsed.query, "imgSuffix"))
 
             try:
-                pairs = build_iiif_pairs(manifest_text, image_name_path, image_url_path, image_suffix)
+                elements = build_iiif_elements(manifest_text, image_name_path, image_url_path, image_suffix)
                 if scoped_dir is not None:
                     try:
-                        sync_pairs_manifest(scoped_dir, pairs)
-                        ensure_pair_json_files(scoped_dir, pairs)
+                        sync_elements_manifest(scoped_dir, elements)
+                        ensure_pair_json_files(scoped_dir, elements)
                     except OSError:
                         pass
-                self._send_json(pairs)
+                self._send_json(elements)
             except Exception as error:
                 self.send_error(502, f"Could not load IIIF manifest: {error}")
             return

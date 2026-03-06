@@ -216,7 +216,7 @@
     <div class="content">
       <section class="panel">
         <div class="panel-title">Pages (ets_couv)</div>
-        <div id="pairsWrap" class="panel-body"></div>
+        <div id="elementsWrap" class="panel-body"></div>
       </section>
 
       <section class="panel">
@@ -270,7 +270,7 @@
     const reloadBtn = document.getElementById('reloadBtn');
     const saveBtn = document.getElementById('saveBtn');
     const statusEl = document.getElementById('status');
-    const pairsWrap = document.getElementById('pairsWrap');
+    const elementsWrap = document.getElementById('elementsWrap');
     const imageView = document.getElementById('imageView');
     const bboxLayer = document.getElementById('bboxLayer');
     const imageInfo = document.getElementById('imageInfo');
@@ -281,7 +281,7 @@
     let projectsSettings = [];
     let currentProject = null;
     let currentSubproject = null;
-    let pairs = [];
+    let elements = [];
     let coversRows = [];
     let coversByName = new Map();
     let currentPair = null;
@@ -621,7 +621,7 @@
     async function loadPairsAndCovers() {
       await loadCoverFieldsForCurrentSubproject();
 
-      pairs = [];
+      elements = [];
       coversRows = [];
       coversByName = new Map();
       currentPair = null;
@@ -629,9 +629,9 @@
 
       const base = getCurrentSubprojectBasePath();
       const pairCandidates = [
-        buildScopedApiUrl('/api/pairs'),
-        buildScopedApiUrl('/data/pairs.json'),
-        base ? `${base}/pairs.json` : '',
+        buildScopedApiUrl('/api/elements'),
+        buildScopedApiUrl('/data/elements.json'),
+        base ? `${base}/elements.json` : '',
       ].filter(Boolean);
 
       let loadedPairs = [];
@@ -661,7 +661,7 @@
 
       if (!loadedPairs.length) {
         renderPairsList();
-        setStatus('No pairs found for current subproject');
+        setStatus('No elements found for current subproject');
         return;
       }
 
@@ -696,7 +696,7 @@
         }
       }
 
-      pairs = loadedPairs.filter((pair) => {
+      elements = loadedPairs.filter((pair) => {
         const className = String(classByName.get(pair.name) || pair.class || '').trim();
         return className === 'ets_couv';
       });
@@ -730,7 +730,7 @@
         }
       }
 
-      for (const pair of pairs) {
+      for (const pair of elements) {
         if (!coversByName.has(pair.name)) {
           const row = getDefaultCoverRow(pair);
           coversRows.push(row);
@@ -739,23 +739,23 @@
       }
 
       renderPairsList();
-      if (pairs.length) {
-        selectPair(pairs[0].name);
+      if (elements.length) {
+        selectPair(elements[0].name);
       } else {
         setStatus('No ets_couv pages found in classification');
       }
     }
 
     function renderPairsList() {
-      if (!pairs.length) {
-        pairsWrap.innerHTML = '<div class="muted">No cover page found (ets_couv).</div>';
+      if (!elements.length) {
+        elementsWrap.innerHTML = '<div class="muted">No cover page found (ets_couv).</div>';
         return;
       }
 
       const list = document.createElement('div');
       list.className = 'pair-list';
 
-      for (const pair of pairs) {
+      for (const pair of elements) {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `pair-btn${currentPair?.name === pair.name ? ' active' : ''}`;
@@ -766,8 +766,8 @@
         list.append(button);
       }
 
-      pairsWrap.innerHTML = '';
-      pairsWrap.append(list);
+      elementsWrap.innerHTML = '';
+      elementsWrap.append(list);
     }
 
     function getCurrentCoverRow() {
@@ -811,7 +811,7 @@
     function selectPair(name) {
       persistCurrentForm();
 
-      const pair = pairs.find((item) => item.name === name);
+      const pair = elements.find((item) => item.name === name);
       if (!pair) {
         return;
       }
@@ -1052,7 +1052,7 @@
       initFieldControls();
       await loadProjectsSettings();
       if (!projectsSettings.length) {
-        pairsWrap.innerHTML = '<div class="muted">No projects found in projects-settings.json.</div>';
+        elementsWrap.innerHTML = '<div class="muted">No projects found in projects-settings.json.</div>';
         setStatus('No projects configured');
         return;
       }

@@ -71,9 +71,9 @@ def process_folder(folder_path: Path, save_dir: Path) -> tuple[int, int, int]:
 	return processed, split_count, skipped
 
 
-def create_json_and_pairs(save_dir: Path) -> tuple[int, int]:
+def create_json_and_elements(save_dir: Path) -> tuple[int, int]:
 	created_json_count = 0
-	pairs: list[dict[str, str]] = []
+	elements: list[dict[str, str]] = []
 
 	for image_path in sorted(
 		path
@@ -88,7 +88,7 @@ def create_json_and_pairs(save_dir: Path) -> tuple[int, int]:
 			created_json_count += 1
 
 		relative_json = json_path.relative_to(save_dir)
-		pairs.append(
+		elements.append(
 			{
 				"name": relative_image.with_suffix("").as_posix(),
 				"image": relative_image.as_posix(),
@@ -96,13 +96,13 @@ def create_json_and_pairs(save_dir: Path) -> tuple[int, int]:
 			}
 		)
 
-	pairs_path = save_dir / "pairs.json"
-	pairs_path.write_text(
-		json.dumps(pairs, ensure_ascii=False, indent=4) + "\n",
+	elements_path = save_dir / "elements.json"
+	elements_path.write_text(
+		json.dumps(elements, ensure_ascii=False, indent=4) + "\n",
 		encoding="utf-8",
 	)
 
-	return created_json_count, len(pairs)
+	return created_json_count, len(elements)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -112,9 +112,9 @@ def build_parser() -> argparse.ArgumentParser:
 	parser.add_argument("folder_path", type=Path, help="Folder containing source images")
 	parser.add_argument("save_dir", type=Path, help="Folder where output images are saved")
 	parser.add_argument(
-		"--create-json-and-pairs",
+		"--create-json-and-elements",
 		action="store_true",
-		help="Create missing empty sidecar JSON files and write pairs.json in save_dir",
+		help="Create missing empty sidecar JSON files and write elements.json in save_dir",
 	)
 	return parser
 
@@ -128,10 +128,10 @@ def main() -> None:
 		f"Done. Processed: {processed}, Split images: {split_count}, Skipped unreadable: {skipped}"
 	)
 
-	if args.create_json_and_pairs:
-		created_json_count, pair_count = create_json_and_pairs(args.save_dir)
+	if args.create_json_and_elements:
+		created_json_count, pair_count = create_json_and_elements(args.save_dir)
 		print(
-			f"Created missing empty JSON: {created_json_count}, Pairs written: {pair_count}, File: {args.save_dir / 'pairs.json'}"
+			f"Created missing empty JSON: {created_json_count}, Pairs written: {pair_count}, File: {args.save_dir / 'elements.json'}"
 		)
 
 

@@ -49,7 +49,7 @@ Purpose:
 
 Data source:
 
-- loads pairs from `/api/pairs` (or IIIF manifest for `iiif` subprojects),
+- loads elements from `/api/elements` (or IIIF manifest for `iiif` subprojects),
 - saves row JSON with `/api/save/<json-file>`,
 - uses `/api/column-settings`, `/api/contribuable-clusters`, `/api/autocomplete-fields`.
 
@@ -91,7 +91,7 @@ Purpose:
 
 Data source:
 
-- pages from `/api/pairs` (or `/data/pairs.json` fallback),
+- pages from `/api/elements` (or `/data/elements.json` fallback),
 - predictions from `/data/classification.json`.
 
 What you do:
@@ -152,7 +152,7 @@ Example cover settings file:
 
 How pages are selected:
 
-- loads `pairs.json`,
+- loads `elements.json`,
 - reads `classification.json`,
 - keeps only pages whose resolved class is `ets_couv`.
 
@@ -188,7 +188,7 @@ Inputs:
 
 - manifest URL,
 - output directory,
-- output filenames for `items.json`, `pairs.json`, and optional manifest copy.
+- output filenames for `items.json`, `elements.json`, and optional manifest copy.
 
 Actions:
 
@@ -230,18 +230,18 @@ Behavior:
 - scans source folder recursively for image files,
 - splits landscape images into `_left` and `_right`,
 - copies portrait images unchanged,
-- optionally creates missing sidecar JSON files and `pairs.json`.
+- optionally creates missing sidecar JSON files and `elements.json`.
 
 Usage:
 
 ```powershell
-python .\viewer\cli.py <folder_path> <save_dir> [--create-json-and-pairs]
+python .\viewer\cli.py <folder_path> <save_dir> [--create-json-and-elements]
 ```
 
 Example:
 
 ```powershell
-python .\viewer\cli.py .\images .\cut_images --create-json-and-pairs
+python .\viewer\cli.py .\images .\cut_images --create-json-and-elements
 ```
 
 ### `viewer/iiif.py`
@@ -251,14 +251,14 @@ Builds local manifest files from a IIIF manifest URL.
 Outputs:
 
 - `items.json` (canvas metadata),
-- `pairs.json` (annotation pairs),
+- `elements.json` (annotation elements),
 - empty `[]` annotation JSON files for every pair,
 - optional raw manifest dump.
 
 Usage:
 
 ```powershell
-python .\viewer\iiif.py <manifest_url> [--output-dir .] [--items-output items.json] [--pairs-output pairs.json] [--manifest-output manifest.json]
+python .\viewer\iiif.py <manifest_url> [--output-dir .] [--items-output items.json] [--elements-output elements.json] [--manifest-output manifest.json]
 ```
 
 Examples:
@@ -266,7 +266,7 @@ Examples:
 ```powershell
 python .\viewer\iiif.py "https://archives06.fr/.../manifest.json"
 python .\viewer\iiif.py "https://archives06.fr/.../manifest.json" --output-dir .\cut_images\alpes-maritimes\aiglun\3P31
-python .\viewer\iiif.py "https://archives06.fr/.../manifest.json" --output-dir .\viewer\out --pairs-output my-pairs.json --manifest-output manifest.json
+python .\viewer\iiif.py "https://archives06.fr/.../manifest.json" --output-dir .\viewer\out --elements-output my-elements.json --manifest-output manifest.json
 ```
 
 ### `viewer/classif.py`
@@ -275,27 +275,36 @@ Batch classifies page images with a YOLO classification model.
 
 Current script defaults:
 
-- reads pairs from `cut_images/alpes-maritimes/aiglun/3P31/pairs.json`,
+- reads elements from `cut_images/alpes-maritimes/aiglun/3P31/elements.json`,
 - writes results to `cut_images/alpes-maritimes/aiglun/3P31/classification.json`,
 - uses model `models/classification/best.pt`.
 
 Options:
 
-- `--limit`: process first N pairs only.
+- `--elements-path`: path to input `elements.json`.
+- `--output-path`: path to output `classification.json`.
+- `--model-path`: path to YOLO weights (default: `models/classification/best.pt`).
+- `--limit`: process first N elements only.
 - `--iiif-width`: request resized IIIF images (default `800`, `0` keeps full size).
 - `--device`: `auto`, `cpu`, `cuda`, `cuda:0`, `cuda:1`.
 
 Usage:
 
 ```powershell
-python .\viewer\classif.py [--limit 100] [--iiif-width 800] [--device auto]
+python .\viewer\classif.py [--elements-path <elements.json>] [--output-path <classification.json>] [--model-path <best.pt>] [--limit 100] [--iiif-width 800] [--device auto]
+```
+
+Example for another subproject:
+
+```powershell
+python .\viewer\classif.py --elements-path .\cut_images\alpes-maritimes\belvedere\3P145\elements.json --output-path .\cut_images\alpes-maritimes\belvedere\3P145\classification.json --model-path .\models\classification\best.pt --iiif-width 800 --device auto
 ```
 
 ## Data Files
 
 Expected per subproject folder (for example `cut_images/<project>/<subproject>/`):
 
-- `pairs.json`: list of `{name, image, json}` entries (optional `class`).
+- `elements.json`: list of `{name, image, json}` entries (optional `class`).
 - `<page>.json`: annotation rows array.
 - `classification.json`: predicted/verified classes by `name`.
 - `covers.json`: cover metadata entries for pages classified as `ets_couv`.

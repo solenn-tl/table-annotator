@@ -5,7 +5,7 @@ from pathlib import Path
 
 def ligeo_iiif_manifest(manifest_url):
     """
-    Fetches and returns the IIIF manifest from the given URL.
+    Fetches and returns the IIIF manifest from the given URL provided by the Ligeo software used by certain archive services.
     Args:
         manifest_url (str): The URL of the IIIF manifest.
     Returns:
@@ -107,14 +107,14 @@ def ligeo_retrieve_collection(manifest_url, output_path="items.json"):
     return items
     
 
-def create_pairs(items_or_json_path):
+def create_elements(items_or_json_path):
     if isinstance(items_or_json_path, (str, Path)):
         with open(items_or_json_path, "r", encoding="utf-8") as f:
             items = json.load(f)
     else:
         items = items_or_json_path
 
-    pairs = []
+    elements = []
 
     for item in items:
         img_url = item["img"]
@@ -126,7 +126,7 @@ def create_pairs(items_or_json_path):
             left_coords = (0, 0, width // 2, height)
             left_iiif_img_url = img_url.replace("/full/full/0/default.jpg", f"/{left_coords[0]},{left_coords[1]},{left_coords[2]},{left_coords[3]}/full/0/default.jpg")
             left_annotation_json = item["cote"] + '_left.json'
-            pairs.append({
+            elements.append({
                 "name": left_name,
                 "image": left_iiif_img_url,
                 "json": left_annotation_json
@@ -136,7 +136,7 @@ def create_pairs(items_or_json_path):
             right_coords = (width // 2, 0, width, height)
             right_iiif_img_url = img_url.replace("/full/full/0/default.jpg", f"/{right_coords[0]},{right_coords[1]},{right_coords[2]},{right_coords[3]}/full/0/default.jpg")
             right_annotation_json = item["cote"] + '_right.json'
-            pairs.append({
+            elements.append({
                 "name": right_name,
                 "image": right_iiif_img_url,
                 "json": right_annotation_json
@@ -145,20 +145,20 @@ def create_pairs(items_or_json_path):
             # Single part coordinates (full image)
             name = item["cote"]
             annotation_json = item["cote"] + '.json'
-            pairs.append({
+            elements.append({
                 "name": name,
                 "image": img_url,
                 "json": annotation_json
             })
-    return pairs
+    return elements
 
 
-def create_empty_json_files_from_pairs(pairs, output_dir):
+def create_empty_json_files_from_elements(elements, output_dir):
     base_dir = Path(output_dir).resolve()
     base_dir.mkdir(parents=True, exist_ok=True)
 
     created_count = 0
-    for pair in pairs:
+    for pair in elements:
         if not isinstance(pair, dict):
             continue
 
@@ -202,9 +202,9 @@ def build_parser():
         help="Optional manifest JSON filename or path",
     )
     parser.add_argument(
-        "--pairs-output",
-        default="pairs.json",
-        help="Pairs JSON filename or path (default: pairs.json)",
+        "--elements-output",
+        default="elements.json",
+        help="Pairs JSON filename or path (default: elements.json)",
     )
     return parser
 
@@ -221,17 +221,17 @@ def main():
     args = parser.parse_args()
 
     items_output_path = resolve_output_path(args.items_output, args.output_dir)
-    pairs_output_path = resolve_output_path(args.pairs_output, args.output_dir)
+    elements_output_path = resolve_output_path(args.elements_output, args.output_dir)
 
     manifest = ligeo_iiif_manifest(args.manifest_url)
     items = ligeo_retrieve_collection(manifest, output_path=items_output_path)
-    pairs = create_pairs(items)
-    pairs_output_path.parent.mkdir(parents=True, exist_ok=True)
-    pairs_output_path.write_text(
-        json.dumps(pairs, ensure_ascii=False, indent=4) + "\n",
+    elements = create_elements(items)
+    elements_output_path.parent.mkdir(parents=True, exist_ok=True)
+    elements_output_path.write_text(
+        json.dumps(elements, ensure_ascii=False, indent=4) + "\n",
         encoding="utf-8",
     )
-    created_json_count = create_empty_json_files_from_pairs(pairs, args.output_dir)
+    created_json_count = create_empty_json_files_from_elements(elements, args.output_dir)
 
     if args.manifest_output:
         manifest_output = resolve_output_path(args.manifest_output, args.output_dir)
@@ -243,7 +243,7 @@ def main():
 
     print(f"Items extracted: {len(items)}")
     print(f"Items file: {items_output_path.resolve()}")
-    print(f"Pairs file: {pairs_output_path.resolve()}")
+    print(f"Pairs file: {elements_output_path.resolve()}")
     print(f"Empty annotation JSON files created: {created_json_count}")
     if args.manifest_output:
         print(f"Manifest file: {manifest_output.resolve()}")

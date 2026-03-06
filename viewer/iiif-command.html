@@ -199,8 +199,8 @@
           </div>
 
           <div class="row">
-            <label for="pairsOutput">Pairs filename/path</label>
-            <input id="pairsOutput" type="text" value="pairs.json" />
+            <label for="elementsOutput">Pairs filename/path</label>
+            <input id="elementsOutput" type="text" value="elements.json" />
           </div>
 
           <div class="row">
@@ -225,7 +225,7 @@
 
           <div class="panel-title" style="margin:0 -10px 0 -10px; border-top:1px solid #7774;">Notes</div>
           <ul>
-            <li>Creates <strong>items</strong>, <strong>pairs</strong>, and empty annotation JSON files for each pair.</li>
+            <li>Creates <strong>items</strong>, <strong>elements</strong>, and empty annotation JSON files for each pair.</li>
             <li>If files already exist, annotation JSON files are not overwritten.</li>
             <li>Use absolute paths if you run command outside project root.</li>
           </ul>
@@ -238,7 +238,7 @@
     const manifestUrlInput = document.getElementById('manifestUrl');
     const outputDirInput = document.getElementById('outputDir');
     const itemsOutputInput = document.getElementById('itemsOutput');
-    const pairsOutputInput = document.getElementById('pairsOutput');
+    const elementsOutputInput = document.getElementById('elementsOutput');
     const manifestOutputInput = document.getElementById('manifestOutput');
     const commandPreview = document.getElementById('commandPreview');
     const status = document.getElementById('status');
@@ -254,7 +254,7 @@
       const manifestUrl = manifestUrlInput.value.trim();
       const outputDir = outputDirInput.value.trim();
       const itemsOutput = itemsOutputInput.value.trim();
-      const pairsOutput = pairsOutputInput.value.trim();
+      const elementsOutput = elementsOutputInput.value.trim();
       const manifestOutput = manifestOutputInput.value.trim();
 
       if (!manifestUrl) {
@@ -273,8 +273,8 @@
         command += ` --items-output ${quote(itemsOutput)}`;
       }
 
-      if (pairsOutput) {
-        command += ` --pairs-output ${quote(pairsOutput)}`;
+      if (elementsOutput) {
+        command += ` --elements-output ${quote(elementsOutput)}`;
       }
 
       if (manifestOutput) {
@@ -307,7 +307,7 @@
       }
     }
 
-    [manifestUrlInput, outputDirInput, itemsOutputInput, pairsOutputInput, manifestOutputInput]
+    [manifestUrlInput, outputDirInput, itemsOutputInput, elementsOutputInput, manifestOutputInput]
       .forEach((input) => {
         input.addEventListener('input', renderCommand);
       });
