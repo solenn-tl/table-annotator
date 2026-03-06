@@ -1,0 +1,20 @@
+{   
+    "imageFormat":"double",
+    "columnTypes": {
+        "numeroListe": "none",
+        "contribuable": "autocomplete",
+        "numeroParcelle": "sequence",
+        "adresseParcelle": "autocomplete",
+        "natureParcelle": "autocomplete",
+        "contenanceHect": "sequence",
+        "contenanceAres": "sequence",
+        "contenanceCent": "sequence",
+        "classementChiffres": "none",
+        "classementLettres": "autocomplete",
+        "revenusFr": "none",
+        "revenusCent": "none",
+        "ouvPortesCocheresCharetieres": "sequence",
+        "ouvPortesFenetres": "sequence",
+        "bbox": "none"
+    }
+}

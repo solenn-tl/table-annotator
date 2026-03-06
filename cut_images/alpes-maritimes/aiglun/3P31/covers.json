@@ -1,0 +1,71 @@
+[
+    {
+        "name": "FRAD006_03P_0031_00003",
+        "image": "https://archives06.fr/iiif/Matrice_EtatSection/03P_0031//FRAD006_03P_0031_00003.jpg/full/full/0/default.jpg",
+        "class": "ets_couv",
+        "commune": "Aiglun",
+        "departement": "Var",
+        "arrondissement": "Grasse",
+        "canton": "Saint Auban",
+        "sectionLettre": "A",
+        "sectionTitre": "Section A Dite d'Aiglun et de Vascougnes",
+        "intituleRegistre": "Tableau Indicatif des Propriétés foncières, bâties et non bâties, de leurs contenances et de leurs Revenus",
+        "bboxes": {
+            "commune": {
+                "x": 82,
+                "y": 398,
+                "width": 167,
+                "height": 67
+            },
+            "departement": {
+                "x": 80,
+                "y": 193,
+                "width": 172,
+                "height": 77
+            },
+            "arrondissement": {
+                "x": 74,
+                "y": 269,
+                "width": 180,
+                "height": 55
+            },
+            "canton": {
+                "x": 73,
+                "y": 328,
+                "width": 181,
+                "height": 66
+            },
+            "sectionLettre": {
+                "x": 489,
+                "y": 713,
+                "width": 100,
+                "height": 78
+            },
+            "sectionTitre": {
+                "x": 143,
+                "y": 716,
+                "width": 764,
+                "height": 153
+            },
+            "intituleRegistre": {
+                "x": 71,
+                "y": 478,
+                "width": 921,
+                "height": 200
+            }
+        }
+    },
+    {
+        "name": "FRAD006_03P_0031_00120",
+        "image": "https://archives06.fr/iiif/Matrice_EtatSection/03P_0031//FRAD006_03P_0031_00120.jpg/full/full/0/default.jpg",
+        "class": "ets_couv",
+        "commune": "",
+        "departement": "",
+        "arrondissement": "",
+        "canton": "",
+        "sectionLettre": "",
+        "sectionTitre": "",
+        "intituleRegistre": "",
+        "bboxes": {}
+    }
+]

@@ -1,90 +1,258 @@
-# Annotation Tool (Viewer)
+# Viewer Documentation
 
-This app loads image/JSON pairs from `cut_images/`, lets you edit table annotations, manage bbox regions on image pages, and run clustering views.
+The `viewer/` app is a lightweight web UI and API server to:
 
-The code of this viewer has been produce using GPT-5.3-Codex.
+- annotate table rows with bounding boxes,
+- review and verify page classes,
+- annotate cover-page metadata,
+- generate helper commands for IIIF imports.
 
-## Prepare input files
+All pages are served by `viewer/server.py`.
 
-Use the CLI to split/prep images and create JSON + pairs manifest:
+## Server Launch
 
-```bash
-python viewer\cli.py images\ cut_images\ --create-json-and-pairs
+Run from repository root (`D:\Code\ocr`):
+
+```powershell
+# Activate virtual environment (example)
+& .\ocr-test\Scripts\Activate.ps1
+
+# Start server on default host/port
+python .\viewer\server.py
 ```
 
-## Current UI functions
+Default URL: `http://127.0.0.1:8000`
 
-### Top toolbar
+You can override bind settings:
 
-- **Document** (`pairSelect`): select active image/JSON pair.
-- **Image zoom `- / +`** (`zoomOutBtn` / `zoomInBtn`): zoom image viewport.
-- **Add row** (`addRowBtn`): append one empty row.
-- **Rows to add + Add rows** (`addRowsCountInput` + `addRowsBatchBtn`): append multiple rows (max 1000).
-- **Delete row** (`deleteRowBtn`): delete selected row.
-- **Fill with numeric sequence** (`fillSeriesBtn`): numeric fill-down from 2 consecutive seed cells in the same column.
-- **Set batch `<IDEM>`** (`fillIdemBtn`): sets batch input to `<IDEM>`.
-- **Set batch `<EMPTY>`** (`fillEmptyBtn`): sets batch input to `<EMPTY>`.
-- **Clear batch value** (`clearBatchValueBtn`): empties the batch input.
-- **Batch value + Apply to selected range** (`batchValueInput` + `applyRangeBtn`): apply a single value to selected range.
-- **Integers → lettres** (`convertIntWordsBtn`): convert selected integer range into French words in target column.
-- **Draw bbox** (`drawBboxBtn`): draw bbox on selected row.
-- **Edit bbox corners** (`editBboxCornersBtn`): drag bbox corners directly on image.
-- **Normalize bbox width** (`normalizeBboxWidthBtn`): set all bbox widths to largest existing width (height unchanged).
-- **Batch draw bbox** (`batchDrawBboxChk`): after drawing, auto-select next row.
-- **Save JSON** (`saveBtn`): save current annotation data.
-- **Save badge** (`saveModeBadge`): `server`, `local fallback`, or `unknown`.
+```powershell
+python .\viewer\server.py --host 0.0.0.0 --port 8080
+```
 
-### Annotation panel
+Main routes:
 
-- **Show/Hide column settings** (`columnTypesBtn`): configure per-column behavior:
-  - `none`
-  - `sequence`
-  - `autocomplete`
-  - `both`
+- `http://127.0.0.1:8000/index.html` (Table annotation)
+- `http://127.0.0.1:8000/page-classification.html`
+- `http://127.0.0.1:8000/cover-annotator.html`
+- `http://127.0.0.1:8000/iiif-command.html`
 
-### `Contribuable clusters by numeroListe` panel
+## Page-By-Page Guide
 
-- **Expand / Reduce** (`toggleClustersBtn`): collapse/expand panel.
-- **Chart zoom `- / +`** (`clusterZoomOutBtn` / `clusterZoomInBtn`): zoom sunburst only.
-- **Chart / List** (`clusterChartModeBtn` / `clusterListModeBtn`): switch visualization mode.
-- **Refresh clusters** (`refreshClustersBtn`): reload cluster data.
-- **Chart pan (mouse drag)**: pan inside the chart area in chart mode.
+### 1) Table Annotation (`index.html`)
 
-### `Cluster by custom field` panel
+Purpose:
 
-- **Field** (`clusterFieldInput`): field name to analyze.
-- **Threshold** (`fieldClusterThresholdInput`): normalized Levenshtein distance threshold (`0.00` to `1.00`).
-- **Run clustering** (`runFieldClusterBtn`): compute fuzzy clusters for that field.
-- Threshold changes update value label live and re-run clustering when a field is set.
+- edit row-based OCR annotations stored in sidecar JSON files,
+- draw/edit `bbox` on page images,
+- use clustering/histogram tools for QA.
 
-## Quick workflow
+Data source:
 
-1. Select a **Document**.
-2. Select row/cell in table and edit values.
-3. Draw or edit bbox if needed.
-4. Use range tools (`Shift+click`, batch apply, numeric sequence, integer→letters).
-5. Save with **Save JSON**.
-6. Review clusters in bottom panels (fixed `numeroListe` panel + custom field panel).
+- loads pairs from `/api/pairs` (or IIIF manifest for `iiif` subprojects),
+- saves row JSON with `/api/save/<json-file>`,
+- uses `/api/column-settings`, `/api/contribuable-clusters`, `/api/autocomplete-fields`.
 
-## Shortcuts and interactions
+Top toolbar highlights:
 
-- **Shift + Arrow** in a cell: move to adjacent cell.
-- **Shift + click** in same column: set a range.
-- **Mouse wheel** on image: zoom at cursor.
-- **Click + drag** on image (non-draw mode): pan image.
-- **Click bbox**: select row + fit row width in image view.
-- **Edit bbox corners mode**: drag corner handles to resize selected bbox.
+- `Document`: choose active image/JSON pair.
+- `Add row`, `Add rows`, `Delete row`.
+- `Fill with numeric sequence`: extrapolates from 2 consecutive numeric seed cells.
+- Batch tools: `Set batch <IDEM>`, `Set batch <EMPTY>`, `Clear batch value`, `Apply to selected range`.
+- `Integers -> lettres`: converts integer range values into French words.
+- `Draw bbox`, `Edit bbox corners`, `Normalize bbox width`, `Batch draw bbox`.
+- `Save JSON` with save mode badge (`server`, `local`, `unknown`).
 
-## Clustering details
+Editing and navigation:
 
-- Main cluster panel source: all JSON files in `cut_images/`.
-- Main grouping: `numeroListe` → `contribuable` with source rows and addresses.
-- `numeroListe` cleanup removes markdown strikeout (`~~...~~`) and trims spaces.
-- Custom field clustering uses normalized Levenshtein distance over field values.
+- `Shift+click` in same column creates a vertical range.
+- `Shift+Arrow` moves focus to adjacent cell.
+- Drag rows (unless row reorder is locked).
+- Mouse wheel zooms image at cursor.
+- Click-drag on image pans viewport (outside draw mode).
+- Clicking a bbox selects the matching row and zooms to it.
 
-## Data format
+Panels:
 
-Annotation JSON files must be arrays of objects. `bbox` shape:
+- Column settings panel: per-column mode `none`, `sequence`, `autocomplete`, `both`.
+- `Contribuable clusters by numeroListe`: chart/list, zoom, collapse, refresh.
+- `Cluster by custom field`: fuzzy grouping via normalized Levenshtein threshold.
+- `Histogram by custom field`: distribution view for selected field.
+
+Classification-aware filtering:
+
+- if `classification.json` exists, this page filters to rows with class `ets_tab_p1`.
+
+### 2) Page Classification (`page-classification.html`)
+
+Purpose:
+
+- review class predictions and assign `verify_class` for each page.
+
+Data source:
+
+- pages from `/api/pairs` (or `/data/pairs.json` fallback),
+- predictions from `/data/classification.json`.
+
+What you do:
+
+- choose `Project` and `Subproject`,
+- inspect card thumbnails and predicted class/probability,
+- set `Verified class` dropdown per card,
+- click `Save verified classes`.
+
+What is saved:
+
+- writes/updates `classification.json` through `/api/save/classification.json`,
+- stores `verify_class` by page `name`, preserving existing rows and fields.
+
+Notes:
+
+- if backend is unreachable, status hints to launch `server.py` and open via HTTP.
+- remote IIIF image thumbs are proxied through `/api/image-proxy`.
+
+### 3) Cover Annotation (`cover-annotator.html`)
+
+Purpose:
+
+- annotate cover pages (`ets_couv`) into `covers.json`, with per-field text + bbox.
+
+How pages are selected:
+
+- loads `pairs.json`,
+- reads `classification.json`,
+- keeps only pages whose resolved class is `ets_couv`.
+
+Fields:
+
+- `commune`
+- `departement`
+- `arrondissement`
+- `canton`
+- `sectionLettre`
+- `sectionTitre`
+- `intituleRegistre`
+
+BBox workflow:
+
+- select active field,
+- drag on image to draw bbox,
+- color-coded rectangles per field,
+- `Clear active field bbox` removes current field bbox.
+
+Save behavior:
+
+- primary: POST to `/api/save/covers.json`,
+- fallback: downloads `covers.json` in browser if server save is unavailable.
+
+### 4) IIIF Command Helper (`iiif-command.html`)
+
+Purpose:
+
+- build a ready-to-run command for `viewer/iiif.py`.
+
+Inputs:
+
+- manifest URL,
+- output directory,
+- output filenames for `items.json`, `pairs.json`, and optional manifest copy.
+
+Actions:
+
+- `Build command`: updates preview.
+- `Copy command`: copies CLI command to clipboard.
+
+This page does not run the import itself; it generates the command to execute in terminal.
+
+## Command Line Scripts
+
+### `viewer/server.py`
+
+Runs the local HTTP server for all viewer pages.
+
+```powershell
+python .\viewer\server.py [--host 127.0.0.1] [--port 8000]
+```
+
+### `viewer/cli.py`
+
+Prepares local images for annotation.
+
+Behavior:
+
+- scans source folder recursively for image files,
+- splits landscape images into `_left` and `_right`,
+- copies portrait images unchanged,
+- optionally creates missing sidecar JSON files and `pairs.json`.
+
+Usage:
+
+```powershell
+python .\viewer\cli.py <folder_path> <save_dir> [--create-json-and-pairs]
+```
+
+Example:
+
+```powershell
+python .\viewer\cli.py .\images .\cut_images --create-json-and-pairs
+```
+
+### `viewer/iiif.py`
+
+Builds local manifest files from a IIIF manifest URL.
+
+Outputs:
+
+- `items.json` (canvas metadata),
+- `pairs.json` (annotation pairs),
+- empty `[]` annotation JSON files for every pair,
+- optional raw manifest dump.
+
+Usage:
+
+```powershell
+python .\viewer\iiif.py <manifest_url> [--output-dir .] [--items-output items.json] [--pairs-output pairs.json] [--manifest-output manifest.json]
+```
+
+Examples:
+
+```powershell
+python .\viewer\iiif.py "https://archives06.fr/.../manifest.json"
+python .\viewer\iiif.py "https://archives06.fr/.../manifest.json" --output-dir .\cut_images\alpes-maritimes\aiglun\3P31
+python .\viewer\iiif.py "https://archives06.fr/.../manifest.json" --output-dir .\viewer\out --pairs-output my-pairs.json --manifest-output manifest.json
+```
+
+### `viewer/classif.py`
+
+Batch classifies page images with a YOLO classification model.
+
+Current script defaults:
+
+- reads pairs from `cut_images/alpes-maritimes/aiglun/3P31/pairs.json`,
+- writes results to `cut_images/alpes-maritimes/aiglun/3P31/classification.json`,
+- uses model `models/classification/best.pt`.
+
+Options:
+
+- `--limit`: process first N pairs only.
+- `--iiif-width`: request resized IIIF images (default `800`, `0` keeps full size).
+- `--device`: `auto`, `cpu`, `cuda`, `cuda:0`, `cuda:1`.
+
+Usage:
+
+```powershell
+python .\viewer\classif.py [--limit 100] [--iiif-width 800] [--device auto]
+```
+
+## Data Files
+
+Expected per subproject folder (for example `cut_images/<project>/<subproject>/`):
+
+- `pairs.json`: list of `{name, image, json}` entries (optional `class`).
+- `<page>.json`: annotation rows array.
+- `classification.json`: predicted/verified classes by `name`.
+- `covers.json`: cover metadata entries for pages classified as `ets_couv`.
+
+`bbox` shape used by annotation rows and cover fields:
 
 ```json
 {
@@ -94,11 +262,3 @@ Annotation JSON files must be arrays of objects. `bbox` shape:
   "height": 40
 }
 ```
-
-API endpoints used by viewer include:
-
-- `/api/pairs`
-- `/api/save/<json-file>`
-- `/api/column-settings`
-- `/api/contribuable-clusters`
-- `/api/autocomplete-fields`

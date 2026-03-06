@@ -1,0 +1,27 @@
+[
+    {
+        "name": "Cadastre du Finistère",
+        "subprojects": [
+            {
+                "name": "Ouessant",
+                "settings": "column-settings/column-settings-ouessant.json",
+                "type": "local",
+                "documents": "ETS",
+                "path": "./../cut_images/finistere/ouessant"
+            }
+        ]
+    },
+    {
+        "name": "Cadastre des Alpes-Maritimes",
+        "subprojects": [
+            {
+                "name": "Aiglun - 3P31",
+                "settings": "column-settings/column-settings-alpes.json",
+                "type": "local",
+                "documents": "ETS",
+                "path" : "./../cut_images/alpes-maritimes/aiglun/3P31",
+                "manifest": "https://archives06.fr/ark:/79346/a586c563adb32013b2b3a8e920240680/manifest.json"
+            }
+        ]
+    }
+]

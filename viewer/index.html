@@ -19,8 +19,32 @@
 
     .app {
       display: grid;
-      grid-template-rows: auto auto auto auto;
+      grid-template-rows: auto auto auto auto auto auto;
       min-height: 100vh;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .top-nav a {
+      padding: 4px 10px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .top-nav a.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
     }
 
     .toolbar {
@@ -578,7 +602,18 @@
 </head>
 <body>
   <div class="app">
+    <nav class="top-nav" aria-label="Viewer pages">
+      <a href="./iiif-command.html">IIIF Retriever</a>
+      <a href="./page-classification.html">Page Classification</a>
+      <a class="active" href="./index.html">Table annotation</a>
+      <a href="./cover-annotator.html">Cover annotation</a>
+    </nav>
+
     <div class="toolbar">
+      <label for="projectSelect">Project</label>
+      <select id="projectSelect"></select>
+      <label for="subprojectSelect">Register</label>
+      <select id="subprojectSelect"></select>
       <label for="pairSelect">Document</label>
       <select id="pairSelect"></select>
       <button id="zoomOutBtn" type="button">-</button>
@@ -704,6 +739,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
   <script>
+    const projectSelect = document.getElementById('projectSelect');
+    const subprojectSelect = document.getElementById('subprojectSelect');
     const pairSelect = document.getElementById('pairSelect');
     const imageViewport = document.getElementById('imageViewport');
     const imageView = document.getElementById('imageView');
@@ -818,6 +855,10 @@
     let columnResizeState = null;
     let textMeasureCanvas = null;
     let pairCompletionByName = {};
+    let projectsSettings = [];
+    let currentProject = null;
+    let currentSubproject = null;
+    let currentScopedDir = '';
 
     const MIN_RESIZABLE_COLUMN_WIDTH = 70;
     const MAX_AUTO_COLUMN_WIDTH = 720;
@@ -826,6 +867,18 @@
     const PAIR_STATUS_DONE = '✅';
     const PAIR_STATUS_MISSING = '➡️';
     const PAIR_STATUS_TODO = '⚠️';
+    const DEFAULT_PROJECT_SETTINGS = [
+      {
+        name: 'Default project',
+        subprojects: [
+          {
+            name: 'Default register',
+            type: 'local',
+            path: 'cut_images',
+          },
+        ],
+      },
+    ];
 
     function escapeHtml(value) {
       return String(value)
@@ -915,7 +968,34 @@
     }
 
     function getLastSelectionStorageKey() {
-      return `ocr-annotator-last-selection::${window.location.pathname || '/'}`;
+      return `ocr-annotator-last-selection::${window.location.pathname || '/'}::${getCurrentScopeStorageSuffix()}`;
+    }
+
+    function getLastProjectStorageKey() {
+      return `ocr-annotator-last-project::${window.location.pathname || '/'}`;
+    }
+
+    function getLastSubprojectStorageKey() {
+      return `ocr-annotator-last-subproject::${window.location.pathname || '/'}::${currentProject?.name || ''}`;
+    }
+
+    function getCurrentScopeStorageSuffix() {
+      return `${currentProject?.name || ''}::${currentSubproject?.name || ''}`;
+    }
+
+    function getCurrentScopedDir() {
+      const path = String(currentSubproject?.path || '').trim();
+      return path;
+    }
+
+    function buildScopedApiUrl(pathname) {
+      const scopedDir = getCurrentScopedDir();
+      if (!scopedDir) {
+        return pathname;
+      }
+
+      const separator = pathname.includes('?') ? '&' : '?';
+      return `${pathname}${separator}dir=${encodeURIComponent(scopedDir)}`;
     }
 
     function formatPairLabel(name, status) {
@@ -2192,7 +2272,7 @@
       clustersMeta.textContent = 'Loading clusters…';
 
       try {
-        const response = await fetch('/api/contribuable-clusters', { cache: 'no-store' });
+        const response = await fetch(buildScopedApiUrl('/api/contribuable-clusters'), { cache: 'no-store' });
         if (response.ok) {
           const payload = await response.json();
           renderContribuableClusters(payload);
@@ -2313,7 +2393,7 @@
       let payload = null;
 
       try {
-        const response = await fetch('/api/autocomplete-fields', { cache: 'no-store' });
+        const response = await fetch(buildScopedApiUrl('/api/autocomplete-fields'), { cache: 'no-store' });
         if (response.ok) {
           payload = await response.json();
         } else {
@@ -2396,17 +2476,25 @@
     }
 
     async function loadProjectColumnSettings() {
+      const configuredSettingsPath = String(currentSubproject?.settings || '').trim();
       const candidates = [
+        buildScopedApiUrl('/api/column-settings'),
+        buildScopedApiUrl('/column-settings.json'),
         '/api/column-settings',
         '/column-settings.json',
+        ...(configuredSettingsPath ? [configuredSettingsPath] : []),
         'column-settings.json',
+        './column-settings/column-settings.json',
         './column-settings.json',
       ];
+
+      const attempted = [];
 
       for (const url of candidates) {
         try {
           const response = await fetch(withCacheBust(url), { cache: 'no-store' });
           if (!response.ok) {
+            attempted.push(`${url} (${response.status})`);
             continue;
           }
 
@@ -2426,16 +2514,21 @@
           projectColumnTypeByName = { ...columnTypes };
           columnTypeByName = { ...columnTypes };
           projectImageFormat = imageFormat;
-          setStatus(`Loaded ${Object.keys(projectColumnTypeByName).length} column setting(s), imageFormat=${projectImageFormat}`);
+          const sourceText = payload.settingsPath
+            ? ` · source: ${payload.settingsPath}`
+            : ` · source: ${url}`;
+          setStatus(`Loaded ${Object.keys(projectColumnTypeByName).length} column setting(s), imageFormat=${projectImageFormat}${sourceText}`);
           return;
         } catch {
+          attempted.push(`${url} (network error)`);
           // try next source
         }
       }
 
       projectColumnTypeByName = {};
       projectImageFormat = 'double';
-      setStatus('Column settings not found, using defaults');
+      const details = attempted.length ? ` Tried: ${attempted.join(' | ')}` : '';
+      setStatus(`Column settings not found, using defaults.${details}`);
     }
 
     function normalizeSequenceSeeds() {
@@ -2655,13 +2748,551 @@
         .filter(Boolean);
     }
 
+    function normalizeProjectsSettingsPayload(payload) {
+      if (!Array.isArray(payload)) {
+        return [];
+      }
+
+      return payload
+        .map((project) => {
+          if (!project || typeof project !== 'object') {
+            return null;
+          }
+
+          const projectName = String(project.name || '').trim();
+          if (!projectName) {
+            return null;
+          }
+
+          const rawSubprojects = Array.isArray(project.subprojects) ? project.subprojects : [];
+          const subprojects = rawSubprojects
+            .map((subproject) => {
+              if (!subproject || typeof subproject !== 'object') {
+                return null;
+              }
+
+              const subprojectName = String(subproject.name || '').trim();
+              if (!subprojectName) {
+                return null;
+              }
+
+              const type = String(subproject.type || 'local').trim().toLowerCase();
+              if (!['local', 'iiif'].includes(type)) {
+                return null;
+              }
+
+              const entry = {
+                name: subprojectName,
+                type,
+                path: String(subproject.path || '').trim(),
+                settings: String(subproject.settings || '').trim(),
+                manifest: type === 'iiif' ? String(subproject.manifest || '').trim() : '',
+                documents: String(subproject.documents || '').trim(),
+                imgNamePathInManifest: type === 'iiif'
+                  ? String(subproject['img-name-path-in-manifest'] || subproject.imgNamePathInManifest || '').trim()
+                  : '',
+                imgUrlPath: type === 'iiif'
+                  ? String(subproject['img-url'] || subproject['img-url:'] || subproject.imgUrlPath || '').trim()
+                  : '',
+                imgSuffix: type === 'iiif'
+                  ? String(subproject['img-suffixe'] || subproject.imgSuffix || '').trim()
+                  : '',
+              };
+
+              return entry;
+            })
+            .filter(Boolean);
+
+          return {
+            name: projectName,
+            subprojects,
+          };
+        })
+        .filter(Boolean)
+        .filter((project) => project.subprojects.length > 0);
+    }
+
+    async function loadProjectsSettings() {
+      let configuredProjects = [];
+      let loadWarning = '';
+
+      const candidates = [
+        '/api/projects-settings',
+        '/projects-settings.json',
+        '/porjects-settings.json',
+        'projects-settings.json',
+        './projects-settings.json',
+        'porjects-settings.json',
+        './porjects-settings.json',
+      ];
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            loadWarning = `Unable to load ${url} (${response.status})`;
+            continue;
+          }
+
+          const payload = await response.json();
+          const sourceProjects = Array.isArray(payload) ? payload : (payload?.projects || []);
+          configuredProjects = normalizeProjectsSettingsPayload(sourceProjects);
+
+          if (payload?.error) {
+            loadWarning = `Project settings warning: ${payload.error}`;
+          }
+
+          if (configuredProjects.length) {
+            break;
+          }
+
+          if (!loadWarning) {
+            loadWarning = `No valid project found in ${url}`;
+          }
+        } catch {
+          loadWarning = `Unable to load ${url}`;
+        }
+      }
+
+      projectsSettings = configuredProjects.length ? configuredProjects : DEFAULT_PROJECT_SETTINGS;
+
+      if (!configuredProjects.length) {
+        setStatus(loadWarning || 'Projects settings unavailable; using Default project');
+      } else {
+        const projectCount = configuredProjects.length;
+        const subprojectCount = configuredProjects.reduce((total, project) => {
+          const subprojects = Array.isArray(project?.subprojects) ? project.subprojects.length : 0;
+          return total + subprojects;
+        }, 0);
+        setStatus(`Loaded ${projectCount} project(s) · ${subprojectCount} register(s)`);
+      }
+    }
+
+    function loadLastProjectFromStorage() {
+      try {
+        const value = window.localStorage.getItem(getLastProjectStorageKey());
+        const normalized = typeof value === 'string' ? value.trim() : '';
+        return normalized || null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveLastProjectToStorage(name) {
+      const normalized = String(name || '').trim();
+      if (!normalized) {
+        return;
+      }
+
+      try {
+        window.localStorage.setItem(getLastProjectStorageKey(), normalized);
+      } catch {
+      }
+    }
+
+    function loadLastSubprojectFromStorage() {
+      try {
+        const value = window.localStorage.getItem(getLastSubprojectStorageKey());
+        const normalized = typeof value === 'string' ? value.trim() : '';
+        return normalized || null;
+      } catch {
+        return null;
+      }
+    }
+
+    function saveLastSubprojectToStorage(name) {
+      const normalized = String(name || '').trim();
+      if (!normalized) {
+        return;
+      }
+
+      try {
+        window.localStorage.setItem(getLastSubprojectStorageKey(), normalized);
+      } catch {
+      }
+    }
+
+    function refreshProjectSelectorsFromSettings() {
+      projectSelect.innerHTML = '';
+      subprojectSelect.innerHTML = '';
+
+      if (!projectsSettings.length) {
+        currentProject = null;
+        currentSubproject = null;
+        currentScopedDir = '';
+        return;
+      }
+
+      for (const project of projectsSettings) {
+        const option = document.createElement('option');
+        option.value = project.name;
+        option.textContent = project.name;
+        projectSelect.append(option);
+      }
+
+      const storedProject = loadLastProjectFromStorage();
+      const initialProject = projectsSettings.some((item) => item.name === storedProject)
+        ? storedProject
+        : projectsSettings[0].name;
+      projectSelect.value = initialProject;
+      currentProject = projectsSettings.find((item) => item.name === initialProject) || projectsSettings[0];
+      saveLastProjectToStorage(currentProject.name);
+
+      const subprojects = Array.isArray(currentProject.subprojects) ? currentProject.subprojects : [];
+      for (const subproject of subprojects) {
+        const option = document.createElement('option');
+        option.value = subproject.name;
+        option.textContent = subproject.name;
+        subprojectSelect.append(option);
+      }
+
+      const storedSubproject = loadLastSubprojectFromStorage();
+      const initialSubproject = subprojects.some((item) => item.name === storedSubproject)
+        ? storedSubproject
+        : (subprojects[0]?.name || '');
+      subprojectSelect.value = initialSubproject;
+      currentSubproject = subprojects.find((item) => item.name === initialSubproject) || subprojects[0] || null;
+      if (currentSubproject?.name) {
+        saveLastSubprojectToStorage(currentSubproject.name);
+      }
+
+      currentScopedDir = getCurrentScopedDir();
+    }
+
+    function refreshSubprojectOptionsForSelectedProject() {
+      const nextProject = projectsSettings.find((item) => item.name === projectSelect.value) || projectsSettings[0] || null;
+      currentProject = nextProject;
+      saveLastProjectToStorage(currentProject?.name || '');
+
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+      subprojectSelect.innerHTML = '';
+
+      for (const subproject of subprojects) {
+        const option = document.createElement('option');
+        option.value = subproject.name;
+        option.textContent = subproject.name;
+        subprojectSelect.append(option);
+      }
+
+      const storedSubproject = loadLastSubprojectFromStorage();
+      const initialSubproject = subprojects.some((item) => item.name === storedSubproject)
+        ? storedSubproject
+        : (subprojects[0]?.name || '');
+      subprojectSelect.value = initialSubproject;
+      currentSubproject = subprojects.find((item) => item.name === initialSubproject) || subprojects[0] || null;
+      saveLastSubprojectToStorage(currentSubproject?.name || '');
+      currentScopedDir = getCurrentScopedDir();
+    }
+
+    function updateSelectedSubprojectFromControl() {
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+      currentSubproject = subprojects.find((item) => item.name === subprojectSelect.value) || subprojects[0] || null;
+      saveLastSubprojectToStorage(currentSubproject?.name || '');
+      currentScopedDir = getCurrentScopedDir();
+    }
+
+    function canUseApiScopedSource() {
+      return true;
+    }
+
+    function getCurrentScopeLabel() {
+      const projectName = currentProject?.name || 'Unknown project';
+      const subprojectName = currentSubproject?.name || 'Unknown register';
+      return `${projectName} / ${subprojectName}`;
+    }
+
+    function getManifestBasePath() {
+      const configuredPath = String(currentSubproject?.path || '').trim();
+      if (!configuredPath) {
+        return '../cut_images';
+      }
+
+      return configuredPath.replace(/\/+$/, '');
+    }
+
+    function sanitizePairBaseName(value) {
+      return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        || 'iiif_page';
+    }
+
+    function extractIiifLabel(canvas, fallbackIndex) {
+      const label = canvas?.label;
+      if (typeof label === 'string' && label.trim()) {
+        return label.trim();
+      }
+
+      const noneValues = Array.isArray(label?.none) ? label.none : [];
+      const firstNone = noneValues.find((item) => String(item || '').trim());
+      if (firstNone) {
+        return String(firstNone).trim();
+      }
+
+      const frValues = Array.isArray(label?.fr) ? label.fr : [];
+      const firstFr = frValues.find((item) => String(item || '').trim());
+      if (firstFr) {
+        return String(firstFr).trim();
+      }
+
+      return `page_${fallbackIndex + 1}`;
+    }
+
+    function extractIiifCanvasImageUrl(canvas) {
+      const firstAnnotationPage = Array.isArray(canvas?.items) ? canvas.items[0] : null;
+      const firstAnnotation = Array.isArray(firstAnnotationPage?.items) ? firstAnnotationPage.items[0] : null;
+      const body = firstAnnotation?.body;
+
+      if (typeof body?.id === 'string' && body.id.trim()) {
+        return body.id.trim();
+      }
+
+      if (typeof body === 'string' && body.trim()) {
+        return body.trim();
+      }
+
+      const firstImage = Array.isArray(canvas?.images) ? canvas.images[0] : null;
+      const resource = firstImage?.resource;
+      if (typeof resource?.['@id'] === 'string' && resource['@id'].trim()) {
+        return resource['@id'].trim();
+      }
+      if (typeof resource?.id === 'string' && resource.id.trim()) {
+        return resource.id.trim();
+      }
+      if (typeof resource === 'string' && resource.trim()) {
+        return resource.trim();
+      }
+
+      return null;
+    }
+
+    function extractIiifServiceBaseUrl(canvas) {
+      const firstAnnotationPage = Array.isArray(canvas?.items) ? canvas.items[0] : null;
+      const firstAnnotation = Array.isArray(firstAnnotationPage?.items) ? firstAnnotationPage.items[0] : null;
+      const body = firstAnnotation?.body;
+
+      const serviceFromBody = Array.isArray(body?.service) ? body.service[0] : body?.service;
+      if (typeof serviceFromBody?.id === 'string' && serviceFromBody.id.trim()) {
+        return serviceFromBody.id.trim();
+      }
+      if (typeof serviceFromBody?.['@id'] === 'string' && serviceFromBody['@id'].trim()) {
+        return serviceFromBody['@id'].trim();
+      }
+
+      const firstImage = Array.isArray(canvas?.images) ? canvas.images[0] : null;
+      const service = firstImage?.resource?.service;
+      const firstService = Array.isArray(service) ? service[0] : service;
+      if (typeof firstService?.['@id'] === 'string' && firstService['@id'].trim()) {
+        return firstService['@id'].trim();
+      }
+      if (typeof firstService?.id === 'string' && firstService.id.trim()) {
+        return firstService.id.trim();
+      }
+
+      return null;
+    }
+
+    function getManifestCanvases(manifest) {
+      if (Array.isArray(manifest?.items)) {
+        return manifest.items;
+      }
+
+      const firstSequence = Array.isArray(manifest?.sequences) ? manifest.sequences[0] : null;
+      if (Array.isArray(firstSequence?.canvases)) {
+        return firstSequence.canvases;
+      }
+
+      return [];
+    }
+
+    function buildIiifRegionUrl(imageUrl, region) {
+      const input = String(imageUrl || '').trim();
+      if (!input) {
+        return null;
+      }
+
+      const match = input.match(/^(.*?\/)(full|pct:[^/]+)(\/[^?#]*)(\?[^#]*)?(#.*)?$/i);
+      if (match) {
+        const prefix = match[1];
+        const suffix = match[3] || '';
+        const query = match[4] || '';
+        const hash = match[5] || '';
+        return `${prefix}${region}${suffix}${query}${hash}`;
+      }
+
+      return input;
+    }
+
+    function joinIiifImageUrl(baseUrl, imageName, suffix) {
+      const left = String(baseUrl || '').trim().replace(/\/+$/, '');
+      const middle = String(imageName || '').trim().replace(/^\/+|\/+$/g, '');
+      let right = String(suffix || '').trim();
+      if (right && !right.startsWith('/')) {
+        right = `/${right}`;
+      }
+
+      if (!left) {
+        return '';
+      }
+
+      if (middle) {
+        return `${left}/${middle}${right}`;
+      }
+
+      return `${left}${right}`;
+    }
+
+    async function loadPairsFromIiifManifest() {
+      const manifestUrl = String(currentSubproject?.manifest || '').trim();
+      if (!manifestUrl) {
+        throw new Error(`IIIF manifest missing for ${getCurrentScopeLabel()}`);
+      }
+
+      const annotationPath = String(currentSubproject?.path || '').trim();
+      if (!annotationPath) {
+        throw new Error(`IIIF annotation path missing for ${getCurrentScopeLabel()}`);
+      }
+
+      const imgNamePath = String(currentSubproject?.imgNamePathInManifest || '').trim();
+      const imgUrlPath = String(currentSubproject?.imgUrlPath || '').trim();
+      const imgSuffix = String(currentSubproject?.imgSuffix || '').trim();
+      const iiifEndpoint = buildScopedApiUrl(
+        `/api/iiif-pairs?manifest=${encodeURIComponent(manifestUrl)}${imgNamePath ? `&imgNamePath=${encodeURIComponent(imgNamePath)}` : ''}${imgUrlPath ? `&imgUrlPath=${encodeURIComponent(imgUrlPath)}` : ''}${imgSuffix ? `&imgSuffix=${encodeURIComponent(imgSuffix)}` : ''}`,
+      );
+
+      try {
+        const response = await fetch(withCacheBust(iiifEndpoint), { cache: 'no-store' });
+        if (response.ok) {
+          const payload = await response.json();
+          if (Array.isArray(payload)) {
+            return payload;
+          }
+        }
+      } catch {
+      }
+
+      const response = await fetch(withCacheBust(manifestUrl), { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`IIIF manifest fetch failed (${response.status}) for ${manifestUrl}`);
+      }
+
+      const manifest = await response.json();
+      const canvases = getManifestCanvases(manifest);
+      const nextPairs = [];
+
+      const getNestedValue = (payload, path) => {
+        const parts = String(path || '').split(/[/.]/).map((item) => item.trim()).filter(Boolean);
+        if (!parts.length) {
+          return null;
+        }
+
+        let current = payload;
+        for (const segment of parts) {
+          if (Array.isArray(current)) {
+            if (/^\d+$/.test(segment)) {
+              const index = Number.parseInt(segment, 10);
+              if (!Number.isInteger(index) || index < 0 || index >= current.length) {
+                return null;
+              }
+              current = current[index];
+              continue;
+            }
+
+            const firstItem = current[0];
+            if (firstItem && typeof firstItem === 'object' && segment in firstItem) {
+              current = firstItem[segment];
+              continue;
+            }
+
+            return null;
+          }
+
+          if (!current || typeof current !== 'object' || !(segment in current)) {
+            return null;
+          }
+          current = current[segment];
+        }
+
+        return current;
+      };
+
+      for (let index = 0; index < canvases.length; index += 1) {
+        const canvas = canvases[index];
+        const customName = imgNamePath
+          ? String(getNestedValue(canvas, imgNamePath) || '').trim()
+          : '';
+        const baseUrlFromPath = imgUrlPath
+          ? String(getNestedValue(canvas, imgUrlPath) || '').trim()
+          : '';
+        const label = extractIiifLabel(canvas, index);
+        const canvasId = String(canvas?.id || '').trim();
+        const idTail = canvasId ? canvasId.split('/').filter(Boolean).pop() : '';
+        const baseNameSource = customName || idTail || label;
+
+        let baseName = sanitizePairBaseName(baseNameSource);
+        if (!customName) {
+          baseName = sanitizePairBaseName(`${String(index + 1).padStart(4, '0')}_${baseName}`);
+        }
+
+        let imageUrl = '';
+        if (baseUrlFromPath) {
+          imageUrl = joinIiifImageUrl(baseUrlFromPath, customName || '', imgSuffix);
+        }
+        if (!imageUrl) {
+          const serviceBaseUrl = extractIiifServiceBaseUrl(canvas);
+          if (serviceBaseUrl && (customName || imgSuffix)) {
+            imageUrl = joinIiifImageUrl(serviceBaseUrl, customName || '', imgSuffix);
+          }
+        }
+        if (!imageUrl) {
+          imageUrl = extractIiifCanvasImageUrl(canvas) || '';
+        }
+        if (!imageUrl) {
+          continue;
+        }
+
+        const width = Number(canvas?.width);
+        const height = Number(canvas?.height);
+        const isLandscape = Number.isFinite(width) && Number.isFinite(height) && width > height;
+
+        if (isLandscape) {
+          const leftUrl = buildIiifRegionUrl(imageUrl, 'pct:0,0,50,100');
+          const rightUrl = buildIiifRegionUrl(imageUrl, 'pct:50,0,50,100');
+
+          nextPairs.push({
+            name: `${baseName}_left`,
+            image: leftUrl || imageUrl,
+            json: `${baseName}_left.json`,
+          });
+          nextPairs.push({
+            name: `${baseName}_right`,
+            image: rightUrl || imageUrl,
+            json: `${baseName}_right.json`,
+          });
+          continue;
+        }
+
+        nextPairs.push({
+          name: baseName,
+          image: imageUrl,
+          json: `${baseName}.json`,
+        });
+      }
+
+      return nextPairs;
+    }
+
     function buildDataUrl(fileName) {
       if (/^(https?:|\/|\.\/|\.\.\/)/.test(fileName)) {
         return fileName;
       }
+
       return pairSourceMode === 'api'
-        ? `/data/${encodeURIComponent(fileName)}`
-        : `../cut_images/${encodeURIComponent(fileName)}`;
+        ? `${buildScopedApiUrl(`/data/${encodeURIComponent(fileName)}`)}`
+        : `${getManifestBasePath()}/${encodeURIComponent(fileName)}`;
     }
 
     function withCacheBust(url) {
@@ -4068,7 +4699,7 @@
       let serverFailureMessage = '';
 
       try {
-        const response = await fetch(`/api/save/${encodeURIComponent(currentSelection.json)}`, {
+        const response = await fetch(buildScopedApiUrl(`/api/save/${encodeURIComponent(currentSelection.json)}`), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: payloadText,
@@ -4128,6 +4759,16 @@
 
       const response = await fetch(withCacheBust(buildDataUrl(selected.json)), { cache: 'no-store' });
       if (!response.ok) {
+        if (response.status === 404) {
+          currentData = [];
+          renderTable();
+          renderBboxes();
+          setUnsaved(false);
+          saveLastSelectionToStorage(selected.name);
+          setStatus(`Loaded ${selected.name} (new annotation file)`);
+          return;
+        }
+
         currentData = [];
         renderTable();
         setStatus(`Failed to load ${selected.json}`);
@@ -4144,26 +4785,103 @@
     }
 
     async function loadPairs() {
-      let loaded = [];
+      async function loadTabP1NameFilter() {
+        const url = buildScopedApiUrl('/data/classification.json');
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (response.status === 404) {
+            return { hasClassification: false, allowedNames: new Set() };
+          }
+          if (!response.ok) {
+            return { hasClassification: false, allowedNames: new Set() };
+          }
 
-      try {
-        const apiResponse = await fetch('/api/pairs', { cache: 'no-store' });
-        if (apiResponse.ok) {
-          loaded = await apiResponse.json();
-          pairSourceMode = 'api';
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            return { hasClassification: false, allowedNames: new Set() };
+          }
+
+          const allowedNames = new Set();
+          for (const row of payload) {
+            if (!row || typeof row !== 'object') {
+              continue;
+            }
+
+            const name = String(row.name || '').trim();
+            if (!name) {
+              continue;
+            }
+
+            const rowClass = String(
+              row.verify_class
+              || row.predicted_class
+              || row.class
+              || row?.top_classes?.[0]?.class
+              || ''
+            ).trim();
+
+            if (rowClass === 'ets_tab_p1') {
+              allowedNames.add(name);
+            }
+          }
+
+          return { hasClassification: true, allowedNames };
+        } catch {
+          return { hasClassification: false, allowedNames: new Set() };
         }
-      } catch {}
+      }
 
-      if (!loaded.length) {
-        const manifestResponse = await fetch(withCacheBust('../cut_images/pairs.json'), { cache: 'no-store' });
+      let loaded = [];
+      let apiLoaded = false;
+
+      pairSelect.innerHTML = '';
+      const loadingOption = document.createElement('option');
+      loadingOption.textContent = 'Loading documents…';
+      pairSelect.append(loadingOption);
+
+      if (currentSubproject?.type === 'iiif') {
+        try {
+          loaded = await loadPairsFromIiifManifest();
+          pairSourceMode = 'api';
+          apiLoaded = true;
+        } catch (error) {
+          pairs = [];
+          pairCompletionByName = {};
+          pairSelect.innerHTML = '';
+          const option = document.createElement('option');
+          option.textContent = 'IIIF pages could not be loaded';
+          pairSelect.append(option);
+          setStatus(error?.message || `IIIF loading failed for ${getCurrentScopeLabel()}`);
+          return;
+        }
+      } else {
+        try {
+          const apiResponse = await fetch(buildScopedApiUrl('/api/pairs'), { cache: 'no-store' });
+          if (apiResponse.ok) {
+            loaded = await apiResponse.json();
+            pairSourceMode = 'api';
+            apiLoaded = true;
+          }
+        } catch {}
+      }
+
+      if (!apiLoaded && !loaded.length) {
+        const manifestUrl = `${getManifestBasePath()}/pairs.json`;
+        const manifestResponse = await fetch(withCacheBust(manifestUrl), { cache: 'no-store' });
         if (!manifestResponse.ok) {
-          throw new Error('No pair source found. Add /api/pairs or cut_images/pairs.json');
+          throw new Error(`No pair source found for ${getCurrentScopeLabel()} (API /api/pairs failed and ${manifestUrl} returned ${manifestResponse.status})`);
         }
         loaded = normalizeManifestPairs(await manifestResponse.json());
         pairSourceMode = 'manifest';
       }
 
-      pairs = loaded;
+      const sourcePairs = Array.isArray(loaded) ? loaded : [];
+      const classFilter = await loadTabP1NameFilter();
+      const filteredPairs = classFilter.hasClassification
+        ? sourcePairs.filter((pair) => classFilter.allowedNames.has(String(pair?.name || '').trim()))
+        : sourcePairs;
+
+      pairs = filteredPairs;
       pairCompletionByName = {};
       await loadGlobalAutocompleteFields();
       pairSelect.innerHTML = '';
@@ -4172,7 +4890,9 @@
         const option = document.createElement('option');
         option.textContent = 'No image/json pair found';
         pairSelect.append(option);
-        setStatus('0 pair');
+        const searchedPath = getCurrentScopedDir() || getManifestBasePath();
+        const filterLabel = classFilter.hasClassification ? ' · filter: ets_tab_p1' : '';
+        setStatus(`0 pair · ${getCurrentScopeLabel()} · path: ${searchedPath}${filterLabel}`);
         return;
       }
 
@@ -4191,13 +4911,45 @@
       await renderSelection(initialSelection);
     }
 
+    function confirmDiscardUnsavedChanges() {
+      if (!hasUnsavedChanges) {
+        return true;
+      }
+
+      return window.confirm('You have unsaved changes. Discard them and continue?');
+    }
+
+    async function applyScopeAndReload() {
+      currentScopedDir = getCurrentScopedDir();
+      await loadProjectColumnSettings();
+      await loadPairs();
+      loadContribuableClusters();
+    }
+
+    projectSelect.addEventListener('change', async () => {
+      if (!confirmDiscardUnsavedChanges()) {
+        projectSelect.value = currentProject?.name || projectSelect.value;
+        return;
+      }
+
+      refreshSubprojectOptionsForSelectedProject();
+      await applyScopeAndReload();
+    });
+
+    subprojectSelect.addEventListener('change', async () => {
+      if (!confirmDiscardUnsavedChanges()) {
+        subprojectSelect.value = currentSubproject?.name || subprojectSelect.value;
+        return;
+      }
+
+      updateSelectedSubprojectFromControl();
+      await applyScopeAndReload();
+    });
+
     pairSelect.addEventListener('change', async (event) => {
-      if (hasUnsavedChanges) {
-        const shouldContinue = window.confirm('You have unsaved changes. Discard them and continue?');
-        if (!shouldContinue) {
-          pairSelect.value = currentSelection?.name || pairSelect.value;
-          return;
-        }
+      if (!confirmDiscardUnsavedChanges()) {
+        pairSelect.value = currentSelection?.name || pairSelect.value;
+        return;
       }
 
       await renderSelection(event.target.value);
@@ -4567,9 +5319,11 @@
 
     loadColumnWidthsFromStorage();
 
-    loadProjectColumnSettings()
-      .then(() => loadPairs())
-      .then(() => loadContribuableClusters())
+    loadProjectsSettings()
+      .then(() => {
+        refreshProjectSelectorsFromSettings();
+        return applyScopeAndReload();
+      })
       .catch((error) => {
         tableContainer.className = 'empty';
         tableContainer.textContent = error.message;

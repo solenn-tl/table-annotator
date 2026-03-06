@@ -11,7 +11,8 @@
 Idea : add the possibility to add qualifiers to the cells (like for Wikidata triples)
 
 ## Application perspectives
-- [ ] Add a new page to deal with pages classification from a random folder
+- [X] Add a new page to deal with pages classification from a random folder
+- [ ] Add a new page to deal with section covers annotation
 - [ ] Adapt the annotation tool for regions dependency
 - [ ] Add a module to generate different formats of annotations of the pages for model training and evaluation (tuples, RDF triples etc., cell structure)
 - [ ] Add a tool to create ground-truth clusters for sets of properties (1..n), for example dragging and dropping values in rectangles, initialized automatically.

@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page Classification</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: Canvas;
+      color: CanvasText;
+      overflow-y: auto;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      min-height: 100vh;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .top-nav a {
+      padding: 4px 10px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .top-nav a.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-bottom: 1px solid #7774;
+    }
+
+    .toolbar label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .toolbar select,
+    .toolbar button {
+      padding: 5px 8px;
+      font: inherit;
+    }
+
+    .toolbar select {
+      min-width: 220px;
+    }
+
+    #status {
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    .content {
+      padding: 12px;
+    }
+
+    .panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 95%, black 2%);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .panel-title {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-weight: 600;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .panel-body {
+      overflow: auto;
+      min-height: 300px;
+      max-height: calc(100vh - 220px);
+      padding: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      align-items: center;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 96%, black 2%);
+      display: grid;
+      grid-template-rows: auto auto;
+    }
+
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px;
+    }
+
+    .name {
+      font-size: 12px;
+      color: GrayText;
+      word-break: break-word;
+    }
+
+    .class-line {
+      font-size: 13px;
+    }
+
+    .thumb-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      border: 1px solid #7776;
+      background: color-mix(in oklab, Canvas 96%, black 4%);
+    }
+
+    .verify-select {
+      width: 100%;
+      font: inherit;
+      padding: 4px 6px;
+    }
+
+    .dirty-dot {
+      font-size: 11px;
+      color: #b56d00;
+    }
+
+    .subtle {
+      font-size: 12px;
+      color: GrayText;
+    }
+
+    .empty {
+      padding: 12px;
+      color: GrayText;
+    }
+
+    @media (max-width: 1200px) {
+      .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 560px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="top-nav" aria-label="Viewer pages">
+      <a href="./iiif-command.html">IIIF Retriever</a>
+      <a class="active" href="./page-classification.html">Page Classification</a>
+      <a href="./index.html">Table annotation</a>
+      <a href="./cover-annotator.html">Cover annotation</a>
+    </nav>
+
+    <div class="toolbar">
+      <label for="projectSelect">Project</label>
+      <select id="projectSelect"></select>
+
+      <label for="subprojectSelect">Subproject</label>
+      <select id="subprojectSelect"></select>
+
+      <button id="reloadBtn" type="button">Reload documents</button>
+      <button id="saveVerifiedBtn" type="button">Save verified classes</button>
+      <span id="status">Loading…</span>
+    </div>
+
+    <div class="content">
+      <section class="panel">
+        <div class="panel-title">Pages classificaton</div>
+        <div class="actions">
+          <span id="selectionInfo"></span>
+        </div>
+        <div id="gridWrap" class="panel-body"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const projectSelect = document.getElementById('projectSelect');
+    const subprojectSelect = document.getElementById('subprojectSelect');
+    const reloadBtn = document.getElementById('reloadBtn');
+    const saveVerifiedBtn = document.getElementById('saveVerifiedBtn');
+    const status = document.getElementById('status');
+    const gridWrap = document.getElementById('gridWrap');
+    const selectionInfo = document.getElementById('selectionInfo');
+
+    let projectsSettings = [];
+    let currentProject = null;
+    let currentSubproject = null;
+    let pairs = [];
+    let classificationRows = [];
+    let classificationByName = new Map();
+    let verifyClassByName = new Map();
+    let initialVerifyClassByName = new Map();
+    let classOptions = [];
+    let pairsLoadError = '';
+
+    function setStatus(message) {
+      status.textContent = message;
+    }
+
+    function withCacheBust(url) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}t=${Date.now()}`;
+    }
+
+    function getCurrentScopedDir() {
+      return String(currentSubproject?.path || '').trim();
+    }
+
+    function buildScopedApiUrl(pathname) {
+      const scopedDir = getCurrentScopedDir();
+      if (!scopedDir) {
+        return pathname;
+      }
+      const separator = pathname.includes('?') ? '&' : '?';
+      return `${pathname}${separator}dir=${encodeURIComponent(scopedDir)}`;
+    }
+
+    function toIiifWidth(imageUrl, width) {
+      const value = String(imageUrl || '').trim();
+      if (!value || !width || width <= 0) {
+        return value;
+      }
+
+      const marker = '/full/full/0/default';
+      if (value.includes(marker)) {
+        return value.replace(marker, `/full/${width},/0/default`);
+      }
+      return value;
+    }
+
+    function encodePathSegments(path) {
+      return String(path || '')
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+    }
+
+    function buildImageSrc(imagePath) {
+      const value = String(imagePath || '').trim();
+      if (!value) {
+        return '';
+      }
+
+      if (/^https?:\/\//i.test(value)) {
+        const resizedUrl = toIiifWidth(value, 600);
+        return buildScopedApiUrl(`/api/image-proxy?url=${encodeURIComponent(resizedUrl)}`);
+      }
+
+      const normalized = value.replace(/^\.\//, '').replace(/^\/+/, '');
+      return buildScopedApiUrl(`/data/${encodePathSegments(normalized)}`);
+    }
+
+    function getTopClassInfo(name) {
+      const entry = classificationByName.get(String(name || '').trim());
+      if (!entry) {
+        return null;
+      }
+      return entry;
+    }
+
+    function sanitizeClassValue(value) {
+      return String(value || '').trim();
+    }
+
+    function computeClassOptions() {
+      const values = new Set();
+      for (const row of classificationRows) {
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+
+        values.add(sanitizeClassValue(row.predicted_class));
+        values.add(sanitizeClassValue(row.verify_class));
+
+        const classProbs = Array.isArray(row.class_probs) ? row.class_probs : [];
+        for (const item of classProbs) {
+          if (!item || typeof item !== 'object') {
+            continue;
+          }
+          values.add(sanitizeClassValue(item.class));
+        }
+      }
+
+      // Always provide manual fallback class for verification.
+      values.add('ets_other');
+
+      classOptions = [...values].filter(Boolean).sort((a, b) => a.localeCompare(b));
+    }
+
+    function normalizeProjectsSettingsPayload(payload) {
+      if (!Array.isArray(payload)) {
+        return [];
+      }
+
+      return payload
+        .map((project) => {
+          if (!project || typeof project !== 'object') {
+            return null;
+          }
+
+          const projectName = String(project.name || '').trim();
+          if (!projectName) {
+            return null;
+          }
+
+          const rawSubprojects = Array.isArray(project.subprojects) ? project.subprojects : [];
+          const subprojects = rawSubprojects
+            .map((subproject) => {
+              if (!subproject || typeof subproject !== 'object') {
+                return null;
+              }
+
+              const name = String(subproject.name || '').trim();
+              if (!name) {
+                return null;
+              }
+
+              return {
+                name,
+                path: String(subproject.path || '').trim(),
+              };
+            })
+            .filter(Boolean);
+
+          if (!subprojects.length) {
+            return null;
+          }
+
+          return {
+            name: projectName,
+            subprojects,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    async function loadProjectsSettings() {
+      const candidates = [
+        '/api/projects-settings',
+        '/projects-settings.json',
+        './projects-settings.json',
+      ];
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          const source = Array.isArray(payload) ? payload : (payload?.projects || []);
+          const normalized = normalizeProjectsSettingsPayload(source);
+          if (normalized.length) {
+            projectsSettings = normalized;
+            return;
+          }
+        } catch {
+        }
+      }
+
+      projectsSettings = [];
+    }
+
+    function refreshSelectors() {
+      projectSelect.innerHTML = '';
+      subprojectSelect.innerHTML = '';
+
+      for (const project of projectsSettings) {
+        const option = document.createElement('option');
+        option.value = project.name;
+        option.textContent = project.name;
+        projectSelect.append(option);
+      }
+
+      currentProject = projectsSettings[0] || null;
+      projectSelect.value = currentProject?.name || '';
+
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+      for (const subproject of subprojects) {
+        const option = document.createElement('option');
+        option.value = subproject.name;
+        option.textContent = subproject.name;
+        subprojectSelect.append(option);
+      }
+
+      currentSubproject = subprojects[0] || null;
+      subprojectSelect.value = currentSubproject?.name || '';
+    }
+
+    function updateCurrentProjectFromControl() {
+      currentProject = projectsSettings.find((item) => item.name === projectSelect.value) || projectsSettings[0] || null;
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+
+      subprojectSelect.innerHTML = '';
+      for (const subproject of subprojects) {
+        const option = document.createElement('option');
+        option.value = subproject.name;
+        option.textContent = subproject.name;
+        subprojectSelect.append(option);
+      }
+
+      currentSubproject = subprojects[0] || null;
+      subprojectSelect.value = currentSubproject?.name || '';
+    }
+
+    function updateCurrentSubprojectFromControl() {
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+      currentSubproject = subprojects.find((item) => item.name === subprojectSelect.value) || subprojects[0] || null;
+    }
+
+    async function loadPairs() {
+      pairs = [];
+      classificationRows = [];
+      classificationByName = new Map();
+      verifyClassByName = new Map();
+      initialVerifyClassByName = new Map();
+      classOptions = [];
+      pairsLoadError = '';
+      const candidates = [
+        buildScopedApiUrl('/data/pairs.json'),
+        buildScopedApiUrl('/api/pairs'),
+      ];
+      let lastError = '';
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            lastError = `HTTP ${response.status} on ${url}`;
+            continue;
+          }
+
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            lastError = `Invalid JSON payload from ${url}`;
+            continue;
+          }
+
+          pairs = payload
+            .filter((item) => item && typeof item === 'object')
+            .map((item) => ({
+              name: String(item.name || '').trim(),
+              image: String(item.image || '').trim(),
+              json: String(item.json || '').trim(),
+              class: String(item.class || '').trim(),
+            }))
+            .filter((item) => item.name && item.image && item.json);
+
+          break;
+        } catch (error) {
+          lastError = error?.message || `Request failed for ${url}`;
+        }
+      }
+
+      await loadClassification();
+
+      renderGrid();
+      if (!pairs.length && lastError) {
+        pairsLoadError = lastError;
+        setStatus('Viewer backend is unreachable. Start server.py and open page via http://127.0.0.1:8000/page-classification.html');
+      } else {
+        const modified = countModified();
+        setStatus(`Loaded ${pairs.length} document(s) · ${classificationByName.size} classification(s) · modified ${modified}`);
+      }
+    }
+
+    async function loadClassification() {
+      classificationByName = new Map();
+      classificationRows = [];
+
+      const candidates = [
+        buildScopedApiUrl('/data/classification.json'),
+      ];
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            continue;
+          }
+
+          classificationRows = payload;
+
+          for (const row of payload) {
+            if (!row || typeof row !== 'object') {
+              continue;
+            }
+
+            const name = String(row.name || '').trim();
+            if (!name) {
+              continue;
+            }
+
+            const predictedClass = String(
+              row.predicted_class
+              || row.class
+              || row?.top_classes?.[0]?.class
+              || ''
+            ).trim();
+
+            const predictedProbRaw = row.predicted_prob ?? row?.top_classes?.[0]?.prob;
+            const predictedProb = Number.isFinite(Number(predictedProbRaw))
+              ? Number(predictedProbRaw)
+              : null;
+
+            const verifyClass = sanitizeClassValue(row.verify_class);
+
+            classificationByName.set(name, {
+              name,
+              className: predictedClass,
+              prob: predictedProb,
+              verifyClass,
+            });
+
+            verifyClassByName.set(name, verifyClass || predictedClass || '');
+            initialVerifyClassByName.set(name, verifyClass || predictedClass || '');
+          }
+
+          computeClassOptions();
+
+          break;
+        } catch {
+        }
+      }
+
+      for (const pair of pairs) {
+        const pairName = sanitizeClassValue(pair.name);
+        if (!pairName || verifyClassByName.has(pairName)) {
+          continue;
+        }
+        const fallback = sanitizeClassValue(pair.class);
+        verifyClassByName.set(pairName, fallback);
+        initialVerifyClassByName.set(pairName, fallback);
+        if (fallback) {
+          classOptions.push(fallback);
+        }
+      }
+
+      classOptions = [...new Set(classOptions.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    }
+
+    function countModified() {
+      let count = 0;
+      for (const [name, value] of verifyClassByName.entries()) {
+        const initial = initialVerifyClassByName.get(name) || '';
+        if ((value || '') !== initial) {
+          count += 1;
+        }
+      }
+      return count;
+    }
+
+    function renderGrid() {
+      if (!pairs.length) {
+        if (pairsLoadError) {
+          gridWrap.innerHTML = `<div class="empty">Could not load pairs for this subproject. ${pairsLoadError}</div>`;
+        } else {
+          gridWrap.innerHTML = '<div class="empty">No pairs found for this subproject.</div>';
+        }
+        selectionInfo.textContent = '0 cards';
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+
+      for (const pair of pairs) {
+        const topClass = getTopClassInfo(pair.name);
+        const currentVerify = verifyClassByName.get(pair.name) || '';
+        const initialVerify = initialVerifyClassByName.get(pair.name) || '';
+
+        const card = document.createElement('article');
+        card.className = 'card';
+
+        const imageEl = document.createElement('img');
+        imageEl.className = 'thumb-image';
+        imageEl.loading = 'lazy';
+        imageEl.alt = pair.name;
+        imageEl.src = buildImageSrc(pair.image);
+
+        const meta = document.createElement('div');
+        meta.className = 'card-meta';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'name';
+        nameEl.textContent = pair.name;
+
+        const predicted = document.createElement('div');
+        predicted.className = 'class-line';
+        if (topClass?.className) {
+          const probText = typeof topClass.prob === 'number' ? ` (${topClass.prob.toFixed(3)})` : '';
+          predicted.textContent = `Predicted: ${topClass.className}${probText}`;
+        } else if (pair.class) {
+          predicted.textContent = `Predicted: ${pair.class}`;
+        } else {
+          predicted.textContent = 'Predicted: —';
+        }
+
+        const label = document.createElement('label');
+        label.className = 'subtle';
+        label.textContent = 'Verified class';
+
+        const select = document.createElement('select');
+        select.className = 'verify-select';
+        select.dataset.name = pair.name;
+
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = '-- choose class --';
+        select.append(defaultOption);
+
+        for (const className of classOptions) {
+          const option = document.createElement('option');
+          option.value = className;
+          option.textContent = className;
+          select.append(option);
+        }
+
+        if (currentVerify && !classOptions.includes(currentVerify)) {
+          const customOption = document.createElement('option');
+          customOption.value = currentVerify;
+          customOption.textContent = `${currentVerify} (custom)`;
+          select.append(customOption);
+        }
+
+        select.value = currentVerify;
+
+        const dirty = document.createElement('div');
+        dirty.className = 'dirty-dot';
+        dirty.textContent = currentVerify !== initialVerify ? 'Modified' : '';
+
+        select.addEventListener('change', () => {
+          const nextValue = sanitizeClassValue(select.value);
+          verifyClassByName.set(pair.name, nextValue);
+          dirty.textContent = nextValue !== initialVerify ? 'Modified' : '';
+          const modified = countModified();
+          selectionInfo.textContent = `${pairs.length} cards · ${modified} modified`;
+        });
+
+        meta.append(nameEl, predicted, label, select, dirty);
+        card.append(imageEl, meta);
+        grid.append(card);
+      }
+
+      gridWrap.innerHTML = '';
+      gridWrap.append(grid);
+      selectionInfo.textContent = `${pairs.length} cards · ${countModified()} modified`;
+    }
+
+    async function saveVerifiedClasses() {
+      if (!pairs.length) {
+        setStatus('Nothing to save.');
+        return;
+      }
+
+      const byName = new Map();
+      for (const row of classificationRows) {
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+        const key = sanitizeClassValue(row.name);
+        if (key) {
+          byName.set(key, row);
+        }
+      }
+
+      for (const pair of pairs) {
+        const name = sanitizeClassValue(pair.name);
+        if (!name) {
+          continue;
+        }
+
+        let row = byName.get(name);
+        if (!row) {
+          row = { name };
+          classificationRows.push(row);
+          byName.set(name, row);
+        }
+
+        const verifyClass = sanitizeClassValue(verifyClassByName.get(name));
+        if (verifyClass) {
+          row.verify_class = verifyClass;
+        } else {
+          delete row.verify_class;
+        }
+      }
+
+      saveVerifiedBtn.disabled = true;
+      setStatus('Saving classification.json...');
+      try {
+        const response = await fetch(buildScopedApiUrl('/api/save/classification.json'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(classificationRows),
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Save failed (${response.status}): ${text}`);
+        }
+
+        for (const [name, value] of verifyClassByName.entries()) {
+          initialVerifyClassByName.set(name, value || '');
+        }
+
+        selectionInfo.textContent = `${pairs.length} cards · ${countModified()} modified`;
+        setStatus(`Saved verify_class for ${pairs.length} documents.`);
+      } catch (error) {
+        setStatus(error?.message || 'Save failed');
+      } finally {
+        saveVerifiedBtn.disabled = false;
+      }
+    }
+
+    projectSelect.addEventListener('change', async () => {
+      updateCurrentProjectFromControl();
+      await loadPairs();
+    });
+
+    subprojectSelect.addEventListener('change', async () => {
+      updateCurrentSubprojectFromControl();
+      await loadPairs();
+    });
+
+    reloadBtn.addEventListener('click', async () => {
+      await loadPairs();
+    });
+
+    saveVerifiedBtn.addEventListener('click', async () => {
+      await saveVerifiedClasses();
+    });
+
+    async function init() {
+      await loadProjectsSettings();
+      if (!projectsSettings.length) {
+        gridWrap.innerHTML = '<div class="empty">No projects found in projects-settings.json.</div>';
+        setStatus('No projects configured');
+        return;
+      }
+
+      refreshSelectors();
+      await loadPairs();
+    }
+
+    init();
+  </script>
+</body>
+</html>

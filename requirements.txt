@@ -2,3 +2,4 @@ opencv-python
 mistralai
 python-dotenv
 huggingface_hub
+ultralytics

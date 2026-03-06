@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cover Annotator</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: Canvas;
+      color: CanvasText;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .top-nav,
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .top-nav a {
+      padding: 4px 10px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .top-nav a.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .toolbar label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .toolbar select,
+    .toolbar button {
+      padding: 5px 8px;
+      font: inherit;
+    }
+
+    .toolbar select {
+      min-width: 220px;
+    }
+
+    #status {
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 280px 1fr 360px;
+      gap: 12px;
+      padding: 12px;
+      min-height: 0;
+    }
+
+    .panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 96%, black 2%);
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .panel-title {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .panel-body {
+      overflow: auto;
+      padding: 8px;
+    }
+
+    .pair-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .pair-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      padding: 6px 8px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    .pair-btn.active {
+      border-color: #2b73ff;
+      box-shadow: inset 0 0 0 1px #2b73ff;
+    }
+
+    .image-wrap {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      border: 1px solid #7775;
+      border-radius: 6px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 95%, black 5%);
+    }
+
+    #imageView {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    #bboxLayer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: auto;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .form-row {
+      display: grid;
+      gap: 4px;
+    }
+
+    .form-row label {
+      font-size: 12px;
+      color: GrayText;
+    }
+
+    .form-row input,
+    .form-row select {
+      font: inherit;
+      padding: 5px 8px;
+    }
+
+    .muted {
+      font-size: 12px;
+      color: GrayText;
+    }
+
+    @media (max-width: 1200px) {
+      .content {
+        grid-template-columns: 240px 1fr;
+      }
+
+      .right-panel {
+        grid-column: 1 / -1;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="top-nav" aria-label="Viewer pages">
+      <a href="./iiif-command.html">IIIF Retriever</a>
+      <a href="./page-classification.html">Page Classification</a>
+      <a href="./index.html">Table annotation</a>
+      <a class="active" href="./cover-annotator.html">Cover annotation</a>
+    </nav>
+
+    <div class="toolbar">
+      <label for="projectSelect">Project</label>
+      <select id="projectSelect"></select>
+
+      <label for="subprojectSelect">Subproject</label>
+      <select id="subprojectSelect"></select>
+
+      <button id="reloadBtn" type="button">Reload</button>
+      <button id="saveBtn" type="button">Save covers.json</button>
+      <span id="status">Loading...</span>
+    </div>
+
+    <div class="content">
+      <section class="panel">
+        <div class="panel-title">Pages (ets_couv)</div>
+        <div id="pairsWrap" class="panel-body"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Image</div>
+        <div class="panel-body">
+          <div class="image-wrap">
+            <img id="imageView" alt="Selected cover" />
+            <svg id="bboxLayer" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+          <div id="imageInfo" class="muted" style="margin-top:8px;"></div>
+        </div>
+      </section>
+
+      <section class="panel right-panel">
+        <div class="panel-title">Cover Fields</div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="form-row">
+              <label for="activeFieldSelect">Active field for bbox drawing (optional)</label>
+              <select id="activeFieldSelect"></select>
+            </div>
+            <div>
+              <button id="clearActiveBboxBtn" type="button">Clear active field bbox</button>
+              <span class="muted">Drag on image to draw bbox for active field.</span>
+            </div>
+
+            <div class="form-row"><label for="communeInput">commune</label><input id="communeInput" type="text" /></div>
+            <div class="form-row"><label for="departementInput">departement</label><input id="departementInput" type="text" /></div>
+            <div class="form-row"><label for="arrondissementInput">arrondissement</label><input id="arrondissementInput" type="text" /></div>
+            <div class="form-row"><label for="cantonInput">canton</label><input id="cantonInput" type="text" /></div>
+            <div class="form-row"><label for="sectionLettreInput">sectionLettre</label><input id="sectionLettreInput" type="text" /></div>
+            <div class="form-row"><label for="sectionTitreInput">sectionTitre</label><input id="sectionTitreInput" type="text" /></div>
+            <div class="form-row"><label for="intituleRegistreInput">intituleRegistre</label><input id="intituleRegistreInput" type="text" /></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const FIELD_NAMES = [
+      'commune',
+      'departement',
+      'arrondissement',
+      'canton',
+      'sectionLettre',
+      'sectionTitre',
+      'intituleRegistre',
+    ];
+
+    const FIELD_COLORS = {
+      commune: '#1f77b4',
+      departement: '#ff7f0e',
+      arrondissement: '#2ca02c',
+      canton: '#d62728',
+      sectionLettre: '#9467bd',
+      sectionTitre: '#8c564b',
+      intituleRegistre: '#e377c2',
+    };
+
+    const projectSelect = document.getElementById('projectSelect');
+    const subprojectSelect = document.getElementById('subprojectSelect');
+    const reloadBtn = document.getElementById('reloadBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const statusEl = document.getElementById('status');
+    const pairsWrap = document.getElementById('pairsWrap');
+    const imageView = document.getElementById('imageView');
+    const bboxLayer = document.getElementById('bboxLayer');
+    const imageInfo = document.getElementById('imageInfo');
+    const activeFieldSelect = document.getElementById('activeFieldSelect');
+    const clearActiveBboxBtn = document.getElementById('clearActiveBboxBtn');
+
+    const fieldInputs = {
+      commune: document.getElementById('communeInput'),
+      departement: document.getElementById('departementInput'),
+      arrondissement: document.getElementById('arrondissementInput'),
+      canton: document.getElementById('cantonInput'),
+      sectionLettre: document.getElementById('sectionLettreInput'),
+      sectionTitre: document.getElementById('sectionTitreInput'),
+      intituleRegistre: document.getElementById('intituleRegistreInput'),
+    };
+
+    let projectsSettings = [];
+    let currentProject = null;
+    let currentSubproject = null;
+    let pairs = [];
+    let coversRows = [];
+    let coversByName = new Map();
+    let currentPair = null;
+    let activeField = FIELD_NAMES[0];
+    let currentBboxes = {};
+    let drawState = null;
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function withCacheBust(url) {
+      const sep = url.includes('?') ? '&' : '?';
+      return `${url}${sep}t=${Date.now()}`;
+    }
+
+    function getCurrentScopedDir() {
+      return String(currentSubproject?.path || '').trim();
+    }
+
+    function getCurrentSubprojectBasePath() {
+      return getCurrentScopedDir().replace(/\/+$/, '');
+    }
+
+    function buildScopedApiUrl(pathname) {
+      const scopedDir = getCurrentScopedDir();
+      if (!scopedDir) {
+        return pathname;
+      }
+      const sep = pathname.includes('?') ? '&' : '?';
+      return `${pathname}${sep}dir=${encodeURIComponent(scopedDir)}`;
+    }
+
+    function normalizeProjectsSettingsPayload(payload) {
+      if (!Array.isArray(payload)) {
+        return [];
+      }
+
+      return payload
+        .map((project) => {
+          if (!project || typeof project !== 'object') {
+            return null;
+          }
+          const projectName = String(project.name || '').trim();
+          if (!projectName) {
+            return null;
+          }
+
+          const subprojects = (Array.isArray(project.subprojects) ? project.subprojects : [])
+            .map((subproject) => {
+              if (!subproject || typeof subproject !== 'object') {
+                return null;
+              }
+              const name = String(subproject.name || '').trim();
+              if (!name) {
+                return null;
+              }
+              return {
+                name,
+                path: String(subproject.path || '').trim(),
+              };
+            })
+            .filter(Boolean);
+
+          if (!subprojects.length) {
+            return null;
+          }
+
+          return { name: projectName, subprojects };
+        })
+        .filter(Boolean);
+    }
+
+    async function loadProjectsSettings() {
+      const candidates = ['/api/projects-settings', '/projects-settings.json', './projects-settings.json'];
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+          const payload = await response.json();
+          const source = Array.isArray(payload) ? payload : (payload?.projects || []);
+          const normalized = normalizeProjectsSettingsPayload(source);
+          if (normalized.length) {
+            projectsSettings = normalized;
+            return;
+          }
+        } catch {
+        }
+      }
+      projectsSettings = [];
+    }
+
+    function refreshSelectors() {
+      projectSelect.innerHTML = '';
+      subprojectSelect.innerHTML = '';
+
+      for (const project of projectsSettings) {
+        const option = document.createElement('option');
+        option.value = project.name;
+        option.textContent = project.name;
+        projectSelect.append(option);
+      }
+
+      currentProject = projectsSettings[0] || null;
+      projectSelect.value = currentProject?.name || '';
+
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+      for (const subproject of subprojects) {
+        const option = document.createElement('option');
+        option.value = subproject.name;
+        option.textContent = subproject.name;
+        subprojectSelect.append(option);
+      }
+
+      currentSubproject = subprojects[0] || null;
+      subprojectSelect.value = currentSubproject?.name || '';
+    }
+
+    function updateCurrentProjectFromControl() {
+      currentProject = projectsSettings.find((item) => item.name === projectSelect.value) || projectsSettings[0] || null;
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+
+      subprojectSelect.innerHTML = '';
+      for (const subproject of subprojects) {
+        const option = document.createElement('option');
+        option.value = subproject.name;
+        option.textContent = subproject.name;
+        subprojectSelect.append(option);
+      }
+
+      currentSubproject = subprojects[0] || null;
+      subprojectSelect.value = currentSubproject?.name || '';
+    }
+
+    function updateCurrentSubprojectFromControl() {
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+      currentSubproject = subprojects.find((item) => item.name === subprojectSelect.value) || subprojects[0] || null;
+    }
+
+    function resolveClassFromClassificationRow(row) {
+      if (!row || typeof row !== 'object') {
+        return '';
+      }
+      return String(
+        row.verify_class
+        || row.predicted_class
+        || row.class
+        || row?.top_classes?.[0]?.class
+        || ''
+      ).trim();
+    }
+
+    function toIiifWidth(imageUrl, width) {
+      const value = String(imageUrl || '').trim();
+      if (!value || !width || width <= 0) {
+        return value;
+      }
+      const marker = '/full/full/0/default';
+      if (value.includes(marker)) {
+        return value.replace(marker, `/full/${width},/0/default`);
+      }
+      return value;
+    }
+
+    function buildImageSrc(imagePath) {
+      const value = String(imagePath || '').trim();
+      if (!value) {
+        return '';
+      }
+
+      if (/^https?:\/\//i.test(value)) {
+        return toIiifWidth(value, 1200);
+      }
+
+      const base = getCurrentSubprojectBasePath();
+      const normalized = value.replace(/^\.\//, '').replace(/^\/+/, '');
+      if (base) {
+        return `${base}/${normalized}`;
+      }
+      return buildScopedApiUrl(`/data/${encodeURIComponent(normalized)}`);
+    }
+
+    function getDefaultCoverRow(pair) {
+      return {
+        name: pair.name,
+        image: pair.image,
+        class: pair.class || 'ets_couv',
+        commune: '',
+        departement: '',
+        arrondissement: '',
+        canton: '',
+        sectionLettre: '',
+        sectionTitre: '',
+        intituleRegistre: '',
+        bboxes: {},
+      };
+    }
+
+    async function loadPairsAndCovers() {
+      pairs = [];
+      coversRows = [];
+      coversByName = new Map();
+      currentPair = null;
+      currentBboxes = {};
+
+      const base = getCurrentSubprojectBasePath();
+      const pairCandidates = [
+        buildScopedApiUrl('/api/pairs'),
+        buildScopedApiUrl('/data/pairs.json'),
+        base ? `${base}/pairs.json` : '',
+      ].filter(Boolean);
+
+      let loadedPairs = [];
+      for (const url of pairCandidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            continue;
+          }
+          loadedPairs = payload
+            .filter((item) => item && typeof item === 'object')
+            .map((item) => ({
+              name: String(item.name || '').trim(),
+              image: String(item.image || '').trim(),
+              json: String(item.json || '').trim(),
+              class: String(item.class || '').trim(),
+            }))
+            .filter((item) => item.name && item.image);
+          break;
+        } catch {
+        }
+      }
+
+      if (!loadedPairs.length) {
+        renderPairsList();
+        setStatus('No pairs found for current subproject');
+        return;
+      }
+
+      const classificationCandidates = [
+        buildScopedApiUrl('/data/classification.json'),
+        base ? `${base}/classification.json` : '',
+      ].filter(Boolean);
+
+      const classByName = new Map();
+      for (const url of classificationCandidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            continue;
+          }
+          for (const row of payload) {
+            if (!row || typeof row !== 'object') {
+              continue;
+            }
+            const name = String(row.name || '').trim();
+            if (!name) {
+              continue;
+            }
+            classByName.set(name, resolveClassFromClassificationRow(row));
+          }
+          break;
+        } catch {
+        }
+      }
+
+      pairs = loadedPairs.filter((pair) => {
+        const className = String(classByName.get(pair.name) || pair.class || '').trim();
+        return className === 'ets_couv';
+      });
+
+      const coversCandidates = [
+        buildScopedApiUrl('/data/covers.json'),
+        base ? `${base}/covers.json` : '',
+      ].filter(Boolean);
+
+      for (const url of coversCandidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            continue;
+          }
+          coversRows = payload.filter((row) => row && typeof row === 'object').map((row) => ({ ...row }));
+          break;
+        } catch {
+        }
+      }
+
+      for (const row of coversRows) {
+        const name = String(row.name || '').trim();
+        if (name) {
+          coversByName.set(name, row);
+        }
+      }
+
+      for (const pair of pairs) {
+        if (!coversByName.has(pair.name)) {
+          const row = getDefaultCoverRow(pair);
+          coversRows.push(row);
+          coversByName.set(pair.name, row);
+        }
+      }
+
+      renderPairsList();
+      if (pairs.length) {
+        selectPair(pairs[0].name);
+      } else {
+        setStatus('No ets_couv pages found in classification');
+      }
+    }
+
+    function renderPairsList() {
+      if (!pairs.length) {
+        pairsWrap.innerHTML = '<div class="muted">No cover page found (ets_couv).</div>';
+        return;
+      }
+
+      const list = document.createElement('div');
+      list.className = 'pair-list';
+
+      for (const pair of pairs) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `pair-btn${currentPair?.name === pair.name ? ' active' : ''}`;
+        button.textContent = pair.name;
+        button.addEventListener('click', () => {
+          selectPair(pair.name);
+        });
+        list.append(button);
+      }
+
+      pairsWrap.innerHTML = '';
+      pairsWrap.append(list);
+    }
+
+    function getCurrentCoverRow() {
+      if (!currentPair) {
+        return null;
+      }
+      return coversByName.get(currentPair.name) || null;
+    }
+
+    function persistCurrentForm() {
+      const row = getCurrentCoverRow();
+      if (!row) {
+        return;
+      }
+
+      for (const fieldName of FIELD_NAMES) {
+        row[fieldName] = String(fieldInputs[fieldName]?.value || '').trim();
+      }
+      row.bboxes = { ...currentBboxes };
+    }
+
+    function loadFormFromCurrent() {
+      const row = getCurrentCoverRow();
+      if (!row) {
+        for (const fieldName of FIELD_NAMES) {
+          fieldInputs[fieldName].value = '';
+        }
+        currentBboxes = {};
+        renderBboxes();
+        return;
+      }
+
+      for (const fieldName of FIELD_NAMES) {
+        fieldInputs[fieldName].value = String(row[fieldName] || '');
+      }
+
+      currentBboxes = row.bboxes && typeof row.bboxes === 'object' ? { ...row.bboxes } : {};
+      renderBboxes();
+    }
+
+    function selectPair(name) {
+      persistCurrentForm();
+
+      const pair = pairs.find((item) => item.name === name);
+      if (!pair) {
+        return;
+      }
+
+      currentPair = pair;
+      renderPairsList();
+      loadFormFromCurrent();
+
+      imageView.src = withCacheBust(buildImageSrc(pair.image));
+      imageInfo.textContent = pair.name;
+      setStatus(`Loaded ${pair.name}`);
+    }
+
+    function getImageScale() {
+      const naturalWidth = Number(imageView.naturalWidth) || 1;
+      const naturalHeight = Number(imageView.naturalHeight) || 1;
+      const displayWidth = Number(imageView.clientWidth) || 1;
+      const displayHeight = Number(imageView.clientHeight) || 1;
+      return {
+        sx: displayWidth / naturalWidth,
+        sy: displayHeight / naturalHeight,
+        naturalWidth,
+        naturalHeight,
+        displayWidth,
+        displayHeight,
+      };
+    }
+
+    function eventToDisplayPoint(event) {
+      const rect = imageView.getBoundingClientRect();
+      const x = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+      const y = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+      return { x, y };
+    }
+
+    function displayRectToNatural(rect) {
+      const scale = getImageScale();
+      return {
+        x: Math.round(rect.x / scale.sx),
+        y: Math.round(rect.y / scale.sy),
+        width: Math.round(rect.width / scale.sx),
+        height: Math.round(rect.height / scale.sy),
+      };
+    }
+
+    function naturalRectToDisplay(rect) {
+      const scale = getImageScale();
+      return {
+        x: rect.x * scale.sx,
+        y: rect.y * scale.sy,
+        width: rect.width * scale.sx,
+        height: rect.height * scale.sy,
+      };
+    }
+
+    function renderBboxes() {
+      const width = Number(imageView.clientWidth) || 1;
+      const height = Number(imageView.clientHeight) || 1;
+      bboxLayer.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      bboxLayer.innerHTML = '';
+
+      for (const fieldName of FIELD_NAMES) {
+        const bbox = currentBboxes[fieldName];
+        if (!bbox || typeof bbox !== 'object') {
+          continue;
+        }
+        const rect = naturalRectToDisplay(bbox);
+        if (!(rect.width > 0 && rect.height > 0)) {
+          continue;
+        }
+
+        const color = FIELD_COLORS[fieldName] || '#2b73ff';
+        const svgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        svgRect.setAttribute('x', String(rect.x));
+        svgRect.setAttribute('y', String(rect.y));
+        svgRect.setAttribute('width', String(rect.width));
+        svgRect.setAttribute('height', String(rect.height));
+        svgRect.setAttribute('fill', `${color}33`);
+        svgRect.setAttribute('stroke', color);
+        svgRect.setAttribute('stroke-width', '2');
+        bboxLayer.append(svgRect);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', String(rect.x + 4));
+        label.setAttribute('y', String(Math.max(12, rect.y + 12)));
+        label.setAttribute('fill', color);
+        label.setAttribute('font-size', '12');
+        label.textContent = fieldName;
+        bboxLayer.append(label);
+      }
+
+      if (drawState?.rect) {
+        const color = FIELD_COLORS[activeField] || '#2b73ff';
+        const r = drawState.rect;
+        const preview = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        preview.setAttribute('x', String(r.x));
+        preview.setAttribute('y', String(r.y));
+        preview.setAttribute('width', String(r.width));
+        preview.setAttribute('height', String(r.height));
+        preview.setAttribute('fill', `${color}22`);
+        preview.setAttribute('stroke', color);
+        preview.setAttribute('stroke-width', '2');
+        preview.setAttribute('stroke-dasharray', '4 2');
+        bboxLayer.append(preview);
+      }
+    }
+
+    function beginDraw(event) {
+      if (!currentPair || !imageView.complete || !imageView.naturalWidth) {
+        return;
+      }
+
+      const start = eventToDisplayPoint(event);
+      drawState = {
+        start,
+        rect: { x: start.x, y: start.y, width: 0, height: 0 },
+      };
+      bboxLayer.setPointerCapture(event.pointerId);
+      renderBboxes();
+    }
+
+    function updateDraw(event) {
+      if (!drawState) {
+        return;
+      }
+
+      const point = eventToDisplayPoint(event);
+      const x = Math.min(drawState.start.x, point.x);
+      const y = Math.min(drawState.start.y, point.y);
+      const width = Math.abs(point.x - drawState.start.x);
+      const height = Math.abs(point.y - drawState.start.y);
+      drawState.rect = { x, y, width, height };
+      renderBboxes();
+    }
+
+    function endDraw(event) {
+      if (!drawState) {
+        return;
+      }
+
+      const rect = drawState.rect;
+      drawState = null;
+
+      if (rect.width >= 4 && rect.height >= 4) {
+        currentBboxes[activeField] = displayRectToNatural(rect);
+        persistCurrentForm();
+      }
+
+      try {
+        bboxLayer.releasePointerCapture(event.pointerId);
+      } catch {
+      }
+
+      renderBboxes();
+    }
+
+    async function saveCovers() {
+      persistCurrentForm();
+      const payload = [...coversByName.values()].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+
+      saveBtn.disabled = true;
+      setStatus('Saving covers.json...');
+      try {
+        const response = await fetch(buildScopedApiUrl('/api/save/covers.json'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Server save unavailable (${response.status})`);
+        }
+
+        setStatus(`Saved covers.json (${payload.length} entries)`);
+      } catch {
+        const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: 'application/json;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'covers.json';
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        URL.revokeObjectURL(url);
+        setStatus('Server save unavailable: downloaded covers.json instead.');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    function initFieldControls() {
+      activeFieldSelect.innerHTML = '';
+      for (const fieldName of FIELD_NAMES) {
+        const option = document.createElement('option');
+        option.value = fieldName;
+        option.textContent = fieldName;
+        activeFieldSelect.append(option);
+      }
+      activeFieldSelect.value = activeField;
+
+      activeFieldSelect.addEventListener('change', () => {
+        activeField = activeFieldSelect.value;
+      });
+
+      for (const fieldName of FIELD_NAMES) {
+        fieldInputs[fieldName].addEventListener('focus', () => {
+          activeField = fieldName;
+          activeFieldSelect.value = fieldName;
+        });
+      }
+
+      clearActiveBboxBtn.addEventListener('click', () => {
+        if (!currentPair) {
+          return;
+        }
+        delete currentBboxes[activeField];
+        persistCurrentForm();
+        renderBboxes();
+      });
+    }
+
+    projectSelect.addEventListener('change', async () => {
+      updateCurrentProjectFromControl();
+      await loadPairsAndCovers();
+    });
+
+    subprojectSelect.addEventListener('change', async () => {
+      updateCurrentSubprojectFromControl();
+      await loadPairsAndCovers();
+    });
+
+    reloadBtn.addEventListener('click', async () => {
+      await loadPairsAndCovers();
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      await saveCovers();
+    });
+
+    imageView.addEventListener('load', () => {
+      renderBboxes();
+    });
+
+    bboxLayer.addEventListener('pointerdown', beginDraw);
+    bboxLayer.addEventListener('pointermove', updateDraw);
+    bboxLayer.addEventListener('pointerup', endDraw);
+    bboxLayer.addEventListener('pointercancel', endDraw);
+
+    async function init() {
+      initFieldControls();
+      await loadProjectsSettings();
+      if (!projectsSettings.length) {
+        pairsWrap.innerHTML = '<div class="muted">No projects found in projects-settings.json.</div>';
+        setStatus('No projects configured');
+        return;
+      }
+
+      refreshSelectors();
+      await loadPairsAndCovers();
+    }
+
+    init();
+  </script>
+</body>
+</html>

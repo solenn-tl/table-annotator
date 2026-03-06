@@ -7,16 +7,21 @@ import mimetypes
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
+from urllib.request import Request, urlopen
 
 
 ROOT_DIR = Path(__file__).resolve().parent
 CUT_IMAGES_DIR = ROOT_DIR.parent / "cut_images"
+PROJECTS_SETTINGS_PATH = ROOT_DIR / "projects-settings.json"
+LEGACY_PROJECTS_SETTINGS_PATH = ROOT_DIR / "projects-settings.json"
+COLUMN_SETTINGS_DIR = ROOT_DIR / "column-settings"
 COLUMN_SETTINGS_PATH = ROOT_DIR / "column-settings.json"
 LEGACY_COLUMN_SETTINGS_PATH = ROOT_DIR.parent / "column-settings.json"
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".bmp"}
 ALLOWED_COLUMN_TYPES = {"none", "sequence", "autocomplete", "both"}
 ALLOWED_IMAGE_FORMATS = {"single", "double"}
+ALLOWED_SUBPROJECT_TYPES = {"local", "iiif"}
 DEFAULT_IMAGE_FORMAT = "double"
 
 
@@ -56,15 +61,15 @@ def numero_liste_sort_key(value: str) -> tuple[int, object]:
         return (1, value.casefold())
 
 
-def build_pairs() -> list[dict[str, str]]:
+def build_pairs(cut_images_dir: Path = CUT_IMAGES_DIR) -> list[dict[str, str]]:
     pairs: list[dict[str, str]] = []
 
-    if not CUT_IMAGES_DIR.exists():
+    if not cut_images_dir.exists():
         return pairs
 
-    json_by_stem = {path.stem: path for path in CUT_IMAGES_DIR.glob("*.json")}
+    json_by_stem = {path.stem: path for path in cut_images_dir.glob("*.json")}
 
-    for image_path in sorted(CUT_IMAGES_DIR.iterdir()):
+    for image_path in sorted(cut_images_dir.iterdir()):
         if image_path.suffix.lower() not in IMAGE_EXTENSIONS:
             continue
 
@@ -83,10 +88,665 @@ def build_pairs() -> list[dict[str, str]]:
     return pairs
 
 
-def load_column_settings() -> dict[str, object]:
-    settings_path = COLUMN_SETTINGS_PATH
-    if not settings_path.exists() and LEGACY_COLUMN_SETTINGS_PATH.exists():
-        settings_path = LEGACY_COLUMN_SETTINGS_PATH
+def sanitize_pair_base_name(value: object) -> str:
+    text = str(value or "")
+    normalized = re.sub(r"[^A-Za-z0-9_-]+", "_", text)
+    normalized = re.sub(r"_+", "_", normalized).strip("_")
+    return normalized or "iiif_page"
+
+
+def extract_iiif_label(canvas: object, fallback_index: int) -> str:
+    if not isinstance(canvas, dict):
+        return f"page_{fallback_index + 1}"
+
+    label = canvas.get("label")
+    if isinstance(label, str) and label.strip():
+        return label.strip()
+
+    if isinstance(label, dict):
+        for key in ("none", "fr", "en"):
+            values = label.get(key)
+            if isinstance(values, list):
+                for item in values:
+                    text = as_non_empty_text(item)
+                    if text:
+                        return text
+
+    return f"page_{fallback_index + 1}"
+
+
+def extract_iiif_canvas_image_url(canvas: object) -> str | None:
+    if not isinstance(canvas, dict):
+        return None
+
+    annotation_pages = canvas.get("items")
+    if isinstance(annotation_pages, list) and annotation_pages:
+        first_page = annotation_pages[0]
+        if isinstance(first_page, dict):
+            annotations = first_page.get("items")
+            if isinstance(annotations, list) and annotations:
+                first_annotation = annotations[0]
+                if isinstance(first_annotation, dict):
+                    body = first_annotation.get("body")
+                    if isinstance(body, str):
+                        return as_non_empty_text(body)
+
+                    if isinstance(body, dict):
+                        return as_non_empty_text(body.get("id"))
+
+    images = canvas.get("images")
+    if isinstance(images, list) and images:
+        first_image = images[0]
+        if isinstance(first_image, dict):
+            resource = first_image.get("resource")
+            if isinstance(resource, str):
+                return as_non_empty_text(resource)
+            if isinstance(resource, dict):
+                return as_non_empty_text(resource.get("@id")) or as_non_empty_text(resource.get("id"))
+
+    return None
+
+
+def extract_iiif_service_base_url(canvas: object) -> str | None:
+    if not isinstance(canvas, dict):
+        return None
+
+    annotation_pages = canvas.get("items")
+    if isinstance(annotation_pages, list) and annotation_pages:
+        first_page = annotation_pages[0]
+        if isinstance(first_page, dict):
+            annotations = first_page.get("items")
+            if isinstance(annotations, list) and annotations:
+                first_annotation = annotations[0]
+                if isinstance(first_annotation, dict):
+                    body = first_annotation.get("body")
+                    if isinstance(body, dict):
+                        services = body.get("service")
+                        if isinstance(services, list) and services:
+                            first_service = services[0]
+                            if isinstance(first_service, dict):
+                                return as_non_empty_text(first_service.get("id")) or as_non_empty_text(first_service.get("@id"))
+                        if isinstance(services, dict):
+                            return as_non_empty_text(services.get("id")) or as_non_empty_text(services.get("@id"))
+
+    images = canvas.get("images")
+    if isinstance(images, list) and images:
+        first_image = images[0]
+        if isinstance(first_image, dict):
+            resource = first_image.get("resource")
+            if isinstance(resource, dict):
+                service = resource.get("service")
+                if isinstance(service, dict):
+                    return as_non_empty_text(service.get("@id")) or as_non_empty_text(service.get("id"))
+                if isinstance(service, list) and service:
+                    first_service = service[0]
+                    if isinstance(first_service, dict):
+                        return as_non_empty_text(first_service.get("@id")) or as_non_empty_text(first_service.get("id"))
+
+    return None
+
+
+def build_iiif_region_url(image_url: str, region: str) -> str:
+    match = re.match(r"^(.*?/)(full|pct:[^/]+)(/[^?#]*)(\?[^#]*)?(#.*)?$", image_url, re.IGNORECASE)
+    if not match:
+        return image_url
+
+    prefix = match.group(1) or ""
+    suffix = match.group(3) or ""
+    query = match.group(4) or ""
+    fragment = match.group(5) or ""
+    return f"{prefix}{region}{suffix}{query}{fragment}"
+
+
+def join_iiif_image_url(base_url: str, image_name: str, suffix: str) -> str:
+    left = base_url.rstrip("/")
+    middle = image_name.strip().strip("/")
+    right = suffix.strip()
+    if right and not right.startswith("/"):
+        right = f"/{right}"
+
+    base_without_query = re.split(r"[?#]", left, maxsplit=1)[0]
+    base_has_image_filename = bool(re.search(r"\.[A-Za-z0-9]{2,5}$", base_without_query))
+
+    if middle and (left.endswith(f"/{middle}") or base_has_image_filename):
+        middle = ""
+
+    if middle:
+        return f"{left}/{middle}{right}"
+    return f"{left}{right}"
+
+
+def get_nested_value(payload: object, path: str) -> object | None:
+    current = payload
+    parts = [segment for segment in re.split(r"[/.]", path) if segment]
+    if not parts:
+        return None
+
+    for segment in parts:
+        if isinstance(current, dict):
+            if segment in current:
+                current = current[segment]
+                continue
+            return None
+
+        if isinstance(current, list):
+            if re.fullmatch(r"\d+", segment):
+                index = int(segment)
+                if index < 0 or index >= len(current):
+                    return None
+                current = current[index]
+                continue
+
+            if current and isinstance(current[0], dict) and segment in current[0]:
+                current = current[0][segment]
+                continue
+
+            return None
+
+        return None
+
+    return current
+
+
+def get_manifest_canvases(manifest: object) -> list[object]:
+    if not isinstance(manifest, dict):
+        return []
+
+    items = manifest.get("items")
+    if isinstance(items, list):
+        return items
+
+    sequences = manifest.get("sequences")
+    if isinstance(sequences, list) and sequences:
+        first_sequence = sequences[0]
+        if isinstance(first_sequence, dict):
+            canvases = first_sequence.get("canvases")
+            if isinstance(canvases, list):
+                return canvases
+
+    return []
+
+
+def sync_pairs_manifest(cut_images_dir: Path, pairs: list[dict[str, str]]) -> None:
+    cache_path = cut_images_dir / "pairs.json"
+
+    existing_pairs: list[dict[str, str]] | None = None
+    try:
+        if cache_path.exists():
+            payload = json.loads(cache_path.read_text(encoding="utf-8"))
+            if isinstance(payload, list):
+                existing_pairs = payload
+    except (OSError, json.JSONDecodeError):
+        existing_pairs = None
+
+    if existing_pairs == pairs:
+        return
+
+    cut_images_dir.mkdir(parents=True, exist_ok=True)
+    cache_path.write_text(
+        json.dumps(pairs, ensure_ascii=False, indent=4) + "\n",
+        encoding="utf-8",
+    )
+
+
+def ensure_pair_json_files(cut_images_dir: Path, pairs: list[dict[str, str]]) -> int:
+    cut_images_dir.mkdir(parents=True, exist_ok=True)
+    created_count = 0
+
+    for pair in pairs:
+        json_name = pair.get("json") if isinstance(pair, dict) else None
+        json_text = as_non_empty_text(json_name)
+        if json_text is None:
+            continue
+
+        target = (cut_images_dir / json_text).resolve()
+        if target.parent != cut_images_dir.resolve():
+            continue
+
+        if target.exists():
+            continue
+
+        target.write_text("[]\n", encoding="utf-8")
+        created_count += 1
+
+    return created_count
+
+
+def load_pairs_manifest(cut_images_dir: Path) -> list[dict[str, object]]:
+    manifest_path = cut_images_dir / "pairs.json"
+    if manifest_path.exists():
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if isinstance(payload, list):
+                normalized: list[dict[str, object]] = []
+                for entry in payload:
+                    if isinstance(entry, dict):
+                        normalized.append(dict(entry))
+                return normalized
+        except (OSError, json.JSONDecodeError):
+            pass
+
+    generated = build_pairs(cut_images_dir)
+    return [dict(item) for item in generated]
+
+
+def save_pairs_manifest(cut_images_dir: Path, pairs: list[dict[str, object]]) -> Path:
+    cut_images_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = cut_images_dir / "pairs.json"
+    manifest_path.write_text(
+        json.dumps(pairs, ensure_ascii=False, indent=4) + "\n",
+        encoding="utf-8",
+    )
+    return manifest_path
+
+
+def resolve_model_path(model_path_text: str) -> Path:
+    model_path = Path(model_path_text)
+    if model_path.is_absolute():
+        return model_path
+    return (ROOT_DIR.parent / model_path).resolve()
+
+
+def extract_top_class_name(result: object, model: object) -> str | None:
+    probs = getattr(result, "probs", None)
+    if probs is None:
+        return None
+
+    top1 = getattr(probs, "top1", None)
+    if top1 is None:
+        return None
+
+    try:
+        top_index = int(top1)
+    except (TypeError, ValueError):
+        return None
+
+    names = getattr(result, "names", None)
+    if not names:
+        names = getattr(model, "names", None)
+
+    if isinstance(names, dict):
+        label = names.get(top_index)
+        return str(label) if label is not None else str(top_index)
+
+    if isinstance(names, list) and 0 <= top_index < len(names):
+        return str(names[top_index])
+
+    return str(top_index)
+
+
+def classify_pairs_with_yolo(
+    cut_images_dir: Path,
+    pair_names: list[str] | None,
+    model_path_text: str,
+    confidence: float,
+) -> dict[str, object]:
+    try:
+        from ultralytics import YOLO
+    except Exception as error:
+        raise RuntimeError(f"Ultralytics is not available: {error}") from error
+
+    model_path = resolve_model_path(model_path_text)
+    if not model_path.exists():
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+
+    pairs = load_pairs_manifest(cut_images_dir)
+    selected_names = {
+        text
+        for text in (as_non_empty_text(name) for name in (pair_names or []))
+        if text is not None
+    }
+
+    if selected_names:
+        target_pairs = [
+            pair for pair in pairs
+            if as_non_empty_text(pair.get("name")) in selected_names
+        ]
+    else:
+        target_pairs = pairs
+
+    model = YOLO(str(model_path))
+    classified_count = 0
+    failed: list[dict[str, str]] = []
+
+    for pair in target_pairs:
+        pair_name = as_non_empty_text(pair.get("name")) or "(unknown)"
+        image_value = as_non_empty_text(pair.get("image"))
+        if image_value is None:
+            failed.append({"name": pair_name, "error": "Missing image path"})
+            continue
+
+        image_source: str
+        if re.match(r"^https?://", image_value, re.IGNORECASE):
+            image_source = image_value
+        else:
+            image_path = (cut_images_dir / image_value).resolve()
+            if not image_path.exists():
+                failed.append({"name": pair_name, "error": f"Image not found: {image_path.name}"})
+                continue
+            image_source = str(image_path)
+
+        try:
+            results = model.predict(source=image_source, conf=confidence, verbose=False)
+        except Exception as error:
+            failed.append({"name": pair_name, "error": str(error)})
+            continue
+
+        if not results:
+            failed.append({"name": pair_name, "error": "No prediction result"})
+            continue
+
+        class_name = extract_top_class_name(results[0], model)
+        if class_name is None:
+            failed.append({"name": pair_name, "error": "No class probability output"})
+            continue
+
+        pair["class"] = class_name
+        classified_count += 1
+
+    manifest_path = save_pairs_manifest(cut_images_dir, pairs)
+    return {
+        "ok": True,
+        "classified": classified_count,
+        "failed": failed,
+        "totalSelected": len(target_pairs),
+        "pairsPath": str(manifest_path),
+        "modelPath": str(model_path),
+    }
+
+
+def build_iiif_pairs(
+    manifest_url: str,
+    image_name_path: str | None = None,
+    image_url_path: str | None = None,
+    image_suffix: str | None = None,
+) -> list[dict[str, str]]:
+    request = Request(
+        manifest_url,
+        headers={
+            "User-Agent": "ocr-viewer/1.0",
+            "Accept": "application/json",
+        },
+    )
+    with urlopen(request, timeout=25) as response:
+        raw_payload = response.read()
+        charset = response.headers.get_content_charset() or "utf-8"
+        content_type = response.headers.get("Content-Type", "")
+
+    raw_text = raw_payload.decode(charset, errors="replace").lstrip("\ufeff").strip()
+    if not raw_text:
+        raise ValueError(f"Empty response body for IIIF manifest URL: {manifest_url}")
+
+    try:
+        manifest = json.loads(raw_text)
+    except json.JSONDecodeError as error:
+        snippet = raw_text[:200].replace("\n", " ")
+        raise ValueError(
+            f"Invalid JSON from IIIF manifest URL {manifest_url}. "
+            f"Content-Type={content_type!r}. Body starts with: {snippet!r}"
+        ) from error
+
+    canvases = get_manifest_canvases(manifest)
+    if not canvases:
+        return []
+
+    pairs: list[dict[str, str]] = []
+
+    for index, canvas in enumerate(canvases):
+        label = extract_iiif_label(canvas, index)
+        canvas_id = canvas.get("id") if isinstance(canvas, dict) else None
+        canvas_id_text = str(canvas_id).strip() if isinstance(canvas_id, str) else ""
+        id_tail = canvas_id_text.split("/")[-1] if canvas_id_text else ""
+        custom_name = None
+        if image_name_path and isinstance(canvas, dict):
+            nested_value = get_nested_value(canvas, image_name_path)
+            nested_text = as_non_empty_text(nested_value)
+            if nested_text:
+                custom_name = nested_text
+
+        base_name_source = custom_name or id_tail or label
+        base_name = sanitize_pair_base_name(base_name_source)
+        if not custom_name:
+            base_name = sanitize_pair_base_name(f"{index + 1:04d}_{base_name}")
+
+        image_url = None
+        if image_url_path and isinstance(canvas, dict):
+            image_url_value = get_nested_value(canvas, image_url_path)
+            base_url_text = as_non_empty_text(image_url_value)
+            if base_url_text:
+                image_url = join_iiif_image_url(base_url_text, custom_name or "", image_suffix or "")
+
+        if not image_url:
+            service_base = extract_iiif_service_base_url(canvas)
+            if service_base and (custom_name or image_suffix):
+                image_url = join_iiif_image_url(service_base, custom_name or "", image_suffix or "")
+
+        if not image_url:
+            image_url = extract_iiif_canvas_image_url(canvas)
+
+        if not image_url:
+            continue
+
+        width = canvas.get("width") if isinstance(canvas, dict) else None
+        height = canvas.get("height") if isinstance(canvas, dict) else None
+        is_landscape = isinstance(width, (int, float)) and isinstance(height, (int, float)) and width > height
+
+        if is_landscape:
+            left_url = build_iiif_region_url(image_url, "pct:0,0,50,100")
+            right_url = build_iiif_region_url(image_url, "pct:50,0,50,100")
+
+            pairs.append({
+                "name": f"{base_name}_left",
+                "image": left_url,
+                "json": f"{base_name}_left.json",
+            })
+            pairs.append({
+                "name": f"{base_name}_right",
+                "image": right_url,
+                "json": f"{base_name}_right.json",
+            })
+            continue
+
+        pairs.append({
+            "name": base_name,
+            "image": image_url,
+            "json": f"{base_name}.json",
+        })
+
+    return pairs
+
+
+def normalize_projects_settings(payload: object) -> list[dict[str, object]]:
+    if not isinstance(payload, list):
+        return []
+
+    normalized_projects: list[dict[str, object]] = []
+
+    for project in payload:
+        if not isinstance(project, dict):
+            continue
+
+        project_name = as_non_empty_text(project.get("name"))
+        if not project_name:
+            continue
+
+        raw_subprojects = project.get("subprojects")
+        if not isinstance(raw_subprojects, list):
+            raw_subprojects = []
+
+        subprojects: list[dict[str, object]] = []
+        for subproject in raw_subprojects:
+            if not isinstance(subproject, dict):
+                continue
+
+            subproject_name = as_non_empty_text(subproject.get("name"))
+            if not subproject_name:
+                continue
+
+            raw_type = as_non_empty_text(subproject.get("type"))
+            subproject_type = (raw_type or "local").lower()
+            if subproject_type not in ALLOWED_SUBPROJECT_TYPES:
+                continue
+
+            entry: dict[str, object] = {
+                "name": subproject_name,
+                "type": subproject_type,
+            }
+
+            documents = as_non_empty_text(subproject.get("documents"))
+            if documents:
+                entry["documents"] = documents
+
+            path_value = as_non_empty_text(subproject.get("path"))
+            if path_value:
+                entry["path"] = path_value
+
+            manifest_value = as_non_empty_text(subproject.get("manifest"))
+            if manifest_value:
+                entry["manifest"] = manifest_value
+
+            settings_value = as_non_empty_text(subproject.get("settings"))
+            if settings_value:
+                entry["settings"] = settings_value
+
+            image_name_path = as_non_empty_text(subproject.get("img-name-path-in-manifest"))
+            if image_name_path:
+                entry["img-name-path-in-manifest"] = image_name_path
+
+            image_url_path = as_non_empty_text(subproject.get("img-url"))
+            if image_url_path is None:
+                image_url_path = as_non_empty_text(subproject.get("img-url:"))
+            if image_url_path:
+                entry["img-url"] = image_url_path
+
+            image_suffix = as_non_empty_text(subproject.get("img-suffixe"))
+            if image_suffix:
+                entry["img-suffixe"] = image_suffix
+
+            subprojects.append(entry)
+
+        normalized_projects.append({
+            "name": project_name,
+            "subprojects": subprojects,
+        })
+
+    return normalized_projects
+
+
+def load_projects_settings() -> dict[str, object]:
+    settings_path = PROJECTS_SETTINGS_PATH
+    if not settings_path.exists() and LEGACY_PROJECTS_SETTINGS_PATH.exists():
+        settings_path = LEGACY_PROJECTS_SETTINGS_PATH
+
+    if not settings_path.exists():
+        return {"projects": []}
+
+    try:
+        payload = json.loads(settings_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return {
+            "projects": [],
+            "error": "Invalid projects settings JSON",
+            "details": str(error),
+            "path": settings_path.name,
+        }
+
+    return {
+        "projects": normalize_projects_settings(payload),
+        "path": settings_path.name,
+    }
+
+
+def resolve_scoped_directory(raw_dir: str | None) -> Path | None:
+    if raw_dir is None:
+        return CUT_IMAGES_DIR.resolve()
+
+    normalized = raw_dir.strip().replace("\\", "/")
+    if not normalized:
+        return CUT_IMAGES_DIR.resolve()
+
+    if normalized.startswith("/") or re.match(r"^[a-zA-Z]:", normalized):
+        return None
+
+    workspace_root = ROOT_DIR.parent.resolve()
+
+    candidate_paths = [
+        (ROOT_DIR / normalized).resolve(),
+        (workspace_root / normalized).resolve(),
+    ]
+
+    for resolved in candidate_paths:
+        if workspace_root not in resolved.parents and resolved != workspace_root:
+            continue
+        return resolved
+
+    return None
+
+
+def resolve_column_settings_path_for_subproject(scoped_dir: Path) -> Path:
+    default_candidates = [
+        COLUMN_SETTINGS_DIR / "column-settings.json",
+        COLUMN_SETTINGS_PATH,
+        LEGACY_COLUMN_SETTINGS_PATH,
+    ]
+
+    projects_payload = load_projects_settings()
+    projects = projects_payload.get("projects")
+    if isinstance(projects, list):
+        scoped_resolved = scoped_dir.resolve()
+        for project in projects:
+            if not isinstance(project, dict):
+                continue
+
+            subprojects = project.get("subprojects")
+            if not isinstance(subprojects, list):
+                continue
+
+            for subproject in subprojects:
+                if not isinstance(subproject, dict):
+                    continue
+
+                subproject_path = as_non_empty_text(subproject.get("path"))
+                if not subproject_path:
+                    continue
+
+                subproject_dir = resolve_scoped_directory(subproject_path)
+                if subproject_dir is None or subproject_dir.resolve() != scoped_resolved:
+                    continue
+
+                settings_value = as_non_empty_text(subproject.get("settings"))
+                if settings_value:
+                    settings_path = Path(settings_value)
+                    if settings_path.is_absolute():
+                        return settings_path
+
+                    if settings_value.startswith("./") or settings_value.startswith("../"):
+                        return (ROOT_DIR / settings_path).resolve()
+
+                    if "/" in settings_value or "\\" in settings_value:
+                        return (ROOT_DIR / settings_path).resolve()
+
+                    return (COLUMN_SETTINGS_DIR / settings_path).resolve()
+
+    for candidate in default_candidates:
+        if candidate.exists():
+            return candidate
+
+    return default_candidates[0]
+
+
+def get_query_first(parsed_query: str, key: str) -> str | None:
+    query = parse_qs(parsed_query)
+    values = query.get(key)
+    if not values:
+        return None
+    value = values[0]
+    return value if isinstance(value, str) else None
+
+
+def load_column_settings(scoped_dir: Path | None = None) -> dict[str, object]:
+    effective_dir = scoped_dir or CUT_IMAGES_DIR
+    settings_path = resolve_column_settings_path_for_subproject(effective_dir)
 
     if not settings_path.exists():
         return {"imageFormat": DEFAULT_IMAGE_FORMAT, "columnTypes": {}}
@@ -118,14 +778,24 @@ def load_column_settings() -> dict[str, object]:
     return {"imageFormat": image_format, "columnTypes": normalized}
 
 
-def build_contribuable_clusters() -> dict[str, object]:
+def load_column_settings_with_source(scoped_dir: Path | None = None) -> dict[str, object]:
+    effective_dir = scoped_dir or CUT_IMAGES_DIR
+    settings_path = resolve_column_settings_path_for_subproject(effective_dir)
+    payload = load_column_settings(effective_dir)
+    return {
+        **payload,
+        "settingsPath": str(settings_path),
+    }
+
+
+def build_contribuable_clusters(cut_images_dir: Path = CUT_IMAGES_DIR) -> dict[str, object]:
     grouped: dict[str, dict[str, dict[str, object]]] = defaultdict(dict)
     scanned_files = 0
     used_files = 0
     row_count = 0
     matched_rows = 0
 
-    if not CUT_IMAGES_DIR.exists():
+    if not cut_images_dir.exists():
         return {
             "scannedFiles": 0,
             "usedFiles": 0,
@@ -134,7 +804,7 @@ def build_contribuable_clusters() -> dict[str, object]:
             "groups": [],
         }
 
-    for json_path in sorted(CUT_IMAGES_DIR.glob("*.json")):
+    for json_path in sorted(cut_images_dir.glob("*.json")):
         scanned_files += 1
 
         try:
@@ -226,14 +896,14 @@ def build_contribuable_clusters() -> dict[str, object]:
     }
 
 
-def build_autocomplete_fields() -> dict[str, object]:
+def build_autocomplete_fields(cut_images_dir: Path = CUT_IMAGES_DIR) -> dict[str, object]:
     scanned_files = 0
     used_files = 0
     row_count = 0
     matched_values = 0
     value_sets: dict[str, set[str]] = defaultdict(set)
 
-    if not CUT_IMAGES_DIR.exists():
+    if not cut_images_dir.exists():
         return {
             "scannedFiles": 0,
             "usedFiles": 0,
@@ -242,7 +912,7 @@ def build_autocomplete_fields() -> dict[str, object]:
             "fields": {},
         }
 
-    for json_path in sorted(CUT_IMAGES_DIR.glob("*.json")):
+    for json_path in sorted(cut_images_dir.glob("*.json")):
         scanned_files += 1
 
         try:
@@ -381,6 +1051,11 @@ class ViewerHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         route = parsed.path
+        scoped_dir = resolve_scoped_directory(get_query_first(parsed.query, "dir"))
+
+        if scoped_dir is None:
+            self.send_error(400, "Invalid dir parameter")
+            return
 
         if route == "/api/column-settings":
             try:
@@ -402,8 +1077,11 @@ class ViewerHandler(BaseHTTPRequestHandler):
                 self.send_error(400, error_message)
                 return
 
+            settings_path = resolve_column_settings_path_for_subproject(scoped_dir)
+
             try:
-                COLUMN_SETTINGS_PATH.write_text(
+                settings_path.parent.mkdir(parents=True, exist_ok=True)
+                settings_path.write_text(
                     json.dumps(normalized_payload, ensure_ascii=False, indent=4) + "\n",
                     encoding="utf-8",
                 )
@@ -411,7 +1089,53 @@ class ViewerHandler(BaseHTTPRequestHandler):
                 self.send_error(500, "Could not save column settings")
                 return
 
-            self._send_json({"ok": True, "saved": COLUMN_SETTINGS_PATH.name})
+            self._send_json({"ok": True, "saved": str(settings_path), "settingsPath": str(settings_path)})
+            return
+
+        if route == "/api/classify-pairs":
+            try:
+                content_length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                self.send_error(400, "Invalid Content-Length")
+                return
+
+            raw_body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(raw_body.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                self.send_error(400, "Invalid JSON payload")
+                return
+
+            if not isinstance(payload, dict):
+                self.send_error(400, "Payload must be a JSON object")
+                return
+
+            raw_pair_names = payload.get("pairNames")
+            pair_names: list[str] | None = None
+            if raw_pair_names is not None:
+                if not isinstance(raw_pair_names, list):
+                    self.send_error(400, "pairNames must be an array")
+                    return
+                pair_names = [str(item) for item in raw_pair_names if item is not None]
+
+            model_path_text = as_non_empty_text(payload.get("modelPath")) or "models/classification/best.pt"
+
+            raw_confidence = payload.get("confidence", 0.25)
+            try:
+                confidence = float(raw_confidence)
+            except (TypeError, ValueError):
+                self.send_error(400, "confidence must be a number")
+                return
+
+            confidence = max(0.0, min(1.0, confidence))
+
+            try:
+                result = classify_pairs_with_yolo(scoped_dir, pair_names, model_path_text, confidence)
+            except Exception as error:
+                self.send_error(500, f"Classification failed: {error}")
+                return
+
+            self._send_json(result)
             return
 
         if not route.startswith("/api/save/"):
@@ -419,8 +1143,8 @@ class ViewerHandler(BaseHTTPRequestHandler):
             return
 
         filename = unquote(route[len("/api/save/") :]).lstrip("/")
-        target_path = (CUT_IMAGES_DIR / filename).resolve()
-        cut_images_root = CUT_IMAGES_DIR.resolve()
+        target_path = (scoped_dir / filename).resolve()
+        cut_images_root = scoped_dir.resolve()
 
         if target_path.parent != cut_images_root:
             self.send_error(403, "Forbidden")
@@ -428,10 +1152,6 @@ class ViewerHandler(BaseHTTPRequestHandler):
 
         if target_path.suffix.lower() != ".json":
             self.send_error(400, "Only JSON files can be saved")
-            return
-
-        if not target_path.exists():
-            self.send_error(404, "JSON file not found")
             return
 
         try:
@@ -452,10 +1172,15 @@ class ViewerHandler(BaseHTTPRequestHandler):
             self.send_error(400, "Payload must be a JSON array")
             return
 
-        target_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=4) + "\n",
-            encoding="utf-8",
-        )
+        try:
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            target_path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=4) + "\n",
+                encoding="utf-8",
+            )
+        except OSError:
+            self.send_error(500, "Could not save JSON file")
+            return
         self._send_json({"ok": True, "saved": target_path.name})
 
     def do_PUT(self) -> None:
@@ -464,6 +1189,11 @@ class ViewerHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         route = parsed.path
+        scoped_dir = resolve_scoped_directory(get_query_first(parsed.query, "dir"))
+
+        if scoped_dir is None:
+            self.send_error(400, "Invalid dir parameter")
+            return
 
         if route in {"/", "/index.html"}:
             self._send_file(ROOT_DIR / "index.html")
@@ -473,31 +1203,130 @@ class ViewerHandler(BaseHTTPRequestHandler):
             self._send_file(ROOT_DIR / "column-settings.html")
             return
 
+        if route in {"/page-classification", "/page-classification.html"}:
+            self._send_file(ROOT_DIR / "page-classification.html")
+            return
+
+        if route in {"/cover-annotator", "/cover-annotator.html"}:
+            self._send_file(ROOT_DIR / "cover-annotator.html")
+            return
+
+        if route in {"/iiif-command", "/iiif-command.html"}:
+            self._send_file(ROOT_DIR / "iiif-command.html")
+            return
+
         if route == "/column-settings.json":
-            self._send_json(load_column_settings())
+            self._send_json(load_column_settings(scoped_dir))
+            return
+
+        if route == "/projects-settings.json":
+            if PROJECTS_SETTINGS_PATH.exists():
+                self._send_file(PROJECTS_SETTINGS_PATH)
+                return
+            if LEGACY_PROJECTS_SETTINGS_PATH.exists():
+                self._send_file(LEGACY_PROJECTS_SETTINGS_PATH)
+                return
+            self.send_error(404, "projects-settings.json not found")
+            return
+
+        if route == "/projects-settings.json":
+            if LEGACY_PROJECTS_SETTINGS_PATH.exists():
+                self._send_file(LEGACY_PROJECTS_SETTINGS_PATH)
+                return
+            if PROJECTS_SETTINGS_PATH.exists():
+                self._send_file(PROJECTS_SETTINGS_PATH)
+                return
+            self.send_error(404, "projects-settings.json not found")
             return
 
         if route == "/api/pairs":
-            self._send_json(build_pairs())
+            self._send_json(load_pairs_manifest(scoped_dir))
+            return
+
+        if route == "/api/iiif-pairs":
+            manifest_url = get_query_first(parsed.query, "manifest")
+            manifest_text = as_non_empty_text(manifest_url)
+            if manifest_text is None:
+                self.send_error(400, "Missing manifest query parameter")
+                return
+
+            image_name_path = as_non_empty_text(get_query_first(parsed.query, "imgNamePath"))
+            image_url_path = as_non_empty_text(get_query_first(parsed.query, "imgUrlPath"))
+            image_suffix = as_non_empty_text(get_query_first(parsed.query, "imgSuffix"))
+
+            try:
+                pairs = build_iiif_pairs(manifest_text, image_name_path, image_url_path, image_suffix)
+                if scoped_dir is not None:
+                    try:
+                        sync_pairs_manifest(scoped_dir, pairs)
+                        ensure_pair_json_files(scoped_dir, pairs)
+                    except OSError:
+                        pass
+                self._send_json(pairs)
+            except Exception as error:
+                self.send_error(502, f"Could not load IIIF manifest: {error}")
+            return
+
+        if route == "/api/projects-settings":
+            self._send_json(load_projects_settings())
             return
 
         if route == "/api/column-settings":
-            self._send_json(load_column_settings())
+            self._send_json(load_column_settings_with_source(scoped_dir))
             return
 
         if route == "/api/contribuable-clusters":
-            self._send_json(build_contribuable_clusters())
+            self._send_json(build_contribuable_clusters(scoped_dir))
             return
 
         if route == "/api/autocomplete-fields":
-            self._send_json(build_autocomplete_fields())
+            self._send_json(build_autocomplete_fields(scoped_dir))
+            return
+
+        if route == "/api/image-proxy":
+            image_url = as_non_empty_text(get_query_first(parsed.query, "url"))
+            if image_url is None:
+                self.send_error(400, "Missing url query parameter")
+                return
+
+            if not re.match(r"^https?://", image_url, re.IGNORECASE):
+                self.send_error(400, "Only http(s) URLs are allowed")
+                return
+
+            try:
+                request = Request(
+                    image_url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                        "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+                        "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+                        "Referer": "https://archives06.fr/",
+                        "Accept-Language": "en-US,en;q=0.9",
+                    },
+                )
+                with urlopen(request, timeout=25) as response:
+                    content = response.read()
+                    content_type = response.headers.get("Content-Type", "application/octet-stream")
+            except Exception as error:
+                self.send_error(502, f"Could not fetch remote image: {error}")
+                return
+
+            self.send_response(200)
+            self._set_cors_headers()
+            self.send_header("Content-Type", content_type)
+            self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
+            self.send_header("Content-Length", str(len(content)))
+            self.end_headers()
+            self.wfile.write(content)
             return
 
         if route.startswith("/data/"):
             relative = unquote(route[len("/data/") :]).lstrip("/")
-            file_path = (CUT_IMAGES_DIR / relative).resolve()
+            file_path = (scoped_dir / relative).resolve()
 
-            if file_path.parent != CUT_IMAGES_DIR.resolve():
+            if file_path.parent != scoped_dir.resolve():
                 self.send_error(403, "Forbidden")
                 return
 

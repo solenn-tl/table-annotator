@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IIIF Command Helper</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: Canvas;
+      color: CanvasText;
+      overflow-y: auto;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .top-nav a {
+      padding: 4px 10px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .top-nav a.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-bottom: 1px solid #7774;
+    }
+
+    .toolbar a,
+    .toolbar button,
+    .toolbar input {
+      padding: 5px 8px;
+      font: inherit;
+    }
+
+    .content {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+    }
+
+    .panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 95%, black 2%);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .panel-title {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-weight: 600;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .panel-body {
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .row label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .row input {
+      padding: 6px 8px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+    }
+
+    .help {
+      color: GrayText;
+      font-size: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #7776;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    pre {
+      margin: 0;
+      padding: 10px;
+      border: 1px solid #7774;
+      border-radius: 6px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 13px;
+      background: color-mix(in oklab, Canvas 96%, black 4%);
+    }
+
+    #status {
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    @media (max-width: 920px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="top-nav" aria-label="Viewer pages">
+      <a class="active" href="./iiif-command.html">IIIF Retriever</a>
+      <a href="./page-classification.html">Page Classification</a>
+      <a href="./index.html">Table annotation</a>
+    </nav>
+
+    <div class="toolbar">
+      <strong>IIIF Command Helper</strong>
+      <div class="actions"></div>
+    </div>
+
+    <div class="content">
+      <section class="panel">
+        <div class="panel-title">Command Inputs</div>
+        <div class="panel-body">
+          <div class="row">
+            <label for="manifestUrl">Manifest URL</label>
+            <input id="manifestUrl" type="text" value="https://archives06.fr/ark:/79346/a586c563adb32013b2b3a8e920240680/manifest.json" />
+          </div>
+
+          <div class="row">
+            <label for="outputDir">Output directory</label>
+            <input id="outputDir" type="text" value=".\cut_images\alpes-maritimes\aiglun\3P31" />
+            <div class="help">Folder where generated files will be written.</div>
+          </div>
+
+          <div class="row">
+            <label for="itemsOutput">Items filename/path</label>
+            <input id="itemsOutput" type="text" value="items.json" />
+          </div>
+
+          <div class="row">
+            <label for="pairsOutput">Pairs filename/path</label>
+            <input id="pairsOutput" type="text" value="pairs.json" />
+          </div>
+
+          <div class="row">
+            <label for="manifestOutput">Manifest filename/path (optional)</label>
+            <input id="manifestOutput" type="text" value="manifest.json" />
+          </div>
+
+          <div class="actions">
+            <button id="buildBtn" type="button">Build command</button>
+            <button id="copyBtn" type="button">Copy command</button>
+          </div>
+
+          <div id="status">Ready</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Generated Command</div>
+        <div class="panel-body">
+          <pre id="commandPreview"></pre>
+          <div class="help">Run this command in your activated Python environment.</div>
+
+          <div class="panel-title" style="margin:0 -10px 0 -10px; border-top:1px solid #7774;">Notes</div>
+          <ul>
+            <li>Creates <strong>items</strong>, <strong>pairs</strong>, and empty annotation JSON files for each pair.</li>
+            <li>If files already exist, annotation JSON files are not overwritten.</li>
+            <li>Use absolute paths if you run command outside project root.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const manifestUrlInput = document.getElementById('manifestUrl');
+    const outputDirInput = document.getElementById('outputDir');
+    const itemsOutputInput = document.getElementById('itemsOutput');
+    const pairsOutputInput = document.getElementById('pairsOutput');
+    const manifestOutputInput = document.getElementById('manifestOutput');
+    const commandPreview = document.getElementById('commandPreview');
+    const status = document.getElementById('status');
+    const buildBtn = document.getElementById('buildBtn');
+    const copyBtn = document.getElementById('copyBtn');
+
+    function quote(value) {
+      const text = String(value || '').trim();
+      return `"${text.replaceAll('"', '\\"')}"`;
+    }
+
+    function buildCommand() {
+      const manifestUrl = manifestUrlInput.value.trim();
+      const outputDir = outputDirInput.value.trim();
+      const itemsOutput = itemsOutputInput.value.trim();
+      const pairsOutput = pairsOutputInput.value.trim();
+      const manifestOutput = manifestOutputInput.value.trim();
+
+      if (!manifestUrl) {
+        status.textContent = 'Manifest URL is required';
+        return '';
+      }
+
+      if (!outputDir) {
+        status.textContent = 'Output directory is required';
+        return '';
+      }
+
+      let command = `python viewer\\iiif.py ${quote(manifestUrl)} --output-dir ${quote(outputDir)}`;
+
+      if (itemsOutput) {
+        command += ` --items-output ${quote(itemsOutput)}`;
+      }
+
+      if (pairsOutput) {
+        command += ` --pairs-output ${quote(pairsOutput)}`;
+      }
+
+      if (manifestOutput) {
+        command += ` --manifest-output ${quote(manifestOutput)}`;
+      }
+
+      status.textContent = 'Command ready';
+      return command;
+    }
+
+    function renderCommand() {
+      const command = buildCommand();
+      commandPreview.textContent = command || '—';
+    }
+
+    async function copyCommand() {
+      const command = buildCommand();
+      if (!command) {
+        commandPreview.textContent = '—';
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(command);
+        commandPreview.textContent = command;
+        status.textContent = 'Command copied to clipboard';
+      } catch {
+        commandPreview.textContent = command;
+        status.textContent = 'Copy failed. Select the command text manually.';
+      }
+    }
+
+    [manifestUrlInput, outputDirInput, itemsOutputInput, pairsOutputInput, manifestOutputInput]
+      .forEach((input) => {
+        input.addEventListener('input', renderCommand);
+      });
+
+    buildBtn.addEventListener('click', renderCommand);
+    copyBtn.addEventListener('click', copyCommand);
+
+    renderCommand();
+  </script>
+</body>
+</html>
