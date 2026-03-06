@@ -1,0 +1,42 @@
+[
+    {
+        "name": "FRAD029_3P156_04_002_left",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_002_right",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_003_left",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_003_right",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_004_left",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_004_right",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_005_left",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_005_right",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_006_left",
+        "verify_class": "ets_tab_p1"
+    },
+    {
+        "name": "FRAD029_3P156_04_006_right",
+        "verify_class": "ets_tab_p1"
+    }
+]

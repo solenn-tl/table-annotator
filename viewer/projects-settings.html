@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projects Settings Editor</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: Canvas;
+      color: CanvasText;
+      min-height: 100vh;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .top-nav a {
+      padding: 4px 10px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .top-nav a.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-bottom: 1px solid #7774;
+    }
+
+    .toolbar button {
+      padding: 5px 8px;
+      font: inherit;
+    }
+
+    #status {
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    .content {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }
+
+    .panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 96%, black 2%);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .panel-title {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-weight: 600;
+      font-size: 13px;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .panel-body {
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .project-card {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 97%, black 3%);
+    }
+
+    .project-head {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border-bottom: 1px solid #7774;
+    }
+
+    .project-controls,
+    .subproject-controls,
+    .inline-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .subproject-list {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .subproject-card {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 8px;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+    }
+
+    .form-row {
+      display: grid;
+      gap: 4px;
+    }
+
+    .form-row label {
+      font-size: 12px;
+      color: GrayText;
+    }
+
+    input,
+    select,
+    button,
+    textarea {
+      font: inherit;
+      color: inherit;
+    }
+
+    input,
+    select {
+      padding: 5px 8px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      background: transparent;
+    }
+
+    button {
+      padding: 6px 10px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .danger {
+      border-color: #b74141;
+      color: #b74141;
+    }
+
+    .empty {
+      color: GrayText;
+      font-size: 13px;
+      padding: 12px;
+      border: 1px dashed #7775;
+      border-radius: 8px;
+    }
+
+    .json-preview {
+      width: 100%;
+      min-height: 180px;
+      border: 1px solid #7774;
+      border-radius: 8px;
+      padding: 10px;
+      box-sizing: border-box;
+      background: color-mix(in oklab, Canvas 96%, black 4%);
+      resize: vertical;
+    }
+
+    @media (max-width: 860px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="top-nav" aria-label="Viewer pages">
+      <a href="./iiif-command.html">IIIF Retriever</a>
+      <a href="./page-classification.html">Page Classification</a>
+      <a href="./index.html">Table annotation</a>
+      <a href="./cover-annotator.html">Cover annotation</a>
+      <a class="active" href="./projects-settings.html">Projects settings</a>
+    </nav>
+
+    <div class="toolbar">
+      <button id="reloadBtn" type="button">Reload</button>
+      <button id="addProjectBtn" type="button">Add project</button>
+      <button id="saveBtn" type="button">Save projects-settings.json</button>
+      <span id="status">Loading...</span>
+    </div>
+
+    <main class="content">
+      <section class="panel">
+        <div class="panel-title">
+          <span>Projects</span>
+        </div>
+        <div id="projectsWrap" class="panel-body"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">
+          <span>JSON preview</span>
+        </div>
+        <div class="panel-body">
+          <textarea id="jsonPreview" class="json-preview" readonly></textarea>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const projectsWrap = document.getElementById('projectsWrap');
+    const jsonPreview = document.getElementById('jsonPreview');
+    const statusEl = document.getElementById('status');
+    const reloadBtn = document.getElementById('reloadBtn');
+    const addProjectBtn = document.getElementById('addProjectBtn');
+    const saveBtn = document.getElementById('saveBtn');
+
+    let projects = [];
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    function createDefaultSubproject() {
+      return {
+        name: 'New subproject',
+        type: 'local',
+        documents: 'ETS',
+        path: './../cut_images/',
+        settings: 'column-settings/column-settings.json',
+        coversettings: 'cover-settings/cover-settings-cadastre.json',
+      };
+    }
+
+    function createDefaultProject() {
+      return {
+        name: 'New project',
+        subprojects: [createDefaultSubproject()],
+      };
+    }
+
+    function normalizeSubproject(raw) {
+      const subproject = raw && typeof raw === 'object' ? raw : {};
+      return {
+        name: String(subproject.name || '').trim(),
+        type: String(subproject.type || 'local').trim() || 'local',
+        documents: String(subproject.documents || '').trim(),
+        path: String(subproject.path || '').trim(),
+        settings: String(subproject.settings || '').trim(),
+        coversettings: String(subproject.coversettings || subproject['cover-settings'] || subproject.coverSettings || '').trim(),
+        manifest: String(subproject.manifest || '').trim(),
+      };
+    }
+
+    function normalizeProject(raw) {
+      const project = raw && typeof raw === 'object' ? raw : {};
+      const subprojects = Array.isArray(project.subprojects)
+        ? project.subprojects.map(normalizeSubproject)
+        : [];
+
+      return {
+        name: String(project.name || '').trim(),
+        subprojects,
+      };
+    }
+
+    function withCacheBust(url) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}t=${Date.now()}`;
+    }
+
+    function compactPayload() {
+      return projects
+        .map((project) => {
+          const name = String(project.name || '').trim();
+          if (!name) {
+            return null;
+          }
+
+          const subprojects = (Array.isArray(project.subprojects) ? project.subprojects : [])
+            .map((subproject) => {
+              const normalized = normalizeSubproject(subproject);
+              if (!normalized.name) {
+                return null;
+              }
+
+              const entry = {
+                name: normalized.name,
+                type: normalized.type || 'local',
+              };
+
+              if (normalized.documents) {
+                entry.documents = normalized.documents;
+              }
+              if (normalized.path) {
+                entry.path = normalized.path;
+              }
+              if (normalized.settings) {
+                entry.settings = normalized.settings;
+              }
+              if (normalized.coversettings) {
+                entry.coversettings = normalized.coversettings;
+              }
+              if (normalized.manifest) {
+                entry.manifest = normalized.manifest;
+              }
+
+              return entry;
+            })
+            .filter(Boolean);
+
+          return {
+            name,
+            subprojects,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function updatePreview() {
+      const payload = compactPayload();
+      jsonPreview.value = `${JSON.stringify(payload, null, 4)}\n`;
+    }
+
+    function bindInput(input, onChange) {
+      input.addEventListener('input', () => {
+        onChange(input.value);
+        updatePreview();
+      });
+    }
+
+    function renderSubprojectCard(projectIndex, subproject, subprojectIndex) {
+      const card = document.createElement('article');
+      card.className = 'subproject-card';
+
+      const actions = document.createElement('div');
+      actions.className = 'inline-actions';
+
+      const title = document.createElement('strong');
+      title.textContent = `Subproject ${subprojectIndex + 1}`;
+      actions.append(title);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'danger';
+      removeBtn.textContent = 'Remove subproject';
+      removeBtn.addEventListener('click', () => {
+        projects[projectIndex].subprojects.splice(subprojectIndex, 1);
+        renderProjects();
+      });
+      actions.append(removeBtn);
+
+      const grid = document.createElement('div');
+      grid.className = 'form-grid';
+
+      function createField(labelText, value, onChange, options) {
+        const row = document.createElement('div');
+        row.className = 'form-row';
+
+        const label = document.createElement('label');
+        label.textContent = labelText;
+        row.append(label);
+
+        let input;
+        if (Array.isArray(options) && options.length) {
+          input = document.createElement('select');
+          for (const optionValue of options) {
+            const option = document.createElement('option');
+            option.value = optionValue;
+            option.textContent = optionValue;
+            input.append(option);
+          }
+          input.value = value || options[0];
+          input.addEventListener('change', () => {
+            onChange(input.value);
+            updatePreview();
+          });
+        } else {
+          input = document.createElement('input');
+          input.type = 'text';
+          input.value = value || '';
+          bindInput(input, onChange);
+        }
+
+        row.append(input);
+        return row;
+      }
+
+      grid.append(createField('name', subproject.name, (next) => { subproject.name = next; }));
+      grid.append(createField('type', subproject.type, (next) => { subproject.type = next; }, ['local', 'iiif']));
+      grid.append(createField('documents', subproject.documents, (next) => { subproject.documents = next; }));
+      grid.append(createField('path', subproject.path, (next) => { subproject.path = next; }));
+      grid.append(createField('settings', subproject.settings, (next) => { subproject.settings = next; }));
+      grid.append(createField('coversettings', subproject.coversettings, (next) => { subproject.coversettings = next; }));
+      grid.append(createField('manifest', subproject.manifest, (next) => { subproject.manifest = next; }));
+
+      card.append(actions, grid);
+      return card;
+    }
+
+    function renderProjectCard(project, projectIndex) {
+      const wrapper = document.createElement('section');
+      wrapper.className = 'project-card';
+
+      const head = document.createElement('div');
+      head.className = 'project-head';
+
+      const nameRow = document.createElement('div');
+      nameRow.className = 'form-row';
+      const nameLabel = document.createElement('label');
+      nameLabel.textContent = `Project ${projectIndex + 1} name`;
+      const nameInput = document.createElement('input');
+      nameInput.type = 'text';
+      nameInput.value = project.name || '';
+      bindInput(nameInput, (next) => {
+        project.name = next;
+      });
+      nameRow.append(nameLabel, nameInput);
+
+      const controls = document.createElement('div');
+      controls.className = 'project-controls';
+
+      const addSubprojectBtn = document.createElement('button');
+      addSubprojectBtn.type = 'button';
+      addSubprojectBtn.textContent = 'Add subproject';
+      addSubprojectBtn.addEventListener('click', () => {
+        if (!Array.isArray(project.subprojects)) {
+          project.subprojects = [];
+        }
+        project.subprojects.push(createDefaultSubproject());
+        renderProjects();
+      });
+
+      const removeProjectBtn = document.createElement('button');
+      removeProjectBtn.type = 'button';
+      removeProjectBtn.className = 'danger';
+      removeProjectBtn.textContent = 'Remove project';
+      removeProjectBtn.addEventListener('click', () => {
+        projects.splice(projectIndex, 1);
+        renderProjects();
+      });
+
+      controls.append(addSubprojectBtn, removeProjectBtn);
+      head.append(nameRow, controls);
+
+      const subprojectList = document.createElement('div');
+      subprojectList.className = 'subproject-list';
+
+      const subprojects = Array.isArray(project.subprojects) ? project.subprojects : [];
+      if (!subprojects.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'No subproject yet. Click "Add subproject".';
+        subprojectList.append(empty);
+      } else {
+        for (let index = 0; index < subprojects.length; index += 1) {
+          subprojectList.append(renderSubprojectCard(projectIndex, subprojects[index], index));
+        }
+      }
+
+      wrapper.append(head, subprojectList);
+      return wrapper;
+    }
+
+    function renderProjects() {
+      projectsWrap.innerHTML = '';
+
+      if (!projects.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = 'No project configured. Click "Add project".';
+        projectsWrap.append(empty);
+      } else {
+        for (let index = 0; index < projects.length; index += 1) {
+          projectsWrap.append(renderProjectCard(projects[index], index));
+        }
+      }
+
+      updatePreview();
+    }
+
+    async function loadSettings() {
+      const candidates = [
+        '/api/projects-settings',
+        '/projects-settings.json',
+        './projects-settings.json',
+      ];
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          const source = Array.isArray(payload) ? payload : (payload?.projects || []);
+          if (!Array.isArray(source)) {
+            continue;
+          }
+
+          projects = source.map(normalizeProject);
+          setStatus(`Loaded ${projects.length} project(s)`);
+          renderProjects();
+          return;
+        } catch {
+        }
+      }
+
+      projects = [];
+      renderProjects();
+      setStatus('Could not load projects-settings.json');
+    }
+
+    async function saveSettings() {
+      const payload = compactPayload();
+      saveBtn.disabled = true;
+      setStatus('Saving projects-settings.json...');
+
+      try {
+        const response = await fetch('/api/projects-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Save failed (${response.status}): ${text}`);
+        }
+
+        const result = await response.json();
+        const savedPath = result?.path ? ` -> ${result.path}` : '';
+        setStatus(`Saved ${payload.length} project(s)${savedPath}`);
+      } catch (error) {
+        setStatus(error?.message || 'Save failed');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    reloadBtn.addEventListener('click', async () => {
+      await loadSettings();
+    });
+
+    addProjectBtn.addEventListener('click', () => {
+      projects.push(createDefaultProject());
+      renderProjects();
+      setStatus(`Project count: ${projects.length}`);
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      await saveSettings();
+    });
+
+    loadSettings();
+  </script>
+</body>
+</html>

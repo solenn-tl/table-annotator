@@ -609,6 +609,14 @@ def normalize_projects_settings(payload: object) -> list[dict[str, object]]:
             if settings_value:
                 entry["settings"] = settings_value
 
+            cover_settings_value = as_non_empty_text(subproject.get("coversettings"))
+            if cover_settings_value is None:
+                cover_settings_value = as_non_empty_text(subproject.get("cover-settings"))
+            if cover_settings_value is None:
+                cover_settings_value = as_non_empty_text(subproject.get("coverSettings"))
+            if cover_settings_value:
+                entry["coversettings"] = cover_settings_value
+
             image_name_path = as_non_empty_text(subproject.get("img-name-path-in-manifest"))
             if image_name_path:
                 entry["img-name-path-in-manifest"] = image_name_path
@@ -654,6 +662,21 @@ def load_projects_settings() -> dict[str, object]:
     return {
         "projects": normalize_projects_settings(payload),
         "path": settings_path.name,
+    }
+
+
+def save_projects_settings(payload: object) -> dict[str, object]:
+    normalized = normalize_projects_settings(payload)
+    target_path = PROJECTS_SETTINGS_PATH
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    target_path.write_text(
+        json.dumps(normalized, ensure_ascii=False, indent=4) + "\n",
+        encoding="utf-8",
+    )
+    return {
+        "ok": True,
+        "projects": len(normalized),
+        "path": str(target_path),
     }
 
 
@@ -733,6 +756,90 @@ def resolve_column_settings_path_for_subproject(scoped_dir: Path) -> Path:
             return candidate
 
     return default_candidates[0]
+
+
+def resolve_cover_settings_path_for_subproject(scoped_dir: Path) -> Path | None:
+    projects_payload = load_projects_settings()
+    projects = projects_payload.get("projects")
+    if not isinstance(projects, list):
+        return None
+
+    scoped_resolved = scoped_dir.resolve()
+    for project in projects:
+        if not isinstance(project, dict):
+            continue
+
+        subprojects = project.get("subprojects")
+        if not isinstance(subprojects, list):
+            continue
+
+        for subproject in subprojects:
+            if not isinstance(subproject, dict):
+                continue
+
+            subproject_path = as_non_empty_text(subproject.get("path"))
+            if not subproject_path:
+                continue
+
+            subproject_dir = resolve_scoped_directory(subproject_path)
+            if subproject_dir is None or subproject_dir.resolve() != scoped_resolved:
+                continue
+
+            settings_value = as_non_empty_text(subproject.get("coversettings"))
+            if not settings_value:
+                return None
+
+            settings_path = Path(settings_value)
+            if settings_path.is_absolute():
+                return settings_path
+
+            if settings_value.startswith("./") or settings_value.startswith("../"):
+                return (ROOT_DIR / settings_path).resolve()
+
+            return (ROOT_DIR / settings_path).resolve()
+
+    return None
+
+
+def load_cover_settings_with_source(scoped_dir: Path) -> dict[str, object]:
+    settings_path = resolve_cover_settings_path_for_subproject(scoped_dir)
+    if settings_path is None:
+        return {
+            "ok": True,
+            "settingsPath": None,
+            "coverSettings": None,
+        }
+
+    workspace_root = ROOT_DIR.parent.resolve()
+    resolved = settings_path.resolve()
+    if workspace_root not in resolved.parents and resolved != workspace_root:
+        return {
+            "ok": False,
+            "settingsPath": str(resolved),
+            "error": "Cover settings path is outside workspace",
+        }
+
+    if not resolved.exists() or not resolved.is_file():
+        return {
+            "ok": False,
+            "settingsPath": str(resolved),
+            "error": "Cover settings file not found",
+        }
+
+    try:
+        payload = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        return {
+            "ok": False,
+            "settingsPath": str(resolved),
+            "error": f"Invalid cover settings JSON: {error}",
+        }
+
+    return {
+        "ok": True,
+        "settingsPath": str(resolved),
+        "coverSettings": payload,
+    }
 
 
 def get_query_first(parsed_query: str, key: str) -> str | None:
@@ -1051,6 +1158,34 @@ class ViewerHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         parsed = urlparse(self.path)
         route = parsed.path
+
+        if route == "/api/projects-settings":
+            try:
+                content_length = int(self.headers.get("Content-Length", "0"))
+            except ValueError:
+                self.send_error(400, "Invalid Content-Length")
+                return
+
+            raw_body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(raw_body.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
+                self.send_error(400, "Invalid JSON payload")
+                return
+
+            if not isinstance(payload, list):
+                self.send_error(400, "Payload must be a JSON array")
+                return
+
+            try:
+                result = save_projects_settings(payload)
+            except OSError:
+                self.send_error(500, "Could not save projects settings")
+                return
+
+            self._send_json(result)
+            return
+
         scoped_dir = resolve_scoped_directory(get_query_first(parsed.query, "dir"))
 
         if scoped_dir is None:
@@ -1215,6 +1350,10 @@ class ViewerHandler(BaseHTTPRequestHandler):
             self._send_file(ROOT_DIR / "iiif-command.html")
             return
 
+        if route in {"/projects-settings", "/projects-settings.html"}:
+            self._send_file(ROOT_DIR / "projects-settings.html")
+            return
+
         if route == "/column-settings.json":
             self._send_json(load_column_settings(scoped_dir))
             return
@@ -1281,6 +1420,11 @@ class ViewerHandler(BaseHTTPRequestHandler):
 
         if route == "/api/autocomplete-fields":
             self._send_json(build_autocomplete_fields(scoped_dir))
+            return
+
+        if route == "/api/cover-settings":
+            payload = load_cover_settings_with_source(scoped_dir)
+            self._send_json(payload, status=200 if payload.get("ok") else 404)
             return
 
         if route == "/api/image-proxy":

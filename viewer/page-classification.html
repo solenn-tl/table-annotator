@@ -97,6 +97,12 @@
       background: color-mix(in oklab, Canvas 98%, black 2%);
     }
 
+    .note {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
     .panel-body {
       overflow: auto;
       min-height: 300px;
@@ -111,6 +117,24 @@
       padding: 8px 10px;
       border-bottom: 1px solid #7774;
       align-items: center;
+    }
+
+    .class-adder {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .class-adder input {
+      min-width: 200px;
+      padding: 4px 6px;
+      font: inherit;
+    }
+
+    .class-adder button {
+      padding: 4px 8px;
+      font: inherit;
     }
 
     .grid {
@@ -200,6 +224,7 @@
       <a class="active" href="./page-classification.html">Page Classification</a>
       <a href="./index.html">Table annotation</a>
       <a href="./cover-annotator.html">Cover annotation</a>
+      <a href="./projects-settings.html">Projects settings</a>
     </nav>
 
     <div class="toolbar">
@@ -214,11 +239,18 @@
       <span id="status">Loading…</span>
     </div>
 
+
     <div class="content">
       <section class="panel">
         <div class="panel-title">Pages classificaton</div>
+        <div class="note">Run the classification algorithm to automatically assign classes to each page (use <i>classif.py</i>).</div>
         <div class="actions">
           <span id="selectionInfo"></span>
+          <div class="class-adder">
+            <label class="subtle" for="newClassInput">Add class</label>
+            <input id="newClassInput" type="text" placeholder="example: ets_tab_p1" />
+            <button id="addClassBtn" type="button">Add</button>
+          </div>
         </div>
         <div id="gridWrap" class="panel-body"></div>
       </section>
@@ -233,6 +265,8 @@
     const status = document.getElementById('status');
     const gridWrap = document.getElementById('gridWrap');
     const selectionInfo = document.getElementById('selectionInfo');
+    const newClassInput = document.getElementById('newClassInput');
+    const addClassBtn = document.getElementById('addClassBtn');
 
     let projectsSettings = [];
     let currentProject = null;
@@ -243,6 +277,7 @@
     let verifyClassByName = new Map();
     let initialVerifyClassByName = new Map();
     let classOptions = [];
+    let proposedClassOptions = new Set();
     let pairsLoadError = '';
 
     function setStatus(message) {
@@ -314,6 +349,54 @@
       return String(value || '').trim();
     }
 
+    function getClassProposalStorageKey() {
+      const subprojectPath = sanitizeClassValue(currentSubproject?.path);
+      const projectName = sanitizeClassValue(currentProject?.name);
+      const subprojectName = sanitizeClassValue(currentSubproject?.name);
+      const scope = [subprojectPath, projectName, subprojectName].find(Boolean) || 'default';
+      return `viewer.page-classification.custom-classes::${scope}`;
+    }
+
+    function loadProposedClassOptions() {
+      try {
+        const raw = window.localStorage.getItem(getClassProposalStorageKey());
+        const payload = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(payload)) {
+          proposedClassOptions = new Set();
+          return;
+        }
+
+        proposedClassOptions = new Set(
+          payload
+            .map((item) => sanitizeClassValue(item))
+            .filter(Boolean),
+        );
+      } catch {
+        proposedClassOptions = new Set();
+      }
+    }
+
+    function saveProposedClassOptions() {
+      try {
+        window.localStorage.setItem(
+          getClassProposalStorageKey(),
+          JSON.stringify([...proposedClassOptions].sort((a, b) => a.localeCompare(b))),
+        );
+      } catch {
+      }
+    }
+
+    function mergeProposedClassOptions() {
+      const values = new Set(classOptions.filter(Boolean));
+      for (const className of proposedClassOptions) {
+        const normalized = sanitizeClassValue(className);
+        if (normalized) {
+          values.add(normalized);
+        }
+      }
+      classOptions = [...values].sort((a, b) => a.localeCompare(b));
+    }
+
     function computeClassOptions() {
       const values = new Set();
       for (const row of classificationRows) {
@@ -337,6 +420,27 @@
       values.add('ets_other');
 
       classOptions = [...values].filter(Boolean).sort((a, b) => a.localeCompare(b));
+    }
+
+    function addClassOptionFromInput() {
+      const nextClass = sanitizeClassValue(newClassInput.value);
+      if (!nextClass) {
+        setStatus('Enter a class name first.');
+        return;
+      }
+
+      const exists = classOptions.includes(nextClass);
+      proposedClassOptions.add(nextClass);
+      saveProposedClassOptions();
+      mergeProposedClassOptions();
+      renderGrid();
+
+      newClassInput.value = '';
+      if (exists) {
+        setStatus(`Class already available: ${nextClass}`);
+      } else {
+        setStatus(`Class added to dropdowns: ${nextClass}`);
+      }
     }
 
     function normalizeProjectsSettingsPayload(payload) {
@@ -462,6 +566,7 @@
     }
 
     async function loadPairs() {
+      loadProposedClassOptions();
       pairs = [];
       classificationRows = [];
       classificationByName = new Map();
@@ -595,6 +700,7 @@
       }
 
       classOptions = [...new Set(classOptions.filter(Boolean))].sort((a, b) => a.localeCompare(b));
+      mergeProposedClassOptions();
     }
 
     function countModified() {
@@ -786,6 +892,19 @@
 
     saveVerifiedBtn.addEventListener('click', async () => {
       await saveVerifiedClasses();
+    });
+
+    addClassBtn.addEventListener('click', () => {
+      addClassOptionFromInput();
+    });
+
+    newClassInput.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') {
+        return;
+      }
+
+      event.preventDefault();
+      addClassOptionFromInput();
     });
 
     async function init() {

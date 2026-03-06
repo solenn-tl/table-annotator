@@ -198,6 +198,7 @@
       <a href="./page-classification.html">Page Classification</a>
       <a href="./index.html">Table annotation</a>
       <a class="active" href="./cover-annotator.html">Cover annotation</a>
+      <a href="./projects-settings.html">Projects settings</a>
     </nav>
 
     <div class="toolbar">
@@ -241,14 +242,7 @@
               <button id="clearActiveBboxBtn" type="button">Clear active field bbox</button>
               <span class="muted">Drag on image to draw bbox for active field.</span>
             </div>
-
-            <div class="form-row"><label for="communeInput">commune</label><input id="communeInput" type="text" /></div>
-            <div class="form-row"><label for="departementInput">departement</label><input id="departementInput" type="text" /></div>
-            <div class="form-row"><label for="arrondissementInput">arrondissement</label><input id="arrondissementInput" type="text" /></div>
-            <div class="form-row"><label for="cantonInput">canton</label><input id="cantonInput" type="text" /></div>
-            <div class="form-row"><label for="sectionLettreInput">sectionLettre</label><input id="sectionLettreInput" type="text" /></div>
-            <div class="form-row"><label for="sectionTitreInput">sectionTitre</label><input id="sectionTitreInput" type="text" /></div>
-            <div class="form-row"><label for="intituleRegistreInput">intituleRegistre</label><input id="intituleRegistreInput" type="text" /></div>
+            <div id="coverFieldsContainer" class="form-grid"></div>
           </div>
         </div>
       </section>
@@ -256,7 +250,7 @@
   </div>
 
   <script>
-    const FIELD_NAMES = [
+    const DEFAULT_FIELD_NAMES = [
       'commune',
       'departement',
       'arrondissement',
@@ -266,15 +260,10 @@
       'intituleRegistre',
     ];
 
-    const FIELD_COLORS = {
-      commune: '#1f77b4',
-      departement: '#ff7f0e',
-      arrondissement: '#2ca02c',
-      canton: '#d62728',
-      sectionLettre: '#9467bd',
-      sectionTitre: '#8c564b',
-      intituleRegistre: '#e377c2',
-    };
+    const FIELD_COLOR_PALETTE = [
+      '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2',
+      '#17becf', '#bcbd22', '#7f7f7f', '#8dd3c7', '#fb8072', '#80b1d3', '#fdb462',
+    ];
 
     const projectSelect = document.getElementById('projectSelect');
     const subprojectSelect = document.getElementById('subprojectSelect');
@@ -287,16 +276,7 @@
     const imageInfo = document.getElementById('imageInfo');
     const activeFieldSelect = document.getElementById('activeFieldSelect');
     const clearActiveBboxBtn = document.getElementById('clearActiveBboxBtn');
-
-    const fieldInputs = {
-      commune: document.getElementById('communeInput'),
-      departement: document.getElementById('departementInput'),
-      arrondissement: document.getElementById('arrondissementInput'),
-      canton: document.getElementById('cantonInput'),
-      sectionLettre: document.getElementById('sectionLettreInput'),
-      sectionTitre: document.getElementById('sectionTitreInput'),
-      intituleRegistre: document.getElementById('intituleRegistreInput'),
-    };
+    const coverFieldsContainer = document.getElementById('coverFieldsContainer');
 
     let projectsSettings = [];
     let currentProject = null;
@@ -305,7 +285,10 @@
     let coversRows = [];
     let coversByName = new Map();
     let currentPair = null;
-    let activeField = FIELD_NAMES[0];
+    let coverFieldNames = [...DEFAULT_FIELD_NAMES];
+    let fieldColors = {};
+    let fieldInputs = {};
+    let activeField = coverFieldNames[0] || '';
     let currentBboxes = {};
     let drawState = null;
 
@@ -362,6 +345,7 @@
               return {
                 name,
                 path: String(subproject.path || '').trim(),
+                coversettings: String(subproject.coversettings || subproject['cover-settings'] || subproject.coverSettings || '').trim(),
               };
             })
             .filter(Boolean);
@@ -373,6 +357,123 @@
           return { name: projectName, subprojects };
         })
         .filter(Boolean);
+    }
+
+    function normalizeFieldName(value) {
+      return String(value || '').trim();
+    }
+
+    function normalizeCoverSettingsPayload(payload) {
+      const names = [];
+      const pushName = (value) => {
+        const name = normalizeFieldName(value);
+        if (!name || names.includes(name)) {
+          return;
+        }
+        names.push(name);
+      };
+
+      if (Array.isArray(payload)) {
+        for (const item of payload) {
+          if (typeof item === 'string') {
+            pushName(item);
+            continue;
+          }
+          if (item && typeof item === 'object') {
+            pushName(item.name || item.field || item.key || item.id);
+          }
+        }
+      }
+
+      if (payload && typeof payload === 'object') {
+        const fields = Array.isArray(payload.fields) ? payload.fields : [];
+        for (const item of fields) {
+          if (typeof item === 'string') {
+            pushName(item);
+            continue;
+          }
+          if (item && typeof item === 'object') {
+            pushName(item.name || item.field || item.key || item.id);
+          }
+        }
+      }
+
+      return names;
+    }
+
+    function rebuildFieldColors() {
+      const next = {};
+      for (let index = 0; index < coverFieldNames.length; index += 1) {
+        next[coverFieldNames[index]] = FIELD_COLOR_PALETTE[index % FIELD_COLOR_PALETTE.length];
+      }
+      fieldColors = next;
+    }
+
+    function renderCoverFieldInputs() {
+      fieldInputs = {};
+      coverFieldsContainer.innerHTML = '';
+
+      for (const fieldName of coverFieldNames) {
+        const row = document.createElement('div');
+        row.className = 'form-row';
+
+        const label = document.createElement('label');
+        const inputId = `${fieldName}Input`;
+        label.htmlFor = inputId;
+        label.textContent = fieldName;
+
+        const input = document.createElement('input');
+        input.id = inputId;
+        input.type = 'text';
+        input.addEventListener('focus', () => {
+          activeField = fieldName;
+          activeFieldSelect.value = fieldName;
+        });
+
+        fieldInputs[fieldName] = input;
+        row.append(label, input);
+        coverFieldsContainer.append(row);
+      }
+    }
+
+    function refreshActiveFieldSelect() {
+      activeFieldSelect.innerHTML = '';
+      for (const fieldName of coverFieldNames) {
+        const option = document.createElement('option');
+        option.value = fieldName;
+        option.textContent = fieldName;
+        activeFieldSelect.append(option);
+      }
+
+      if (!coverFieldNames.length) {
+        activeField = '';
+        return;
+      }
+
+      if (!coverFieldNames.includes(activeField)) {
+        activeField = coverFieldNames[0];
+      }
+      activeFieldSelect.value = activeField;
+    }
+
+    async function loadCoverFieldsForCurrentSubproject() {
+      coverFieldNames = [...DEFAULT_FIELD_NAMES];
+
+      try {
+        const response = await fetch(withCacheBust(buildScopedApiUrl('/api/cover-settings')), { cache: 'no-store' });
+        if (response.ok) {
+          const payload = await response.json();
+          const names = normalizeCoverSettingsPayload(payload?.coverSettings);
+          if (names.length) {
+            coverFieldNames = names;
+          }
+        }
+      } catch {
+      }
+
+      rebuildFieldColors();
+      renderCoverFieldInputs();
+      refreshActiveFieldSelect();
     }
 
     async function loadProjectsSettings() {
@@ -487,22 +588,39 @@
     }
 
     function getDefaultCoverRow(pair) {
-      return {
+      const row = {
         name: pair.name,
         image: pair.image,
         class: pair.class || 'ets_couv',
-        commune: '',
-        departement: '',
-        arrondissement: '',
-        canton: '',
-        sectionLettre: '',
-        sectionTitre: '',
-        intituleRegistre: '',
         bboxes: {},
       };
+
+      for (const fieldName of coverFieldNames) {
+        row[fieldName] = '';
+      }
+
+      return row;
+    }
+
+    function ensureCoverRowFields(row) {
+      if (!row || typeof row !== 'object') {
+        return;
+      }
+
+      for (const fieldName of coverFieldNames) {
+        if (!(fieldName in row)) {
+          row[fieldName] = '';
+        }
+      }
+
+      if (!row.bboxes || typeof row.bboxes !== 'object') {
+        row.bboxes = {};
+      }
     }
 
     async function loadPairsAndCovers() {
+      await loadCoverFieldsForCurrentSubproject();
+
       pairs = [];
       coversRows = [];
       coversByName = new Map();
@@ -605,6 +723,7 @@
       }
 
       for (const row of coversRows) {
+        ensureCoverRowFields(row);
         const name = String(row.name || '').trim();
         if (name) {
           coversByName.set(name, row);
@@ -664,7 +783,7 @@
         return;
       }
 
-      for (const fieldName of FIELD_NAMES) {
+      for (const fieldName of coverFieldNames) {
         row[fieldName] = String(fieldInputs[fieldName]?.value || '').trim();
       }
       row.bboxes = { ...currentBboxes };
@@ -673,7 +792,7 @@
     function loadFormFromCurrent() {
       const row = getCurrentCoverRow();
       if (!row) {
-        for (const fieldName of FIELD_NAMES) {
+        for (const fieldName of coverFieldNames) {
           fieldInputs[fieldName].value = '';
         }
         currentBboxes = {};
@@ -681,7 +800,7 @@
         return;
       }
 
-      for (const fieldName of FIELD_NAMES) {
+      for (const fieldName of coverFieldNames) {
         fieldInputs[fieldName].value = String(row[fieldName] || '');
       }
 
@@ -754,7 +873,7 @@
       bboxLayer.setAttribute('viewBox', `0 0 ${width} ${height}`);
       bboxLayer.innerHTML = '';
 
-      for (const fieldName of FIELD_NAMES) {
+      for (const fieldName of coverFieldNames) {
         const bbox = currentBboxes[fieldName];
         if (!bbox || typeof bbox !== 'object') {
           continue;
@@ -764,7 +883,7 @@
           continue;
         }
 
-        const color = FIELD_COLORS[fieldName] || '#2b73ff';
+        const color = fieldColors[fieldName] || '#2b73ff';
         const svgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         svgRect.setAttribute('x', String(rect.x));
         svgRect.setAttribute('y', String(rect.y));
@@ -785,7 +904,7 @@
       }
 
       if (drawState?.rect) {
-        const color = FIELD_COLORS[activeField] || '#2b73ff';
+        const color = fieldColors[activeField] || '#2b73ff';
         const r = drawState.rect;
         const preview = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         preview.setAttribute('x', String(r.x));
@@ -884,25 +1003,13 @@
     }
 
     function initFieldControls() {
-      activeFieldSelect.innerHTML = '';
-      for (const fieldName of FIELD_NAMES) {
-        const option = document.createElement('option');
-        option.value = fieldName;
-        option.textContent = fieldName;
-        activeFieldSelect.append(option);
-      }
-      activeFieldSelect.value = activeField;
+      rebuildFieldColors();
+      renderCoverFieldInputs();
+      refreshActiveFieldSelect();
 
       activeFieldSelect.addEventListener('change', () => {
         activeField = activeFieldSelect.value;
       });
-
-      for (const fieldName of FIELD_NAMES) {
-        fieldInputs[fieldName].addEventListener('focus', () => {
-          activeField = fieldName;
-          activeFieldSelect.value = fieldName;
-        });
-      }
 
       clearActiveBboxBtn.addEventListener('click', () => {
         if (!currentPair) {

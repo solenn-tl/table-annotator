@@ -52,8 +52,15 @@
                 "y": 478,
                 "width": 921,
                 "height": 200
+            },
+            "modeleRegistre": {
+                "x": 863,
+                "y": 211,
+                "width": 121,
+                "height": 40
             }
-        }
+        },
+        "modeleRegistre": "N°10, Art 75"
     },
     {
         "name": "FRAD006_03P_0031_00120",
@@ -108,7 +115,14 @@
                 "y": 451,
                 "width": 902,
                 "height": 197
+            },
+            "modeleRegistre": {
+                "x": 861,
+                "y": 187,
+                "width": 116,
+                "height": 40
             }
-        }
+        },
+        "modeleRegistre": "N°10, Art 75"
     }
 ]

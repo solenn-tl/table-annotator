@@ -1,0 +1,12 @@
+{
+    "fields": [
+        "commune",
+        "departement",
+        "arrondissement",
+        "canton",
+        "sectionLettre",
+        "sectionTitre",
+        "intituleRegistre",
+        "modeleRegistre"
+    ]
+}

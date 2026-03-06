@@ -35,6 +35,7 @@ Main routes:
 - `http://127.0.0.1:8000/page-classification.html`
 - `http://127.0.0.1:8000/cover-annotator.html`
 - `http://127.0.0.1:8000/iiif-command.html`
+- `http://127.0.0.1:8000/projects-settings.html`
 
 ## Page-By-Page Guide
 
@@ -97,6 +98,7 @@ What you do:
 
 - choose `Project` and `Subproject`,
 - inspect card thumbnails and predicted class/probability,
+- add new class labels directly from the page (`Add class`) when starting from scratch,
 - set `Verified class` dropdown per card,
 - click `Save verified classes`.
 
@@ -115,6 +117,38 @@ Notes:
 Purpose:
 
 - annotate cover pages (`ets_couv`) into `covers.json`, with per-field text + bbox.
+
+Dynamic form fields:
+
+- each subproject can declare a `coversettings` path in `projects-settings.json`.
+- the page loads this file via `/api/cover-settings` and builds the form dynamically.
+- fallback: if the file is missing/invalid, default cadastre fields are used.
+
+Example subproject setting:
+
+```json
+{
+  "name": "Ouessant",
+  "path": "./../cut_images/finistere/ouessant",
+  "coversettings": "cover-settings/cover-settings-cadastre.json"
+}
+```
+
+Example cover settings file:
+
+```json
+{
+  "fields": [
+    "commune",
+    "departement",
+    "arrondissement",
+    "canton",
+    "sectionLettre",
+    "sectionTitre",
+    "intituleRegistre"
+  ]
+}
+```
 
 How pages are selected:
 
@@ -162,6 +196,20 @@ Actions:
 - `Copy command`: copies CLI command to clipboard.
 
 This page does not run the import itself; it generates the command to execute in terminal.
+
+### 5) Projects Settings Editor (`projects-settings.html`)
+
+Purpose:
+
+- edit `viewer/projects-settings.json` from the browser,
+- add/remove projects,
+- add/remove subprojects inside each project.
+
+Capabilities:
+
+- form fields for `name`, `type`, `documents`, `path`, `settings`, `coversettings`, `manifest`.
+- live JSON preview of the payload to save.
+- `Save projects-settings.json` persists through `POST /api/projects-settings`.
 
 ## Command Line Scripts
 
