@@ -1,0 +1,2072 @@
+{
+    "project": "Cadastre du Finistère",
+    "subproject": "Ouessant",
+    "dir": "./../cut_images/finistere/ouessant",
+    "clustersFile": "ner-clusters--natureparcelle.json",
+    "metric": "normalized_levenshtein",
+    "threshold": 0.67,
+    "clusterMode": "entity",
+    "clusterEntityClass": "natureParcelle.uniqueValue",
+    "helperColumns": [],
+    "nerSettingsFile": "cadastre.json",
+    "nerClasses": [
+        "contribuable.uniqueValue",
+        "contribuable.lastName",
+        "contribuable.firstNames",
+        "contribuable.activity",
+        "contribuable.address",
+        "contribuable.familyStatus",
+        "contribuable.title",
+        "natureParcelle.uniqueValue",
+        "natureParcelle.quantity",
+        "adresseParcelle.uniqueValue",
+        "adresseContribuable.uniqueValue"
+    ],
+    "selectedColumns": [
+        "natureParcelle"
+    ],
+    "distinctValuesCount": 24,
+    "clusterItemsCount": 45,
+    "clusters": [
+        {
+            "id": 1,
+            "name": "Cluster 1",
+            "values": [
+                {
+                    "itemId": "natureParcelle::Lab::entity::natureParcelle.uniqueValue::full-source:0::0",
+                    "sourceItemId": "natureParcelle::Lab",
+                    "mentionId": "full-source:0",
+                    "column": "natureParcelle",
+                    "value": "Lab",
+                    "count": 88,
+                    "rowUuids": [
+                        "b964cbc7-b5d8-415a-94c9-2b48b7aa9a31",
+                        "7f4b8e2e-1b36-402f-86da-77f2ad00ca8b",
+                        "6c455b57-70d3-492c-832a-4044e96145fb",
+                        "1f2a97a7-3e72-4ea4-8380-afb2077e8f2f",
+                        "7d899233-f750-4bdd-aea7-7baff189ba56",
+                        "fdfcdbf2-0e57-4ace-888f-c6516dde2368",
+                        "0b6be933-7205-419c-af4b-72d6ef6fb5df",
+                        "6466f86e-99aa-4317-9377-1c5216fef9c5",
+                        "11a66f81-be89-4a69-9fbb-9a163ab2ae38",
+                        "b146fddb-337d-46ec-9ffe-c7998da20fdd",
+                        "f731a6ea-34c9-43ce-90e1-d37b28209fcf",
+                        "7497b734-5462-4168-a0e5-9e8faed8b83f",
+                        "be303cff-91ad-4e3a-8780-3b3be3896158",
+                        "2bc6dbf1-9333-496b-9f2f-d23ee893f78d",
+                        "4b1c3605-4680-4acf-8ebb-7317aeb3a8af",
+                        "02decf19-bb08-47ee-ab47-1e6e1b55d308",
+                        "f54a012e-9d92-45e6-9d31-f3c87e7ea118",
+                        "aac14ca4-53ec-4010-bdab-bb2afdfa0e4b",
+                        "ffc96a78-2a93-42d5-a636-202f5bffcbec",
+                        "590a4716-2311-48e2-8554-655bb5a26b37",
+                        "e2185620-6e31-4f4f-9fec-668d1051dcc9",
+                        "cd68f934-aa2e-4823-aabf-ba1f15e47870",
+                        "680b6d08-2bdb-457f-a674-d315b8fed9e5",
+                        "50ebc16c-0798-4fd4-948f-90c2d90dac25",
+                        "7f6524e0-7b15-4e81-b00b-a01e2a67ca86",
+                        "593ac43e-dce3-4a26-921e-48a4b713522b",
+                        "123fcb14-653a-4fa2-a3d5-10670b5b5735",
+                        "116fb54b-7a4b-4810-9ecc-612e6f579894",
+                        "55959dec-c8d2-45e8-b76a-d5c59cc1c255",
+                        "3d605ec7-a5cc-448b-90b5-85064caedfc8",
+                        "277b5c05-068f-4c1f-8c46-ce2b7f535f76",
+                        "ca9acc56-ecc1-4f23-865d-dce8dd52651a",
+                        "0c1b4c06-3bd2-472e-aed7-0d0e9f1b2d06",
+                        "4e9a1899-ccdb-43d5-9868-2e57247e320f",
+                        "d7bef9b3-f2d7-42df-8d2f-1e64ae9aeaba",
+                        "ce954664-3f88-4455-917b-8f2622282ce1",
+                        "e7207895-f2a7-4267-ad76-04fa467c9055",
+                        "a169c59e-be99-45b8-85e8-f800ca4370b7",
+                        "9a096383-a9ee-485e-8ba5-d8f1f2d550ec",
+                        "d22317d3-4b7a-4b17-9f07-9c04946f85be",
+                        "c54ea77e-8ee2-425e-8bfa-8644d0a11c59",
+                        "cb9cb86a-37cc-49e8-9a12-0f8aeed74610",
+                        "31425e9e-f0bd-4a61-b3b2-8146d6f3965e",
+                        "6fb29895-b4b0-465d-b211-bac8e5ff3cee",
+                        "a9bc6e9b-eb14-4a1a-8ee8-57582479ff47",
+                        "eafc2d99-69c8-4f1b-a6d3-cc5a0eca9702",
+                        "cdee1366-35d0-45b8-8a38-08720de488a0",
+                        "480ff622-4b56-4f8a-8ae4-66b3bfa92cfa",
+                        "2aaedd23-018a-464c-b3af-c281bf87e832",
+                        "83108630-485a-47ab-9af8-53ac14f7502a",
+                        "92f7fcd5-249e-4a3a-8fae-ce6aa8585560",
+                        "56bd7feb-cabf-40fa-b0bc-2b67820d8db9",
+                        "c465ac29-c994-4d56-8ff7-39f5dd6b645e",
+                        "bf36ba6a-eba9-456d-80e6-44b1cd169671",
+                        "0ee01869-66e4-4d8e-8290-5196fb5c366f",
+                        "104e0924-bc3c-4ed5-a4c8-0333277ee92f",
+                        "73e09c84-36fb-44ee-a6aa-199d563af46a",
+                        "716d67de-5c8f-416e-b1f2-74f8e6c0a57a",
+                        "dc943dba-5fcb-423e-b9d7-6a8ef103ee24",
+                        "5df5b0ee-2c84-4b95-abfa-b4a19024a2f0",
+                        "54d0c787-26e4-4393-bf6c-09c56c49cf33",
+                        "9a830cd0-4851-42b8-9b98-db7d1acaba12",
+                        "d357dc05-ad89-4a0f-93e1-3859942da423",
+                        "d28f4e93-1b5d-4bfd-92ab-37dc5dfba979",
+                        "5f355649-2462-4952-8c09-5a4e538b9d70",
+                        "66a7e634-54e6-4e01-8c92-1d97dc522b48",
+                        "d88317d3-6398-4a08-9ec6-75e2aaaceaf4",
+                        "5f82b614-582d-4fb1-aafe-47d98eda8830",
+                        "bbf6e68e-e764-4695-9aac-aeebda00b10a",
+                        "02dc2f5e-9d69-4a58-a04f-92f6dea7f953",
+                        "0174d6eb-d6bf-4366-906e-8624977f70e2",
+                        "2a20e204-74f1-427c-aa22-951a4e9f2cd6",
+                        "8e3bfb4f-894b-45e7-a4cf-d1ee7b7d8af9",
+                        "1c255709-c67a-440a-a388-7d9c4d87f161",
+                        "1cb3a9c0-fab7-4db6-8b47-362803aa09c8",
+                        "905cd539-1693-4442-a8a7-2ba81c2e438b",
+                        "be91c563-60a3-4bfc-b5f8-b8f2f11c387a",
+                        "db8b0a70-b6d3-421c-a6fc-86cd79f6febc",
+                        "f2796b68-80ee-4632-a4f0-6a5ab48d0f45",
+                        "39ba7eaf-2e7f-4f8b-a666-ec9dd9fd78e0",
+                        "6ffea062-19d9-46e5-8ef2-8d99ac8bf248",
+                        "0aefc77c-2397-46f1-86f9-0de6bf344d02",
+                        "789d79b2-1535-477b-9a30-b0e6d4cba4a2",
+                        "99d68ec8-08df-49a5-b207-02142f2d9012",
+                        "35c3f73c-0e23-4c34-ba69-53588d97c601",
+                        "dde861f1-6dba-4863-ac83-d4b985fa8f09",
+                        "b2753871-ac1e-4efd-958a-7bb436569dfa",
+                        "b3a550de-2872-4bfa-808b-93e80bed1a56"
+                    ],
+                    "sourceRowUuids": [
+                        "b964cbc7-b5d8-415a-94c9-2b48b7aa9a31",
+                        "7f4b8e2e-1b36-402f-86da-77f2ad00ca8b",
+                        "6c455b57-70d3-492c-832a-4044e96145fb",
+                        "1f2a97a7-3e72-4ea4-8380-afb2077e8f2f",
+                        "7d899233-f750-4bdd-aea7-7baff189ba56",
+                        "fdfcdbf2-0e57-4ace-888f-c6516dde2368",
+                        "0b6be933-7205-419c-af4b-72d6ef6fb5df",
+                        "6466f86e-99aa-4317-9377-1c5216fef9c5",
+                        "11a66f81-be89-4a69-9fbb-9a163ab2ae38",
+                        "b146fddb-337d-46ec-9ffe-c7998da20fdd",
+                        "f731a6ea-34c9-43ce-90e1-d37b28209fcf",
+                        "7497b734-5462-4168-a0e5-9e8faed8b83f",
+                        "be303cff-91ad-4e3a-8780-3b3be3896158",
+                        "2bc6dbf1-9333-496b-9f2f-d23ee893f78d",
+                        "4b1c3605-4680-4acf-8ebb-7317aeb3a8af",
+                        "02decf19-bb08-47ee-ab47-1e6e1b55d308",
+                        "f54a012e-9d92-45e6-9d31-f3c87e7ea118",
+                        "aac14ca4-53ec-4010-bdab-bb2afdfa0e4b",
+                        "ffc96a78-2a93-42d5-a636-202f5bffcbec",
+                        "590a4716-2311-48e2-8554-655bb5a26b37",
+                        "e2185620-6e31-4f4f-9fec-668d1051dcc9",
+                        "cd68f934-aa2e-4823-aabf-ba1f15e47870",
+                        "680b6d08-2bdb-457f-a674-d315b8fed9e5",
+                        "50ebc16c-0798-4fd4-948f-90c2d90dac25",
+                        "7f6524e0-7b15-4e81-b00b-a01e2a67ca86",
+                        "593ac43e-dce3-4a26-921e-48a4b713522b",
+                        "123fcb14-653a-4fa2-a3d5-10670b5b5735",
+                        "116fb54b-7a4b-4810-9ecc-612e6f579894",
+                        "55959dec-c8d2-45e8-b76a-d5c59cc1c255",
+                        "3d605ec7-a5cc-448b-90b5-85064caedfc8",
+                        "277b5c05-068f-4c1f-8c46-ce2b7f535f76",
+                        "ca9acc56-ecc1-4f23-865d-dce8dd52651a",
+                        "0c1b4c06-3bd2-472e-aed7-0d0e9f1b2d06",
+                        "4e9a1899-ccdb-43d5-9868-2e57247e320f",
+                        "d7bef9b3-f2d7-42df-8d2f-1e64ae9aeaba",
+                        "ce954664-3f88-4455-917b-8f2622282ce1",
+                        "e7207895-f2a7-4267-ad76-04fa467c9055",
+                        "a169c59e-be99-45b8-85e8-f800ca4370b7",
+                        "9a096383-a9ee-485e-8ba5-d8f1f2d550ec",
+                        "d22317d3-4b7a-4b17-9f07-9c04946f85be",
+                        "c54ea77e-8ee2-425e-8bfa-8644d0a11c59",
+                        "cb9cb86a-37cc-49e8-9a12-0f8aeed74610",
+                        "31425e9e-f0bd-4a61-b3b2-8146d6f3965e",
+                        "6fb29895-b4b0-465d-b211-bac8e5ff3cee",
+                        "a9bc6e9b-eb14-4a1a-8ee8-57582479ff47",
+                        "eafc2d99-69c8-4f1b-a6d3-cc5a0eca9702",
+                        "cdee1366-35d0-45b8-8a38-08720de488a0",
+                        "480ff622-4b56-4f8a-8ae4-66b3bfa92cfa",
+                        "2aaedd23-018a-464c-b3af-c281bf87e832",
+                        "83108630-485a-47ab-9af8-53ac14f7502a",
+                        "92f7fcd5-249e-4a3a-8fae-ce6aa8585560",
+                        "56bd7feb-cabf-40fa-b0bc-2b67820d8db9",
+                        "c465ac29-c994-4d56-8ff7-39f5dd6b645e",
+                        "bf36ba6a-eba9-456d-80e6-44b1cd169671",
+                        "0ee01869-66e4-4d8e-8290-5196fb5c366f",
+                        "104e0924-bc3c-4ed5-a4c8-0333277ee92f",
+                        "73e09c84-36fb-44ee-a6aa-199d563af46a",
+                        "716d67de-5c8f-416e-b1f2-74f8e6c0a57a",
+                        "dc943dba-5fcb-423e-b9d7-6a8ef103ee24",
+                        "5df5b0ee-2c84-4b95-abfa-b4a19024a2f0",
+                        "54d0c787-26e4-4393-bf6c-09c56c49cf33",
+                        "9a830cd0-4851-42b8-9b98-db7d1acaba12",
+                        "d357dc05-ad89-4a0f-93e1-3859942da423",
+                        "d28f4e93-1b5d-4bfd-92ab-37dc5dfba979",
+                        "5f355649-2462-4952-8c09-5a4e538b9d70",
+                        "66a7e634-54e6-4e01-8c92-1d97dc522b48",
+                        "d88317d3-6398-4a08-9ec6-75e2aaaceaf4",
+                        "5f82b614-582d-4fb1-aafe-47d98eda8830",
+                        "bbf6e68e-e764-4695-9aac-aeebda00b10a",
+                        "02dc2f5e-9d69-4a58-a04f-92f6dea7f953",
+                        "0174d6eb-d6bf-4366-906e-8624977f70e2",
+                        "2a20e204-74f1-427c-aa22-951a4e9f2cd6",
+                        "8e3bfb4f-894b-45e7-a4cf-d1ee7b7d8af9",
+                        "1c255709-c67a-440a-a388-7d9c4d87f161",
+                        "1cb3a9c0-fab7-4db6-8b47-362803aa09c8",
+                        "905cd539-1693-4442-a8a7-2ba81c2e438b",
+                        "be91c563-60a3-4bfc-b5f8-b8f2f11c387a",
+                        "db8b0a70-b6d3-421c-a6fc-86cd79f6febc",
+                        "f2796b68-80ee-4632-a4f0-6a5ab48d0f45",
+                        "39ba7eaf-2e7f-4f8b-a666-ec9dd9fd78e0",
+                        "6ffea062-19d9-46e5-8ef2-8d99ac8bf248",
+                        "0aefc77c-2397-46f1-86f9-0de6bf344d02",
+                        "789d79b2-1535-477b-9a30-b0e6d4cba4a2",
+                        "99d68ec8-08df-49a5-b207-02142f2d9012",
+                        "35c3f73c-0e23-4c34-ba69-53588d97c601",
+                        "dde861f1-6dba-4863-ac83-d4b985fa8f09",
+                        "b2753871-ac1e-4efd-958a-7bb436569dfa",
+                        "b3a550de-2872-4bfa-808b-93e80bed1a56"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                },
+                {
+                    "itemId": "natureParcelle::Lab et Pat::entity::natureParcelle.uniqueValue::0:0:1:0::1",
+                    "sourceItemId": "natureParcelle::Lab et Pat",
+                    "mentionId": "0:0:1:0",
+                    "column": "natureParcelle",
+                    "value": "Lab",
+                    "count": 3,
+                    "rowUuids": [
+                        "2da9a1a5-6bdb-45e8-9516-7bc31b693f2d",
+                        "12d28241-c5db-4481-96ea-3f831ae8bc26",
+                        "20c164a6-a58b-4ab9-82b3-ad12e5c55bed"
+                    ],
+                    "sourceRowUuids": [
+                        "2da9a1a5-6bdb-45e8-9516-7bc31b693f2d",
+                        "12d28241-c5db-4481-96ea-3f831ae8bc26",
+                        "20c164a6-a58b-4ab9-82b3-ad12e5c55bed"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Pat | Lab"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881386439",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881387117",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~Lab~~ pât::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::~~Lab~~ pât",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Lab",
+                    "count": 1,
+                    "rowUuids": [
+                        "2cbdbf98-fbdc-4f40-8ebe-e84232c73a72"
+                    ],
+                    "sourceRowUuids": [
+                        "2cbdbf98-fbdc-4f40-8ebe-e84232c73a72"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Lab | pât"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881462636",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881463498",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~Lab~~ Pât::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::~~Lab~~ Pât",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Lab",
+                    "count": 1,
+                    "rowUuids": [
+                        "30be05f2-0e15-4d67-bb16-b843de16b185"
+                    ],
+                    "sourceRowUuids": [
+                        "30be05f2-0e15-4d67-bb16-b843de16b185"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Lab | Pât"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881454884",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881455488",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Lab et pat::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::Lab et pat",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Lab",
+                    "count": 1,
+                    "rowUuids": [
+                        "1939051d-fefd-45f5-91f2-5b8fd20b71f9"
+                    ],
+                    "sourceRowUuids": [
+                        "1939051d-fefd-45f5-91f2-5b8fd20b71f9"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Lab | pat"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881431246",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881432019",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Labour::entity::natureParcelle.uniqueValue::full-source:0::0",
+                    "sourceItemId": "natureParcelle::Labour",
+                    "mentionId": "full-source:0",
+                    "column": "natureParcelle",
+                    "value": "Labour",
+                    "count": 1,
+                    "rowUuids": [
+                        "bc882c48-ae2f-49e1-bee1-461c3948fbac"
+                    ],
+                    "sourceRowUuids": [
+                        "bc882c48-ae2f-49e1-bee1-461c3948fbac"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                },
+                {
+                    "itemId": "natureParcelle::Labour courtil et 2 bts rx::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::Labour courtil et 2 bts rx",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Labour",
+                    "count": 1,
+                    "rowUuids": [
+                        "e512eb53-258d-4d96-8d83-c5237fe90942"
+                    ],
+                    "sourceRowUuids": [
+                        "e512eb53-258d-4d96-8d83-c5237fe90942"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Labour | courtil | bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881424575",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881425092",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:4:5:1772881426005",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 4,
+                            "end": 5
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue",
+                        "5": "natureParcelle.uniqueValue"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 2,
+            "name": "Cluster 2",
+            "values": [
+                {
+                    "itemId": "natureParcelle::Pat::entity::natureParcelle.uniqueValue::full-source:0::0",
+                    "sourceItemId": "natureParcelle::Pat",
+                    "mentionId": "full-source:0",
+                    "column": "natureParcelle",
+                    "value": "Pat",
+                    "count": 24,
+                    "rowUuids": [
+                        "c5bd7d3f-8be7-4a0f-afb5-51f14b3132d6",
+                        "fd0852ca-dcd8-4ed0-a81c-ecdc80a15313",
+                        "16f19338-c8af-4782-aef4-ace6cd7444eb",
+                        "80069308-b8a1-4157-a110-066dc684314d",
+                        "588b4f11-b386-406b-ac6a-58d17e9f5e4c",
+                        "ab668b79-1ec8-4fb1-b88c-9e682505f1c5",
+                        "52b6b175-4d51-424e-a30d-f79bb459c151",
+                        "d6d9a14f-a5f6-42c1-aa5a-7de83642e779",
+                        "70358d82-c33a-4a63-8da8-3fa93b6a9f5f",
+                        "b1db2208-241d-4a4f-8df6-0a962a0f008b",
+                        "357497bd-a2b1-4fac-89bb-7b6eaafef8b3",
+                        "4c480130-78c4-4a21-8beb-0e9018299246",
+                        "9d853887-5b70-4f8d-8445-9dd3384a520e",
+                        "e5b4bb45-f2cf-42a3-a0ed-89ea7627cc99",
+                        "3697587d-159b-491c-9136-5ddd00428567",
+                        "e1d35e66-84bd-4445-b48d-566289552019",
+                        "15cb05b0-cd8d-4a16-a879-95b5f60620cf",
+                        "41cd7d68-ff64-4ee6-9db1-436d68e291bb",
+                        "b52873ce-0c5d-4352-84a1-405368717743",
+                        "688380db-cf99-4b7b-b90e-c6efa6986d04",
+                        "b0ab9592-bae5-452a-99f5-217452410e2d",
+                        "d0b9a9ca-a310-4aa5-a4b5-52da08de1aca",
+                        "28977b2f-c769-485d-8a67-ce6e2eadaf03",
+                        "a82e5487-0355-4541-b86c-79532aa14dca"
+                    ],
+                    "sourceRowUuids": [
+                        "c5bd7d3f-8be7-4a0f-afb5-51f14b3132d6",
+                        "fd0852ca-dcd8-4ed0-a81c-ecdc80a15313",
+                        "16f19338-c8af-4782-aef4-ace6cd7444eb",
+                        "80069308-b8a1-4157-a110-066dc684314d",
+                        "588b4f11-b386-406b-ac6a-58d17e9f5e4c",
+                        "ab668b79-1ec8-4fb1-b88c-9e682505f1c5",
+                        "52b6b175-4d51-424e-a30d-f79bb459c151",
+                        "d6d9a14f-a5f6-42c1-aa5a-7de83642e779",
+                        "70358d82-c33a-4a63-8da8-3fa93b6a9f5f",
+                        "b1db2208-241d-4a4f-8df6-0a962a0f008b",
+                        "357497bd-a2b1-4fac-89bb-7b6eaafef8b3",
+                        "4c480130-78c4-4a21-8beb-0e9018299246",
+                        "9d853887-5b70-4f8d-8445-9dd3384a520e",
+                        "e5b4bb45-f2cf-42a3-a0ed-89ea7627cc99",
+                        "3697587d-159b-491c-9136-5ddd00428567",
+                        "e1d35e66-84bd-4445-b48d-566289552019",
+                        "15cb05b0-cd8d-4a16-a879-95b5f60620cf",
+                        "41cd7d68-ff64-4ee6-9db1-436d68e291bb",
+                        "b52873ce-0c5d-4352-84a1-405368717743",
+                        "688380db-cf99-4b7b-b90e-c6efa6986d04",
+                        "b0ab9592-bae5-452a-99f5-217452410e2d",
+                        "d0b9a9ca-a310-4aa5-a4b5-52da08de1aca",
+                        "28977b2f-c769-485d-8a67-ce6e2eadaf03",
+                        "a82e5487-0355-4541-b86c-79532aa14dca"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                },
+                {
+                    "itemId": "natureParcelle::~~Pat~~ T Lab::entity::natureParcelle.uniqueValue::0:0:1:0::1",
+                    "sourceItemId": "natureParcelle::~~Pat~~ T Lab",
+                    "mentionId": "0:0:1:0",
+                    "column": "natureParcelle",
+                    "value": "Pat",
+                    "count": 3,
+                    "rowUuids": [
+                        "a5a44641-abe8-47d0-98d5-647b91ee5ff6",
+                        "a35b14ac-2831-4eec-a1d3-601a5a6721c0",
+                        "3705f0b4-1145-45f3-8b30-33cacf811363"
+                    ],
+                    "sourceRowUuids": [
+                        "a5a44641-abe8-47d0-98d5-647b91ee5ff6",
+                        "a35b14ac-2831-4eec-a1d3-601a5a6721c0",
+                        "3705f0b4-1145-45f3-8b30-33cacf811363"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "T Lab | Pat"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:1:2:1772881382654",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 2
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881383446",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Lab et Pat::entity::natureParcelle.uniqueValue::2:2:0:0::0",
+                    "sourceItemId": "natureParcelle::Lab et Pat",
+                    "mentionId": "2:2:0:0",
+                    "column": "natureParcelle",
+                    "value": "Pat",
+                    "count": 3,
+                    "rowUuids": [
+                        "2da9a1a5-6bdb-45e8-9516-7bc31b693f2d",
+                        "12d28241-c5db-4481-96ea-3f831ae8bc26",
+                        "20c164a6-a58b-4ab9-82b3-ad12e5c55bed"
+                    ],
+                    "sourceRowUuids": [
+                        "2da9a1a5-6bdb-45e8-9516-7bc31b693f2d",
+                        "12d28241-c5db-4481-96ea-3f831ae8bc26",
+                        "20c164a6-a58b-4ab9-82b3-ad12e5c55bed"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Pat | Lab"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881386439",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881387117",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Lab et pat::entity::natureParcelle.uniqueValue::2:2:1:0::1",
+                    "sourceItemId": "natureParcelle::Lab et pat",
+                    "mentionId": "2:2:1:0",
+                    "column": "natureParcelle",
+                    "value": "pat",
+                    "count": 1,
+                    "rowUuids": [
+                        "1939051d-fefd-45f5-91f2-5b8fd20b71f9"
+                    ],
+                    "sourceRowUuids": [
+                        "1939051d-fefd-45f5-91f2-5b8fd20b71f9"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Lab | pat"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881431246",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881432019",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~Pat~~ Lande::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::~~Pat~~ Lande",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Pat",
+                    "count": 1,
+                    "rowUuids": [
+                        "df5045f9-af6c-4bc7-8f8f-a1e34d3fb56a"
+                    ],
+                    "sourceRowUuids": [
+                        "df5045f9-af6c-4bc7-8f8f-a1e34d3fb56a"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Pat | Lande"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881451383",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881452671",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~Pat~~ T. Lab::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::~~Pat~~ T. Lab",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Pat",
+                    "count": 1,
+                    "rowUuids": [
+                        "021bdfdc-eef5-4f63-ba2c-2ae3ca176570"
+                    ],
+                    "sourceRowUuids": [
+                        "021bdfdc-eef5-4f63-ba2c-2ae3ca176570"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Pat | T Lab"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881460065",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:2:1772881461042",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Pat et 2 Bts rx::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::Pat et 2 Bts rx",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Pat",
+                    "count": 1,
+                    "rowUuids": [
+                        "fea7eac0-f50d-4262-a405-39784618e6a8"
+                    ],
+                    "sourceRowUuids": [
+                        "fea7eac0-f50d-4262-a405-39784618e6a8"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Pat | Bts rx",
+                        "natureParcelle.quantity": "2"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881441603",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881442732",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        },
+                        {
+                            "id": "natureParcelle.quantity:2:2:1772881443981",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 2,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.quantity",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~Lab~~ pât::entity::natureParcelle.uniqueValue::1:1:1:0::1",
+                    "sourceItemId": "natureParcelle::~~Lab~~ pât",
+                    "mentionId": "1:1:1:0",
+                    "column": "natureParcelle",
+                    "value": "pât",
+                    "count": 1,
+                    "rowUuids": [
+                        "2cbdbf98-fbdc-4f40-8ebe-e84232c73a72"
+                    ],
+                    "sourceRowUuids": [
+                        "2cbdbf98-fbdc-4f40-8ebe-e84232c73a72"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Lab | pât"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881462636",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881463498",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~Lab~~ Pât::entity::natureParcelle.uniqueValue::1:1:1:0::1",
+                    "sourceItemId": "natureParcelle::~~Lab~~ Pât",
+                    "mentionId": "1:1:1:0",
+                    "column": "natureParcelle",
+                    "value": "Pât",
+                    "count": 1,
+                    "rowUuids": [
+                        "30be05f2-0e15-4d67-bb16-b843de16b185"
+                    ],
+                    "sourceRowUuids": [
+                        "30be05f2-0e15-4d67-bb16-b843de16b185"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Lab | Pât"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881454884",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881455488",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~courtil~~ pât::entity::natureParcelle.uniqueValue::1:1:1:0::1",
+                    "sourceItemId": "natureParcelle::~~courtil~~ pât",
+                    "mentionId": "1:1:1:0",
+                    "column": "natureParcelle",
+                    "value": "pât",
+                    "count": 1,
+                    "rowUuids": [
+                        "e79c6b74-1e3b-48ca-9616-5ff52e2b5745"
+                    ],
+                    "sourceRowUuids": [
+                        "e79c6b74-1e3b-48ca-9616-5ff52e2b5745"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "courtil | pât"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881457595",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881458455",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Pât::entity::natureParcelle.uniqueValue::full-source:0::0",
+                    "sourceItemId": "natureParcelle::Pât",
+                    "mentionId": "full-source:0",
+                    "column": "natureParcelle",
+                    "value": "Pât",
+                    "count": 11,
+                    "rowUuids": [
+                        "feadf5d5-364a-42c5-822c-9d3798d7b9c3",
+                        "8af6db9b-eaa5-4a38-9b96-49b55dab57ab",
+                        "f8a826fd-6eaa-420f-9ae8-8855efa3512f",
+                        "6fc33c42-36f1-4c2b-8300-a0c80bcdd995",
+                        "735e1989-b393-4740-b667-8cdc1b1ed987",
+                        "2ccfcaca-50dd-40ec-84eb-39f2070cd377",
+                        "80ade900-973a-4579-ba0a-ce0d0c221e2f",
+                        "f087cd33-4a88-4c60-af3b-3f34bdeb2a18",
+                        "0a232108-5390-4318-bdfd-1884d4922d9d",
+                        "1b72d107-b72d-49cb-93ae-6689b2210a55",
+                        "8ed05a3b-7599-4033-885a-cba52aa9015d"
+                    ],
+                    "sourceRowUuids": [
+                        "feadf5d5-364a-42c5-822c-9d3798d7b9c3",
+                        "8af6db9b-eaa5-4a38-9b96-49b55dab57ab",
+                        "f8a826fd-6eaa-420f-9ae8-8855efa3512f",
+                        "6fc33c42-36f1-4c2b-8300-a0c80bcdd995",
+                        "735e1989-b393-4740-b667-8cdc1b1ed987",
+                        "2ccfcaca-50dd-40ec-84eb-39f2070cd377",
+                        "80ade900-973a-4579-ba0a-ce0d0c221e2f",
+                        "f087cd33-4a88-4c60-af3b-3f34bdeb2a18",
+                        "0a232108-5390-4318-bdfd-1884d4922d9d",
+                        "1b72d107-b72d-49cb-93ae-6689b2210a55",
+                        "8ed05a3b-7599-4033-885a-cba52aa9015d"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                },
+                {
+                    "itemId": "natureParcelle::Pâture::entity::natureParcelle.uniqueValue::full-source:0::0",
+                    "sourceItemId": "natureParcelle::Pâture",
+                    "mentionId": "full-source:0",
+                    "column": "natureParcelle",
+                    "value": "Pâture",
+                    "count": 1,
+                    "rowUuids": [
+                        "087b3c2e-04ff-491c-a088-4d46dff23b3f"
+                    ],
+                    "sourceRowUuids": [
+                        "087b3c2e-04ff-491c-a088-4d46dff23b3f"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                }
+            ]
+        },
+        {
+            "id": 4,
+            "name": "Cluster 4",
+            "values": [
+                {
+                    "itemId": "natureParcelle::courtil::entity::natureParcelle.uniqueValue::full-source:0::0",
+                    "sourceItemId": "natureParcelle::courtil",
+                    "mentionId": "full-source:0",
+                    "column": "natureParcelle",
+                    "value": "courtil",
+                    "count": 4,
+                    "rowUuids": [
+                        "ebae38de-b5b9-4962-89dd-f43f3ecd6d0b",
+                        "5f6117e4-eb8c-437c-bead-57580da83782",
+                        "b87d30ae-43a7-4be9-b0a5-da20369ec72d",
+                        "f7120663-4c31-4eed-922c-c28bc2f40e72"
+                    ],
+                    "sourceRowUuids": [
+                        "ebae38de-b5b9-4962-89dd-f43f3ecd6d0b",
+                        "5f6117e4-eb8c-437c-bead-57580da83782",
+                        "b87d30ae-43a7-4be9-b0a5-da20369ec72d",
+                        "f7120663-4c31-4eed-922c-c28bc2f40e72"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                },
+                {
+                    "itemId": "natureParcelle::1/2 Maison, cour, Bts rx et un courtil::entity::natureParcelle.uniqueValue::7:7:3:0::3",
+                    "sourceItemId": "natureParcelle::1/2 Maison, cour, Bts rx et un courtil",
+                    "mentionId": "7:7:3:0",
+                    "column": "natureParcelle",
+                    "value": "courtil",
+                    "count": 2,
+                    "rowUuids": [
+                        "0beda76d-bcc0-42a5-8c29-92fc9ae0a994",
+                        "f620c231-eee9-42c4-9c62-42ca8f731576"
+                    ],
+                    "sourceRowUuids": [
+                        "0beda76d-bcc0-42a5-8c29-92fc9ae0a994",
+                        "f620c231-eee9-42c4-9c62-42ca8f731576"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx | courtil",
+                        "natureParcelle.quantity": "1/2 | un"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881392770",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881393638",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881394970",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:7:7:1772881396025",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 7,
+                            "end": 7
+                        },
+                        {
+                            "id": "natureParcelle.quantity:0:0:1772881397675",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.quantity:6:6:1772881398399",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 6,
+                            "end": 6
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.quantity",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue",
+                        "6": "natureParcelle.quantity",
+                        "7": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~courtil~~ pât::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::~~courtil~~ pât",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "courtil",
+                    "count": 1,
+                    "rowUuids": [
+                        "e79c6b74-1e3b-48ca-9616-5ff52e2b5745"
+                    ],
+                    "sourceRowUuids": [
+                        "e79c6b74-1e3b-48ca-9616-5ff52e2b5745"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "courtil | pât"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881457595",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881458455",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::courtil et 2 bts rx::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::courtil et 2 bts rx",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "courtil",
+                    "count": 1,
+                    "rowUuids": [
+                        "a5458847-227e-40e3-a39e-0a703f0d54ce"
+                    ],
+                    "sourceRowUuids": [
+                        "a5458847-227e-40e3-a39e-0a703f0d54ce"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "courtil | bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881417659",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881419222",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Labour courtil et 2 bts rx::entity::natureParcelle.uniqueValue::1:1:1:0::1",
+                    "sourceItemId": "natureParcelle::Labour courtil et 2 bts rx",
+                    "mentionId": "1:1:1:0",
+                    "column": "natureParcelle",
+                    "value": "courtil",
+                    "count": 1,
+                    "rowUuids": [
+                        "e512eb53-258d-4d96-8d83-c5237fe90942"
+                    ],
+                    "sourceRowUuids": [
+                        "e512eb53-258d-4d96-8d83-c5237fe90942"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Labour | courtil | bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881424575",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881425092",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:4:5:1772881426005",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 4,
+                            "end": 5
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue",
+                        "5": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Courtil::entity::natureParcelle.uniqueValue::full-source:0::0",
+                    "sourceItemId": "natureParcelle::Courtil",
+                    "mentionId": "full-source:0",
+                    "column": "natureParcelle",
+                    "value": "Courtil",
+                    "count": 1,
+                    "rowUuids": [
+                        "0a7c4be5-2048-49fb-9f45-539a009ab30d"
+                    ],
+                    "sourceRowUuids": [
+                        "0a7c4be5-2048-49fb-9f45-539a009ab30d"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                },
+                {
+                    "itemId": "natureParcelle::~~2 courtils~~ T. lab::entity::natureParcelle.uniqueValue::1:1:0:0::0",
+                    "sourceItemId": "natureParcelle::~~2 courtils~~ T. lab",
+                    "mentionId": "1:1:0:0",
+                    "column": "natureParcelle",
+                    "value": "courtils",
+                    "count": 1,
+                    "rowUuids": [
+                        "25d1d609-a801-4417-b504-6cdd65fe3c55"
+                    ],
+                    "sourceRowUuids": [
+                        "25d1d609-a801-4417-b504-6cdd65fe3c55"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "courtils | T lab"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881414183",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:3:1772881415205",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 3
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 5,
+            "name": "Cluster 5",
+            "values": [
+                {
+                    "itemId": "natureParcelle::~~Pat~~ T Lab::entity::natureParcelle.uniqueValue::1:2:0:0::0",
+                    "sourceItemId": "natureParcelle::~~Pat~~ T Lab",
+                    "mentionId": "1:2:0:0",
+                    "column": "natureParcelle",
+                    "value": "T Lab",
+                    "count": 3,
+                    "rowUuids": [
+                        "a5a44641-abe8-47d0-98d5-647b91ee5ff6",
+                        "a35b14ac-2831-4eec-a1d3-601a5a6721c0",
+                        "3705f0b4-1145-45f3-8b30-33cacf811363"
+                    ],
+                    "sourceRowUuids": [
+                        "a5a44641-abe8-47d0-98d5-647b91ee5ff6",
+                        "a35b14ac-2831-4eec-a1d3-601a5a6721c0",
+                        "3705f0b4-1145-45f3-8b30-33cacf811363"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "T Lab | Pat"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:1:2:1772881382654",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 2
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881383446",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~2 courtils~~ T. lab::entity::natureParcelle.uniqueValue::2:3:1:0::1",
+                    "sourceItemId": "natureParcelle::~~2 courtils~~ T. lab",
+                    "mentionId": "2:3:1:0",
+                    "column": "natureParcelle",
+                    "value": "T lab",
+                    "count": 1,
+                    "rowUuids": [
+                        "25d1d609-a801-4417-b504-6cdd65fe3c55"
+                    ],
+                    "sourceRowUuids": [
+                        "25d1d609-a801-4417-b504-6cdd65fe3c55"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "courtils | T lab"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881414183",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:3:1772881415205",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 3
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::~~Pat~~ T. Lab::entity::natureParcelle.uniqueValue::1:2:1:0::1",
+                    "sourceItemId": "natureParcelle::~~Pat~~ T. Lab",
+                    "mentionId": "1:2:1:0",
+                    "column": "natureParcelle",
+                    "value": "T Lab",
+                    "count": 1,
+                    "rowUuids": [
+                        "021bdfdc-eef5-4f63-ba2c-2ae3ca176570"
+                    ],
+                    "sourceRowUuids": [
+                        "021bdfdc-eef5-4f63-ba2c-2ae3ca176570"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Pat | T Lab"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881460065",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:2:1772881461042",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 6,
+            "name": "Cluster 6",
+            "values": [
+                {
+                    "itemId": "natureParcelle::1/2 Maison, cour, Bts rx et un courtil::entity::natureParcelle.uniqueValue::3:4:2:0::2",
+                    "sourceItemId": "natureParcelle::1/2 Maison, cour, Bts rx et un courtil",
+                    "mentionId": "3:4:2:0",
+                    "column": "natureParcelle",
+                    "value": "Bts rx",
+                    "count": 2,
+                    "rowUuids": [
+                        "0beda76d-bcc0-42a5-8c29-92fc9ae0a994",
+                        "f620c231-eee9-42c4-9c62-42ca8f731576"
+                    ],
+                    "sourceRowUuids": [
+                        "0beda76d-bcc0-42a5-8c29-92fc9ae0a994",
+                        "f620c231-eee9-42c4-9c62-42ca8f731576"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx | courtil",
+                        "natureParcelle.quantity": "1/2 | un"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881392770",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881393638",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881394970",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:7:7:1772881396025",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 7,
+                            "end": 7
+                        },
+                        {
+                            "id": "natureParcelle.quantity:0:0:1772881397675",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.quantity:6:6:1772881398399",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 6,
+                            "end": 6
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.quantity",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue",
+                        "6": "natureParcelle.quantity",
+                        "7": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Maison cour et Bts rx::entity::natureParcelle.uniqueValue::3:4:2:0::2",
+                    "sourceItemId": "natureParcelle::Maison cour et Bts rx",
+                    "mentionId": "3:4:2:0",
+                    "column": "natureParcelle",
+                    "value": "Bts rx",
+                    "count": 2,
+                    "rowUuids": [
+                        "a9275c3c-bd2f-4868-873b-67ab9ba592c5",
+                        "de2a584b-026f-4924-8628-24c43972bf32"
+                    ],
+                    "sourceRowUuids": [
+                        "a9275c3c-bd2f-4868-873b-67ab9ba592c5",
+                        "de2a584b-026f-4924-8628-24c43972bf32"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881408488",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881410333",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881411218",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::courtil et 2 bts rx::entity::natureParcelle.uniqueValue::3:4:1:0::1",
+                    "sourceItemId": "natureParcelle::courtil et 2 bts rx",
+                    "mentionId": "3:4:1:0",
+                    "column": "natureParcelle",
+                    "value": "bts rx",
+                    "count": 1,
+                    "rowUuids": [
+                        "a5458847-227e-40e3-a39e-0a703f0d54ce"
+                    ],
+                    "sourceRowUuids": [
+                        "a5458847-227e-40e3-a39e-0a703f0d54ce"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "courtil | bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881417659",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881419222",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Labour courtil et 2 bts rx::entity::natureParcelle.uniqueValue::4:5:2:0::2",
+                    "sourceItemId": "natureParcelle::Labour courtil et 2 bts rx",
+                    "mentionId": "4:5:2:0",
+                    "column": "natureParcelle",
+                    "value": "bts rx",
+                    "count": 1,
+                    "rowUuids": [
+                        "e512eb53-258d-4d96-8d83-c5237fe90942"
+                    ],
+                    "sourceRowUuids": [
+                        "e512eb53-258d-4d96-8d83-c5237fe90942"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Labour | courtil | bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881424575",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881425092",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:4:5:1772881426005",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 4,
+                            "end": 5
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue",
+                        "5": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Maison, cour et Bts rx::entity::natureParcelle.uniqueValue::3:4:2:0::2",
+                    "sourceItemId": "natureParcelle::Maison, cour et Bts rx",
+                    "mentionId": "3:4:2:0",
+                    "column": "natureParcelle",
+                    "value": "Bts rx",
+                    "count": 1,
+                    "rowUuids": [
+                        "8acbd436-e594-4330-b67c-5a4353930bc8"
+                    ],
+                    "sourceRowUuids": [
+                        "8acbd436-e594-4330-b67c-5a4353930bc8"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881436040",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881436633",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881437603",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Pat et 2 Bts rx::entity::natureParcelle.uniqueValue::3:4:1:0::1",
+                    "sourceItemId": "natureParcelle::Pat et 2 Bts rx",
+                    "mentionId": "3:4:1:0",
+                    "column": "natureParcelle",
+                    "value": "Bts rx",
+                    "count": 1,
+                    "rowUuids": [
+                        "fea7eac0-f50d-4262-a405-39784618e6a8"
+                    ],
+                    "sourceRowUuids": [
+                        "fea7eac0-f50d-4262-a405-39784618e6a8"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Pat | Bts rx",
+                        "natureParcelle.quantity": "2"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881441603",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881442732",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        },
+                        {
+                            "id": "natureParcelle.quantity:2:2:1772881443981",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 2,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.quantity",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::1 Bt rural::entity::natureParcelle.uniqueValue::1:2:0:0::0",
+                    "sourceItemId": "natureParcelle::1 Bt rural",
+                    "mentionId": "1:2:0:0",
+                    "column": "natureParcelle",
+                    "value": "Bt rural",
+                    "count": 1,
+                    "rowUuids": [
+                        "76b8422c-80c0-4fd4-9066-99eea93db7b8"
+                    ],
+                    "sourceRowUuids": [
+                        "76b8422c-80c0-4fd4-9066-99eea93db7b8"
+                    ],
+                    "annotations": {
+                        "natureParcelle.quantity": "1",
+                        "natureParcelle.uniqueValue": "Bt rural"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.quantity:0:0:1772881446621",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:2:1772881448844",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.quantity",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 7,
+            "name": "Cluster 7",
+            "values": [
+                {
+                    "itemId": "natureParcelle::1/2 Maison, cour, Bts rx et un courtil::entity::natureParcelle.uniqueValue::2:2:1:0::1",
+                    "sourceItemId": "natureParcelle::1/2 Maison, cour, Bts rx et un courtil",
+                    "mentionId": "2:2:1:0",
+                    "column": "natureParcelle",
+                    "value": "cour",
+                    "count": 2,
+                    "rowUuids": [
+                        "0beda76d-bcc0-42a5-8c29-92fc9ae0a994",
+                        "f620c231-eee9-42c4-9c62-42ca8f731576"
+                    ],
+                    "sourceRowUuids": [
+                        "0beda76d-bcc0-42a5-8c29-92fc9ae0a994",
+                        "f620c231-eee9-42c4-9c62-42ca8f731576"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx | courtil",
+                        "natureParcelle.quantity": "1/2 | un"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881392770",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881393638",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881394970",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:7:7:1772881396025",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 7,
+                            "end": 7
+                        },
+                        {
+                            "id": "natureParcelle.quantity:0:0:1772881397675",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.quantity:6:6:1772881398399",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 6,
+                            "end": 6
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.quantity",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue",
+                        "6": "natureParcelle.quantity",
+                        "7": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Maison cour et Bts rx::entity::natureParcelle.uniqueValue::1:1:1:0::1",
+                    "sourceItemId": "natureParcelle::Maison cour et Bts rx",
+                    "mentionId": "1:1:1:0",
+                    "column": "natureParcelle",
+                    "value": "cour",
+                    "count": 2,
+                    "rowUuids": [
+                        "a9275c3c-bd2f-4868-873b-67ab9ba592c5",
+                        "de2a584b-026f-4924-8628-24c43972bf32"
+                    ],
+                    "sourceRowUuids": [
+                        "a9275c3c-bd2f-4868-873b-67ab9ba592c5",
+                        "de2a584b-026f-4924-8628-24c43972bf32"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881408488",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881410333",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881411218",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Maison et cour::entity::natureParcelle.uniqueValue::2:2:1:0::1",
+                    "sourceItemId": "natureParcelle::Maison et cour",
+                    "mentionId": "2:2:1:0",
+                    "column": "natureParcelle",
+                    "value": "cour",
+                    "count": 1,
+                    "rowUuids": [
+                        "d228ac1c-fd6c-4a22-847c-e0288f5f5116"
+                    ],
+                    "sourceRowUuids": [
+                        "d228ac1c-fd6c-4a22-847c-e0288f5f5116"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881428352",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881428889",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Maison, cour et Bts rx::entity::natureParcelle.uniqueValue::1:1:1:0::1",
+                    "sourceItemId": "natureParcelle::Maison, cour et Bts rx",
+                    "mentionId": "1:1:1:0",
+                    "column": "natureParcelle",
+                    "value": "cour",
+                    "count": 1,
+                    "rowUuids": [
+                        "8acbd436-e594-4330-b67c-5a4353930bc8"
+                    ],
+                    "sourceRowUuids": [
+                        "8acbd436-e594-4330-b67c-5a4353930bc8"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881436040",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881436633",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881437603",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 8,
+            "name": "Cluster 8",
+            "values": [
+                {
+                    "itemId": "natureParcelle::1/2 Maison, cour, Bts rx et un courtil::entity::natureParcelle.uniqueValue::1:1:0:0::0",
+                    "sourceItemId": "natureParcelle::1/2 Maison, cour, Bts rx et un courtil",
+                    "mentionId": "1:1:0:0",
+                    "column": "natureParcelle",
+                    "value": "Maison",
+                    "count": 2,
+                    "rowUuids": [
+                        "0beda76d-bcc0-42a5-8c29-92fc9ae0a994",
+                        "f620c231-eee9-42c4-9c62-42ca8f731576"
+                    ],
+                    "sourceRowUuids": [
+                        "0beda76d-bcc0-42a5-8c29-92fc9ae0a994",
+                        "f620c231-eee9-42c4-9c62-42ca8f731576"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx | courtil",
+                        "natureParcelle.quantity": "1/2 | un"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881392770",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881393638",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881394970",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:7:7:1772881396025",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 7,
+                            "end": 7
+                        },
+                        {
+                            "id": "natureParcelle.quantity:0:0:1772881397675",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.quantity:6:6:1772881398399",
+                            "classKey": "natureParcelle.quantity",
+                            "start": 6,
+                            "end": 6
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.quantity",
+                        "1": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue",
+                        "6": "natureParcelle.quantity",
+                        "7": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Maison cour et Bts rx::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::Maison cour et Bts rx",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Maison",
+                    "count": 2,
+                    "rowUuids": [
+                        "a9275c3c-bd2f-4868-873b-67ab9ba592c5",
+                        "de2a584b-026f-4924-8628-24c43972bf32"
+                    ],
+                    "sourceRowUuids": [
+                        "a9275c3c-bd2f-4868-873b-67ab9ba592c5",
+                        "de2a584b-026f-4924-8628-24c43972bf32"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881408488",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881410333",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881411218",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Maison et cour::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::Maison et cour",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Maison",
+                    "count": 1,
+                    "rowUuids": [
+                        "d228ac1c-fd6c-4a22-847c-e0288f5f5116"
+                    ],
+                    "sourceRowUuids": [
+                        "d228ac1c-fd6c-4a22-847c-e0288f5f5116"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881428352",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:2:2:1772881428889",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 2,
+                            "end": 2
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "2": "natureParcelle.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "natureParcelle::Maison, cour et Bts rx::entity::natureParcelle.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "natureParcelle::Maison, cour et Bts rx",
+                    "mentionId": "0:0:0:0",
+                    "column": "natureParcelle",
+                    "value": "Maison",
+                    "count": 1,
+                    "rowUuids": [
+                        "8acbd436-e594-4330-b67c-5a4353930bc8"
+                    ],
+                    "sourceRowUuids": [
+                        "8acbd436-e594-4330-b67c-5a4353930bc8"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Maison | cour | Bts rx"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881436040",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881436633",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:3:4:1772881437603",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 3,
+                            "end": 4
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue",
+                        "3": "natureParcelle.uniqueValue",
+                        "4": "natureParcelle.uniqueValue"
+                    }
+                }
+            ]
+        },
+        {
+            "id": 11,
+            "name": "Cluster 11",
+            "values": [
+                {
+                    "itemId": "natureParcelle::~~Pat~~ Lande::entity::natureParcelle.uniqueValue::1:1:1:0::1",
+                    "sourceItemId": "natureParcelle::~~Pat~~ Lande",
+                    "mentionId": "1:1:1:0",
+                    "column": "natureParcelle",
+                    "value": "Lande",
+                    "count": 1,
+                    "rowUuids": [
+                        "df5045f9-af6c-4bc7-8f8f-a1e34d3fb56a"
+                    ],
+                    "sourceRowUuids": [
+                        "df5045f9-af6c-4bc7-8f8f-a1e34d3fb56a"
+                    ],
+                    "annotations": {
+                        "natureParcelle.uniqueValue": "Pat | Lande"
+                    },
+                    "spans": [
+                        {
+                            "id": "natureParcelle.uniqueValue:0:0:1772881451383",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 0,
+                            "end": 0
+                        },
+                        {
+                            "id": "natureParcelle.uniqueValue:1:1:1772881452671",
+                            "classKey": "natureParcelle.uniqueValue",
+                            "start": 1,
+                            "end": 1
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "natureParcelle.uniqueValue",
+                        "1": "natureParcelle.uniqueValue"
+                    }
+                }
+            ]
+        }
+    ],
+    "unassigned": [],
+    "generatedAt": "2026-03-07T11:05:54.608Z"
+}

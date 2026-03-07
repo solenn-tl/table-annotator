@@ -607,6 +607,7 @@
       <a href="./page-classification.html">Page Classification</a>
       <a class="active" href="./index.html">Table annotation</a>
       <a href="./cover-annotator.html">Cover annotation</a>
+      <a href="./ner-and-clustering.html">NER and clustering</a>
       <a href="./projects-settings.html">Projects settings</a>
     </nav>
 
@@ -868,6 +869,7 @@
     const PAIR_STATUS_DONE = '✅';
     const PAIR_STATUS_MISSING = '➡️';
     const PAIR_STATUS_TODO = '⚠️';
+    const ROW_UUID_KEY = '__rowUuid';
     const DEFAULT_PROJECT_SETTINGS = [
       {
         name: 'Default project',
@@ -888,6 +890,41 @@
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#39;');
+    }
+
+    function generateRowUuid() {
+      if (window.crypto?.randomUUID) {
+        return window.crypto.randomUUID();
+      }
+
+      // Fallback for environments without crypto.randomUUID.
+      return `row-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+    }
+
+    function ensureRowUuid(row) {
+      if (!row || typeof row !== 'object') {
+        return generateRowUuid();
+      }
+
+      const existing = String(row[ROW_UUID_KEY] ?? '').trim();
+      if (existing) {
+        return existing;
+      }
+
+      const next = generateRowUuid();
+      row[ROW_UUID_KEY] = next;
+      return next;
+    }
+
+    function normalizeLoadedRows(payload) {
+      const rows = Array.isArray(payload) ? payload : [];
+      return rows
+        .filter((row) => row && typeof row === 'object')
+        .map((row) => {
+          const nextRow = { ...row };
+          ensureRowUuid(nextRow);
+          return nextRow;
+        });
     }
 
     function setClusterViewMode(mode) {
@@ -3317,7 +3354,7 @@
 
       for (const row of dataRows) {
         for (const key of Object.keys(row || {})) {
-          if (key === 'rowIndex') {
+          if (key === 'rowIndex' || key === ROW_UUID_KEY) {
             continue;
           }
           if (!seen.has(key)) {
@@ -3357,6 +3394,8 @@
         row.bbox = null;
       }
 
+      row[ROW_UUID_KEY] = generateRowUuid();
+
       return row;
     }
 
@@ -3369,6 +3408,7 @@
         if (!currentData[rowIndex] || typeof currentData[rowIndex] !== 'object') {
           currentData[rowIndex] = {};
         }
+        ensureRowUuid(currentData[rowIndex]);
         currentData[rowIndex].rowIndex = rowIndex + 1;
       }
     }
@@ -4777,7 +4817,7 @@
       }
 
       const payload = await response.json();
-      currentData = Array.isArray(payload) ? payload : [];
+      currentData = normalizeLoadedRows(payload);
       renderTable();
       renderBboxes();
       setUnsaved(false);

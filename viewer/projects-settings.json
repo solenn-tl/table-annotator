@@ -8,7 +8,8 @@
                 "documents": "ETS",
                 "path": "./../cut_images/finistere/ouessant",
                 "settings": "column-settings/column-settings-ouessant.json",
-                "coversettings": "cover-settings/cover-settings-cadastre.json"
+                "coversettings": "cover-settings/cover-settings-cadastre.json",
+                "nersettings": "ner-settings/cadastre.json"
             }
         ]
     },
@@ -22,7 +23,8 @@
                 "path": "./../cut_images/alpes-maritimes/aiglun/3P31",
                 "manifest": "https://archives06.fr/ark:/79346/a586c563adb32013b2b3a8e920240680/manifest.json",
                 "settings": "column-settings/column-settings-alpes.json",
-                "coversettings": "cover-settings/cover-settings-cadastre.json"
+                "coversettings": "cover-settings/cover-settings-cadastre.json",
+                "nersettings": "ner-settings/cadastre.json"
             },
             {
                 "name": "Belvédère - 3P145",
@@ -31,7 +33,8 @@
                 "path": "./../cut_images/alpes-maritimes/belvedere/3P145",
                 "manifest": "https://archives06.fr/ark:/79346/20132cdf472db5ab2a953643ac67f50b/manifest.json",
                 "settings": "column-settings/column-settings-alpes.json",
-                "coversettings": "cover-settings/cover-settings-cadastre.json"
+                "coversettings": "cover-settings/cover-settings-cadastre.json",
+                "nersettings": "ner-settings/cadastre.json"
             }
         ]
     }

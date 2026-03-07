@@ -24,7 +24,8 @@
             "width": 2164,
             "height": 164
         },
-        "rowIndex": 1
+        "rowIndex": 1,
+        "__rowUuid": "fea7eac0-f50d-4262-a405-39784618e6a8"
     },
     {
         "contribuable": "Bon louis",
@@ -51,7 +52,8 @@
             "width": 2155,
             "height": 127
         },
-        "rowIndex": 2
+        "rowIndex": 2,
+        "__rowUuid": "a9275c3c-bd2f-4868-873b-67ab9ba592c5"
     },
     {
         "contribuable": "<IDEM><EMPTY>",
@@ -78,7 +80,8 @@
             "width": 2168,
             "height": 132
         },
-        "rowIndex": 3
+        "rowIndex": 3,
+        "__rowUuid": "7e3abdcb-42af-4998-b1e8-ae0481c67290"
     },
     {
         "contribuable": "Bon Jean Marie",
@@ -105,7 +108,8 @@
             "width": 2177,
             "height": 150
         },
-        "rowIndex": 4
+        "rowIndex": 4,
+        "__rowUuid": "de2a584b-026f-4924-8628-24c43972bf32"
     },
     {
         "contribuable": "<IDEM><EMPTY>",
@@ -132,7 +136,8 @@
             "width": 2177,
             "height": 114
         },
-        "rowIndex": 5
+        "rowIndex": 5,
+        "__rowUuid": "5dec9966-ec3d-4b40-9919-c647c001cd0a"
     },
     {
         "contribuable": "Bon Jean marie",
@@ -159,7 +164,8 @@
             "width": 2173,
             "height": 136
         },
-        "rowIndex": 6
+        "rowIndex": 6,
+        "__rowUuid": "5f6117e4-eb8c-437c-bead-57580da83782"
     },
     {
         "contribuable": "Bon Jean Marie",
@@ -186,7 +192,8 @@
             "width": 2173,
             "height": 109
         },
-        "rowIndex": 7
+        "rowIndex": 7,
+        "__rowUuid": "d0b9a9ca-a310-4aa5-a4b5-52da08de1aca"
     },
     {
         "contribuable": "Bon louis et Consorts",
@@ -213,7 +220,8 @@
             "width": 2173,
             "height": 109
         },
-        "rowIndex": 8
+        "rowIndex": 8,
+        "__rowUuid": "28977b2f-c769-485d-8a67-ce6e2eadaf03"
     },
     {
         "contribuable": "Louet Ve et enf michel",
@@ -240,7 +248,8 @@
             "width": 2173,
             "height": 159
         },
-        "rowIndex": 9
+        "rowIndex": 9,
+        "__rowUuid": "a82e5487-0355-4541-b86c-79532aa14dca"
     },
     {
         "contribuable": "Bon Jn Mie",
@@ -267,7 +276,8 @@
             "width": 2168,
             "height": 141
         },
-        "rowIndex": 10
+        "rowIndex": 10,
+        "__rowUuid": "e79c6b74-1e3b-48ca-9616-5ff52e2b5745"
     },
     {
         "contribuable": "Gall Mie Josèphe",
@@ -294,7 +304,8 @@
             "width": 2177,
             "height": 150
         },
-        "rowIndex": 11
+        "rowIndex": 11,
+        "__rowUuid": "0aefc77c-2397-46f1-86f9-0de6bf344d02"
     },
     {
         "contribuable": "Louet Ve et enf michel",
@@ -321,7 +332,8 @@
             "width": 2173,
             "height": 141
         },
-        "rowIndex": 12
+        "rowIndex": 12,
+        "__rowUuid": "b87d30ae-43a7-4be9-b0a5-da20369ec72d"
     },
     {
         "contribuable": "Vaillant michel",
@@ -348,7 +360,8 @@
             "width": 2182,
             "height": 132
         },
-        "rowIndex": 13
+        "rowIndex": 13,
+        "__rowUuid": "789d79b2-1535-477b-9a30-b0e6d4cba4a2"
     },
     {
         "contribuable": "Pichon françois",
@@ -375,7 +388,8 @@
             "width": 2164,
             "height": 177
         },
-        "rowIndex": 14
+        "rowIndex": 14,
+        "__rowUuid": "99d68ec8-08df-49a5-b207-02142f2d9012"
     },
     {
         "contribuable": "Stéphan Mie Jeanne",
@@ -402,7 +416,8 @@
             "width": 2181,
             "height": 128
         },
-        "rowIndex": 15
+        "rowIndex": 15,
+        "__rowUuid": "35c3f73c-0e23-4c34-ba69-53588d97c601"
     },
     {
         "contribuable": "Bon louis",
@@ -429,7 +444,8 @@
             "width": 2168,
             "height": 141
         },
-        "rowIndex": 16
+        "rowIndex": 16,
+        "__rowUuid": "dde861f1-6dba-4863-ac83-d4b985fa8f09"
     },
     {
         "contribuable": "Vaillant michel",
@@ -456,7 +472,8 @@
             "width": 2177,
             "height": 141
         },
-        "rowIndex": 17
+        "rowIndex": 17,
+        "__rowUuid": "b2753871-ac1e-4efd-958a-7bb436569dfa"
     },
     {
         "contribuable": "Louet Ve et enf michel",
@@ -483,7 +500,8 @@
             "width": 2186,
             "height": 173
         },
-        "rowIndex": 18
+        "rowIndex": 18,
+        "__rowUuid": "b3a550de-2872-4bfa-808b-93e80bed1a56"
     },
     {
         "contribuable": "Louet Ve et enf michel",
@@ -510,7 +528,8 @@
             "width": 2182,
             "height": 150
         },
-        "rowIndex": 19
+        "rowIndex": 19,
+        "__rowUuid": "a5458847-227e-40e3-a39e-0a703f0d54ce"
     },
     {
         "contribuable": "Morvan alain",
@@ -537,6 +556,7 @@
             "width": 2186,
             "height": 127
         },
-        "rowIndex": 20
+        "rowIndex": 20,
+        "__rowUuid": "f7120663-4c31-4eed-922c-c28bc2f40e72"
     }
 ]

@@ -1,0 +1,29 @@
+[
+    {"contribuable":
+        [
+            {"uniqueValue":""},
+            {"lastName":""},
+            {"firstNames":""},
+            {"activity":""},
+            {"address":""},
+            {"familyStatus":""},
+            {"title":""}
+        ]
+    },
+    {"natureParcelle":
+        [
+            {"uniqueValue":""},
+            {"quantity":""}
+        ]
+    },
+    {"adresseParcelle":
+        [
+            {"uniqueValue":""}
+        ]
+    },
+    {"adresseContribuable":
+        [
+            {"uniqueValue":""}
+        ]
+    }
+]

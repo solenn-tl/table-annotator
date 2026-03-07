@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 ROOT_DIR = Path(__file__).resolve().parent
 CUT_IMAGES_DIR = ROOT_DIR.parent / "cut_images"
+NER_SETTINGS_DIR = ROOT_DIR / "ner-settings"
 PROJECTS_SETTINGS_PATH = ROOT_DIR / "projects-settings.json"
 LEGACY_PROJECTS_SETTINGS_PATH = ROOT_DIR / "projects-settings.json"
 COLUMN_SETTINGS_DIR = ROOT_DIR / "column-settings"
@@ -554,6 +555,30 @@ def build_iiif_elements(
         })
 
     return elements
+
+
+def list_ner_settings_files() -> list[str]:
+    if not NER_SETTINGS_DIR.exists() or not NER_SETTINGS_DIR.is_dir():
+        return []
+
+    files: list[str] = []
+    for path in sorted(NER_SETTINGS_DIR.glob("*.json")):
+        if path.is_file():
+            files.append(path.name)
+
+    return files
+
+
+def list_ner_cluster_profile_files(cut_images_dir: Path) -> list[str]:
+    if not cut_images_dir.exists() or not cut_images_dir.is_dir():
+        return []
+
+    files: list[str] = []
+    for path in sorted(cut_images_dir.glob("ner-clusters--*.json")):
+        if path.is_file():
+            files.append(path.name)
+
+    return files
 
 
 def normalize_projects_settings(payload: object) -> list[dict[str, object]]:
@@ -1303,8 +1328,8 @@ class ViewerHandler(BaseHTTPRequestHandler):
             self.send_error(400, "Invalid JSON payload")
             return
 
-        if not isinstance(payload, list):
-            self.send_error(400, "Payload must be a JSON array")
+        if not isinstance(payload, (list, dict)):
+            self.send_error(400, "Payload must be a JSON array or object")
             return
 
         try:
@@ -1352,6 +1377,10 @@ class ViewerHandler(BaseHTTPRequestHandler):
 
         if route in {"/projects-settings", "/projects-settings.html"}:
             self._send_file(ROOT_DIR / "projects-settings.html")
+            return
+
+        if route in {"/ner-and-clustering", "/ner-and-clustering.html"}:
+            self._send_file(ROOT_DIR / "ner-and-clustering.html")
             return
 
         if route == "/column-settings.json":
@@ -1427,6 +1456,14 @@ class ViewerHandler(BaseHTTPRequestHandler):
             self._send_json(payload, status=200 if payload.get("ok") else 404)
             return
 
+        if route == "/api/ner-settings":
+            self._send_json({"files": list_ner_settings_files()})
+            return
+
+        if route == "/api/ner-cluster-files":
+            self._send_json({"files": list_ner_cluster_profile_files(scoped_dir)})
+            return
+
         if route == "/api/image-proxy":
             image_url = as_non_empty_text(get_query_first(parsed.query, "url"))
             if image_url is None:
@@ -1471,6 +1508,17 @@ class ViewerHandler(BaseHTTPRequestHandler):
             file_path = (scoped_dir / relative).resolve()
 
             if file_path.parent != scoped_dir.resolve():
+                self.send_error(403, "Forbidden")
+                return
+
+            self._send_file(file_path)
+            return
+
+        if route.startswith("/ner-settings/"):
+            relative = unquote(route[len("/ner-settings/") :]).lstrip("/")
+            file_path = (NER_SETTINGS_DIR / relative).resolve()
+
+            if file_path.parent != NER_SETTINGS_DIR.resolve():
                 self.send_error(403, "Forbidden")
                 return
 

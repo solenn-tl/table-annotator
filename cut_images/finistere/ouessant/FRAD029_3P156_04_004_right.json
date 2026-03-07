@@ -24,7 +24,8 @@
             "width": 2155,
             "height": 129
         },
-        "rowIndex": 1
+        "rowIndex": 1,
+        "__rowUuid": "d357dc05-ad89-4a0f-93e1-3859942da423"
     },
     {
         "contribuable": "Bernard Mie Jn",
@@ -51,7 +52,8 @@
             "width": 2155,
             "height": 125
         },
-        "rowIndex": 2
+        "rowIndex": 2,
+        "__rowUuid": "d28f4e93-1b5d-4bfd-92ab-37dc5dfba979"
     },
     {
         "contribuable": "Noret françois",
@@ -78,7 +80,8 @@
             "width": 2144,
             "height": 142
         },
-        "rowIndex": 3
+        "rowIndex": 3,
+        "__rowUuid": "5f355649-2462-4952-8c09-5a4e538b9d70"
     },
     {
         "contribuable": "Malgorn Ve et enf Paul",
@@ -105,7 +108,8 @@
             "width": 2148,
             "height": 146
         },
-        "rowIndex": 4
+        "rowIndex": 4,
+        "__rowUuid": "66a7e634-54e6-4e01-8c92-1d97dc522b48"
     },
     {
         "contribuable": "Jaouen Ve et enf Marc",
@@ -132,7 +136,8 @@
             "width": 2152,
             "height": 115
         },
-        "rowIndex": 5
+        "rowIndex": 5,
+        "__rowUuid": "d88317d3-6398-4a08-9ec6-75e2aaaceaf4"
     },
     {
         "contribuable": "Louet Michel",
@@ -159,7 +164,8 @@
             "width": 2152,
             "height": 123
         },
-        "rowIndex": 6
+        "rowIndex": 6,
+        "__rowUuid": "5f82b614-582d-4fb1-aafe-47d98eda8830"
     },
     {
         "contribuable": "Jaouen Jn Mie",
@@ -186,7 +192,8 @@
             "width": 2168,
             "height": 142
         },
-        "rowIndex": 7
+        "rowIndex": 7,
+        "__rowUuid": "bbf6e68e-e764-4695-9aac-aeebda00b10a"
     },
     {
         "contribuable": "Créac'h alexandre",
@@ -213,7 +220,8 @@
             "width": 2156,
             "height": 103
         },
-        "rowIndex": 8
+        "rowIndex": 8,
+        "__rowUuid": "f087cd33-4a88-4c60-af3b-3f34bdeb2a18"
     },
     {
         "contribuable": "Créac'h alexandre",
@@ -240,7 +248,8 @@
             "width": 2188,
             "height": 119
         },
-        "rowIndex": 9
+        "rowIndex": 9,
+        "__rowUuid": "0a232108-5390-4318-bdfd-1884d4922d9d"
     },
     {
         "contribuable": "Créac'h alexandre",
@@ -267,7 +276,8 @@
             "width": 2164,
             "height": 162
         },
-        "rowIndex": 10
+        "rowIndex": 10,
+        "__rowUuid": "0a7c4be5-2048-49fb-9f45-539a009ab30d"
     },
     {
         "contribuable": "Créac'h alexandre",
@@ -294,7 +304,8 @@
             "width": 2176,
             "height": 154
         },
-        "rowIndex": 11
+        "rowIndex": 11,
+        "__rowUuid": "d228ac1c-fd6c-4a22-847c-e0288f5f5116"
     },
     {
         "contribuable": "<IDEM><EMPTY>",
@@ -321,7 +332,8 @@
             "width": 2200,
             "height": 135
         },
-        "rowIndex": 12
+        "rowIndex": 12,
+        "__rowUuid": "2f1c78b7-9d69-478e-a441-335b8bb4c340"
     },
     {
         "contribuable": "Créac'h alexandre",
@@ -348,7 +360,8 @@
             "width": 2176,
             "height": 142
         },
-        "rowIndex": 13
+        "rowIndex": 13,
+        "__rowUuid": "8acbd436-e594-4330-b67c-5a4353930bc8"
     },
     {
         "contribuable": "<IDEM><EMPTY>",
@@ -375,7 +388,8 @@
             "width": 2168,
             "height": 131
         },
-        "rowIndex": 14
+        "rowIndex": 14,
+        "__rowUuid": "f240e8f6-885c-43a1-9028-066bd6899253"
     },
     {
         "contribuable": "Stéphan Joseph",
@@ -402,7 +416,8 @@
             "width": 2180,
             "height": 158
         },
-        "rowIndex": 15
+        "rowIndex": 15,
+        "__rowUuid": "0beda76d-bcc0-42a5-8c29-92fc9ae0a994"
     },
     {
         "contribuable": "<IDEM><EMPTY>",
@@ -429,7 +444,8 @@
             "width": 2176,
             "height": 142
         },
-        "rowIndex": 16
+        "rowIndex": 16,
+        "__rowUuid": "0b560707-180a-4ac8-8e96-90aa65e2d282"
     },
     {
         "contribuable": "Stéphan Yves",
@@ -456,7 +472,8 @@
             "width": 2164,
             "height": 142
         },
-        "rowIndex": 17
+        "rowIndex": 17,
+        "__rowUuid": "f620c231-eee9-42c4-9c62-42ca8f731576"
     },
     {
         "contribuable": "<IDEM><EMPTY>",
@@ -483,7 +500,8 @@
             "width": 2168,
             "height": 115
         },
-        "rowIndex": 18
+        "rowIndex": 18,
+        "__rowUuid": "cfa18a1a-94ec-4cfa-91fa-0b105850959e"
     },
     {
         "contribuable": "Stéphan Jh Cts",
@@ -510,7 +528,8 @@
             "width": 2180,
             "height": 127
         },
-        "rowIndex": 19
+        "rowIndex": 19,
+        "__rowUuid": "02dc2f5e-9d69-4a58-a04f-92f6dea7f953"
     },
     {
         "contribuable": "Malgorn Nicolas",
@@ -537,6 +556,7 @@
             "width": 2176,
             "height": 146
         },
-        "rowIndex": 20
+        "rowIndex": 20,
+        "__rowUuid": "0174d6eb-d6bf-4366-906e-8624977f70e2"
     }
 ]

@@ -1,0 +1,4020 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NER And Clustering</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Segoe UI, system-ui, -apple-system, sans-serif;
+      --work-area-height: 700px;
+    }
+
+    body {
+      margin: 0;
+      background: Canvas;
+      color: CanvasText;
+      overflow-y: auto;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+      min-height: 100dvh;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .top-nav a {
+      padding: 4px 10px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .top-nav a.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-bottom: 1px solid #7774;
+    }
+
+    .toolbar label,
+    .controls label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .toolbar select,
+    .toolbar button,
+    .toolbar input,
+    .controls select,
+    .controls button,
+    .controls input {
+      padding: 5px 8px;
+      font: inherit;
+    }
+
+    .toolbar select,
+    .controls select {
+      min-width: 180px;
+    }
+
+    .status {
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    .clusters-file-label {
+      border: 1px solid #7776;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      color: GrayText;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .header-actions {
+      display: inline-flex;
+      gap: 8px;
+      margin-left: 6px;
+    }
+
+    .profile-picker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 6px;
+    }
+
+    .profile-picker select {
+      min-width: 260px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    #thresholdOutput {
+      min-width: 48px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    .content {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 12px;
+      padding: 12px;
+      min-height: var(--work-area-height);
+      height: auto;
+    }
+
+    .panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 95%, black 2%);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .panel-title {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-weight: 600;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+      font-size: 14px;
+    }
+
+    .panel-body {
+      padding: 10px;
+      overflow: auto;
+      min-height: 220px;
+    }
+
+    .column-actions {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .column-actions button {
+      font: inherit;
+      padding: 4px 8px;
+    }
+
+    .column-list {
+      display: grid;
+      gap: 6px;
+      max-height: calc(var(--work-area-height) * 0.45);
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .column-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border: 1px solid #7774;
+      border-radius: 8px;
+      padding: 6px 8px;
+      background: color-mix(in oklab, Canvas 97%, black 3%);
+      font-size: 13px;
+    }
+
+    .column-item label {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .count-badge {
+      border: 1px solid #7776;
+      border-radius: 999px;
+      font-size: 11px;
+      padding: 1px 6px;
+      color: GrayText;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .zone {
+      border: 1px dashed #7778;
+      border-radius: 8px;
+      padding: 8px;
+      min-height: 100px;
+      background: color-mix(in oklab, Canvas 96%, black 2%);
+    }
+
+    .zone.drag-over {
+      border-color: #2a7fff;
+      background: color-mix(in oklab, #2a7fff22 30%, Canvas 70%);
+    }
+
+    .zone h3 {
+      margin: 0 0 8px 0;
+      font-size: 13px;
+    }
+
+    .chip-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .value-chip {
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid #7778;
+      font-size: 12px;
+      cursor: grab;
+      background: color-mix(in oklab, Canvas 99%, black 1%);
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 100%;
+    }
+
+    .value-chip.active {
+      border-color: #2a7fff;
+      outline: 1px solid #2a7fff;
+      outline-offset: 1px;
+    }
+
+    .value-chip:active {
+      cursor: grabbing;
+    }
+
+    .value-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 190px;
+    }
+
+    .value-meta {
+      color: GrayText;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .clusters-layout {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      gap: 10px;
+    }
+
+    #nerAnnotationSection {
+      max-height: calc(var(--work-area-height) * 0.40);
+      overflow: auto;
+    }
+
+    #dependencySection {
+      max-height: calc(var(--work-area-height) * 0.32);
+      overflow: auto;
+    }
+
+    #resultTableSection {
+      max-height: calc(var(--work-area-height) * 0.44);
+      overflow: auto;
+      min-height: 400px;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    #clusteringAreaSection {
+      max-height: calc(var(--work-area-height) * 0.56);
+      min-height: 260px;
+      overflow: auto;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .cluster-mode-banner {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      padding: 6px 8px;
+      font-size: 12px;
+      color: GrayText;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid #7774;
+      border-radius: 8px;
+      padding: 6px 8px;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .section-toggle-btn {
+      font: inherit;
+      padding: 3px 7px;
+      font-size: 12px;
+    }
+
+    .is-collapsed {
+      display: none !important;
+    }
+
+    .summary {
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    .annotation-panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      padding: 8px;
+      background: color-mix(in oklab, Canvas 97%, black 3%);
+      display: grid;
+      gap: 8px;
+    }
+
+    .annotation-header {
+      font-size: 12px;
+      color: GrayText;
+      word-break: break-word;
+    }
+
+    .class-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .class-pill {
+      border: 1px solid #7778;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      background: color-mix(in oklab, Canvas 99%, black 1%);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .class-pill.active {
+      border-color: #2a7fff;
+      outline: 1px solid #2a7fff;
+      outline-offset: 1px;
+    }
+
+    .token-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .token {
+      position: relative;
+      border: 1px solid #7778;
+      border-radius: 6px;
+      padding: 3px 6px 9px 6px;
+      font-size: 12px;
+      background: color-mix(in oklab, Canvas 99%, black 1%);
+      cursor: pointer;
+    }
+
+    .token.labeled {
+      border-color: #2a7fff;
+    }
+
+    .token.preview {
+      outline: 1px dashed #2a7fff;
+      outline-offset: 1px;
+    }
+
+    .token-bars {
+      position: absolute;
+      left: 4px;
+      right: 4px;
+      bottom: 2px;
+      display: flex;
+      gap: 2px;
+      height: 4px;
+      pointer-events: none;
+    }
+
+    .token-bar {
+      flex: 1;
+      border-radius: 2px;
+      min-width: 6px;
+    }
+
+    .class-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid #0003;
+      flex: 0 0 auto;
+    }
+
+    .draw-hint {
+      font-size: 12px;
+      color: GrayText;
+    }
+
+    .span-list {
+      display: grid;
+      gap: 4px;
+      max-height: 120px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .span-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      padding: 3px 6px;
+      border: 1px solid #7774;
+      border-radius: 6px;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .span-item code {
+      font-size: 11px;
+    }
+
+    .span-item button {
+      font: inherit;
+      padding: 2px 6px;
+    }
+
+    .entity-summary {
+      display: grid;
+      gap: 4px;
+      font-size: 12px;
+      color: GrayText;
+    }
+
+    .entity-summary code {
+      color: CanvasText;
+      font-size: 12px;
+    }
+
+    .dep-panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      padding: 8px;
+      display: grid;
+      gap: 6px;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .dep-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .dep-row select,
+    .dep-row input,
+    .dep-row button {
+      font: inherit;
+      padding: 4px 6px;
+    }
+
+    .dep-list {
+      display: grid;
+      gap: 4px;
+      max-height: 110px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .dep-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      padding: 3px 6px;
+      border: 1px solid #7774;
+      border-radius: 6px;
+      background: color-mix(in oklab, Canvas 99%, black 1%);
+    }
+
+    .dep-item button {
+      font: inherit;
+      padding: 1px 6px;
+    }
+
+    .table-controls {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      padding: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      background: color-mix(in oklab, Canvas 97%, black 3%);
+    }
+
+    .table-controls input,
+    .table-controls select,
+    .table-controls button {
+      font: inherit;
+      padding: 4px 7px;
+    }
+
+    .helper-columns-dropdown {
+      position: relative;
+      min-width: 220px;
+    }
+
+    .helper-columns-toggle {
+      width: 100%;
+      text-align: left;
+    }
+
+    .helper-columns-menu {
+      position: absolute;
+      left: 0;
+      top: calc(100% + 4px);
+      z-index: 5;
+      min-width: 220px;
+      max-height: 220px;
+      overflow: auto;
+      border: 1px solid #7776;
+      border-radius: 8px;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+      box-shadow: 0 6px 16px #0003;
+      padding: 6px;
+      display: none;
+    }
+
+    .helper-columns-menu.open {
+      display: grid;
+      gap: 4px;
+    }
+
+    .helper-columns-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 2px;
+      cursor: pointer;
+    }
+
+    .table-wrap {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: auto;
+      max-height: calc(var(--work-area-height) * 0.42);
+      min-height: 220px;
+      height: auto;
+      background: color-mix(in oklab, Canvas 97%, black 3%);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid #7774;
+      padding: 4px 6px;
+      text-align: left;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+      z-index: 1;
+    }
+
+    td.value-cell {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .table-input {
+      width: 100%;
+      min-width: 120px;
+      box-sizing: border-box;
+      padding: 3px 5px;
+      font: inherit;
+    }
+
+    .clusters-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .clusters-toolbar button {
+      font: inherit;
+      padding: 5px 8px;
+    }
+
+    .clusters-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      align-content: start;
+      overflow: visible;
+      padding-right: 4px;
+      max-height: none;
+      min-height: 0;
+    }
+
+    .cluster-box {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 96%, black 2%);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 150px;
+    }
+
+    .cluster-head {
+      padding: 8px;
+      border-bottom: 1px solid #7774;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      background: color-mix(in oklab, Canvas 99%, black 1%);
+    }
+
+    .cluster-name {
+      font-size: 13px;
+      font-weight: 600;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cluster-count {
+      font-size: 11px;
+      color: GrayText;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .cluster-head-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cluster-delete-btn {
+      font: inherit;
+      font-weight: 700;
+      padding: 0 7px;
+      border: 1px solid #7778;
+      border-radius: 6px;
+      cursor: pointer;
+      background: color-mix(in oklab, Canvas 99%, black 1%);
+      line-height: 1.4;
+    }
+
+    .empty-note {
+      color: GrayText;
+      font-size: 13px;
+      padding: 10px;
+    }
+
+    @media (max-width: 1080px) {
+      .content {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+
+      .column-list {
+        max-height: min(320px, 40dvh);
+      }
+
+      .clusters-grid {
+        max-height: min(360px, 44dvh);
+        overflow: auto;
+      }
+
+      #nerAnnotationSection,
+      #dependencySection,
+      #resultTableSection,
+      #clusteringAreaSection {
+        max-height: none;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .clusters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .table-wrap {
+        max-height: min(260px, 34dvh);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="top-nav" aria-label="Viewer pages">
+      <a href="./iiif-command.html">IIIF Retriever</a>
+      <a href="./page-classification.html">Page Classification</a>
+      <a href="./index.html">Table annotation</a>
+      <a href="./cover-annotator.html">Cover annotation</a>
+      <a class="active" href="./ner-and-clustering.html">NER and clustering</a>
+      <a href="./projects-settings.html">Projects settings</a>
+    </nav>
+
+    <div class="toolbar">
+      <label for="projectSelect">Project</label>
+      <select id="projectSelect"></select>
+
+      <label for="subprojectSelect">Subproject</label>
+      <select id="subprojectSelect"></select>
+
+      <button id="reloadBtn" type="button">Reload data</button>
+      <span class="header-actions">
+        <button id="saveBtn" type="button">Save clusters JSON</button>
+        <button id="exportBtn" type="button">Export clusters JSON</button>
+      </span>
+      <span id="clustersFileLabel" class="clusters-file-label">Target: -</span>
+      <span class="profile-picker">
+        <label for="clustersProfileSelect">Load profile</label>
+        <select id="clustersProfileSelect"></select>
+        <button id="loadProfileBtn" type="button">Load</button>
+      </span>
+      <span id="status" class="status">Loading...</span>
+    </div>
+
+    <div class="controls">
+      <label for="nerSettingsSelect">NER schema</label>
+      <select id="nerSettingsSelect"></select>
+
+      <label for="metricSelect">Similarity metric</label>
+      <select id="metricSelect"></select>
+
+      <label for="clusterModeSelect">Cluster items</label>
+      <select id="clusterModeSelect">
+        <option value="value">Distinct cell values</option>
+        <option value="entity">Entity mentions</option>
+      </select>
+
+      <label for="clusterEntityClassSelect">Entity class</label>
+      <select id="clusterEntityClassSelect"></select>
+
+      <label for="thresholdInput">Threshold</label>
+      <input id="thresholdInput" type="range" min="0" max="1" step="0.01" value="0.82" />
+      <span id="thresholdOutput">0.82</span>
+
+      <button id="initClustersBtn" type="button">Initialize clusters</button>
+      <button id="newClusterBtn" type="button">New empty cluster</button>
+      <button id="resetBtn" type="button">Reset assignments</button>
+    </div>
+
+    <div class="content">
+      <section class="panel">
+        <div class="panel-title">Columns and Distinct Values</div>
+        <div class="panel-body">
+          <div class="column-actions">
+            <button id="selectAllColumnsBtn" type="button">Select all</button>
+            <button id="clearColumnsBtn" type="button">Clear</button>
+          </div>
+
+          <div id="columnList" class="column-list"></div>
+
+          <div style="margin-top: 10px;">
+            <div id="unassignedZone" class="zone" data-zone="unassigned">
+              <h3>Distinct values (drag to clusters)</h3>
+              <div id="unassignedWrap" class="chip-wrap"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Clusters and NER Annotations</div>
+        <div class="panel-body clusters-layout">
+          <div id="clustersSummary" class="summary"></div>
+
+          <div class="section-head">
+            <span>NER annotation</span>
+            <button id="toggleNerAnnotationBtn" class="section-toggle-btn" type="button">Reduce</button>
+          </div>
+          <section id="nerAnnotationSection" class="annotation-panel">
+            <div id="annotationHeader" class="annotation-header">Click a distinct value to annotate named entities.</div>
+            <div id="entityClassPills" class="class-pills"></div>
+            <div id="drawHint" class="draw-hint">Select a class then drag across tokens to draw an entity span. Nested spans are allowed.</div>
+            <div id="tokenAnnotator" class="token-wrap"></div>
+            <div id="spanList" class="span-list"></div>
+            <div id="entitySummary" class="entity-summary"></div>
+          </section>
+
+          <div class="section-head">
+            <span>Dependency parsing annotation</span>
+            <button id="toggleDependencyBtn" class="section-toggle-btn" type="button">Reduce</button>
+          </div>
+          <section id="dependencySection" class="dep-panel">
+            <div class="draw-hint">Dependency parsing</div>
+            <div class="dep-row">
+              <label for="depHeadNodeSelect">Head node</label>
+              <select id="depHeadNodeSelect"></select>
+              <label for="depDepNodeSelect">Dependent node</label>
+              <select id="depDepNodeSelect"></select>
+            </div>
+            <div class="dep-row">
+              <label for="depRelationInput">Relation</label>
+              <input id="depRelationInput" type="text" placeholder="nsubj, obj, amod..." />
+              <button id="addDepBtn" type="button">Add dependency</button>
+            </div>
+            <div id="depList" class="dep-list"></div>
+          </section>
+
+          <div class="section-head">
+            <span>NER / clustering result table</span>
+            <button id="toggleTableBtn" class="section-toggle-btn" type="button">Reduce</button>
+          </div>
+          <div id="resultTableSection">
+            <section class="table-controls">
+              <label for="tableFilterInput">Filter</label>
+              <input id="tableFilterInput" type="text" placeholder="Search value, cluster, or annotation" />
+
+              <label for="helperColumnDropdownBtn">Helper columns</label>
+              <div id="helperColumnDropdown" class="helper-columns-dropdown">
+                <button id="helperColumnDropdownBtn" class="helper-columns-toggle" type="button" aria-haspopup="listbox" aria-expanded="false">None selected</button>
+                <div id="helperColumnMenu" class="helper-columns-menu" role="listbox" aria-multiselectable="true"></div>
+              </div>
+
+              <label for="bulkClassSelect">Bulk class</label>
+              <select id="bulkClassSelect"></select>
+
+              <label for="bulkValueInput">Bulk value</label>
+              <input id="bulkValueInput" type="text" placeholder="Apply to filtered rows" />
+
+              <button id="bulkApplyBtn" type="button">Apply bulk edit</button>
+            </section>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr id="tableHeaderRow"></tr>
+                </thead>
+                <tbody id="annotationsTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="section-head">
+            <span>Clustering area</span>
+            <button id="toggleClusteringBtn" class="section-toggle-btn" type="button">Reduce</button>
+          </div>
+          <div id="clusteringAreaSection">
+            <div id="clusterModeBanner" class="cluster-mode-banner"></div>
+            <div id="clustersGrid" class="clusters-grid"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const projectSelect = document.getElementById('projectSelect');
+    const subprojectSelect = document.getElementById('subprojectSelect');
+    const reloadBtn = document.getElementById('reloadBtn');
+    const status = document.getElementById('status');
+
+    const nerSettingsSelect = document.getElementById('nerSettingsSelect');
+    const metricSelect = document.getElementById('metricSelect');
+    const clusterModeSelect = document.getElementById('clusterModeSelect');
+    const clusterEntityClassSelect = document.getElementById('clusterEntityClassSelect');
+    const thresholdInput = document.getElementById('thresholdInput');
+    const thresholdOutput = document.getElementById('thresholdOutput');
+    const initClustersBtn = document.getElementById('initClustersBtn');
+    const newClusterBtn = document.getElementById('newClusterBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const selectAllColumnsBtn = document.getElementById('selectAllColumnsBtn');
+    const clearColumnsBtn = document.getElementById('clearColumnsBtn');
+    const columnList = document.getElementById('columnList');
+    const unassignedWrap = document.getElementById('unassignedWrap');
+    const unassignedZone = document.getElementById('unassignedZone');
+
+    const clustersSummary = document.getElementById('clustersSummary');
+    const clusterModeBanner = document.getElementById('clusterModeBanner');
+    const clustersGrid = document.getElementById('clustersGrid');
+    const saveBtn = document.getElementById('saveBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    const clustersFileLabel = document.getElementById('clustersFileLabel');
+    const clustersProfileSelect = document.getElementById('clustersProfileSelect');
+    const loadProfileBtn = document.getElementById('loadProfileBtn');
+    const toggleNerAnnotationBtn = document.getElementById('toggleNerAnnotationBtn');
+    const toggleDependencyBtn = document.getElementById('toggleDependencyBtn');
+    const toggleTableBtn = document.getElementById('toggleTableBtn');
+    const toggleClusteringBtn = document.getElementById('toggleClusteringBtn');
+    const nerAnnotationSection = document.getElementById('nerAnnotationSection');
+    const dependencySection = document.getElementById('dependencySection');
+    const resultTableSection = document.getElementById('resultTableSection');
+    const clusteringAreaSection = document.getElementById('clusteringAreaSection');
+
+    const annotationHeader = document.getElementById('annotationHeader');
+    const entityClassPills = document.getElementById('entityClassPills');
+    const drawHint = document.getElementById('drawHint');
+    const tokenAnnotator = document.getElementById('tokenAnnotator');
+    const spanList = document.getElementById('spanList');
+    const entitySummary = document.getElementById('entitySummary');
+    const depHeadNodeSelect = document.getElementById('depHeadNodeSelect');
+    const depDepNodeSelect = document.getElementById('depDepNodeSelect');
+    const depRelationInput = document.getElementById('depRelationInput');
+    const addDepBtn = document.getElementById('addDepBtn');
+    const depList = document.getElementById('depList');
+
+    const tableFilterInput = document.getElementById('tableFilterInput');
+    const helperColumnDropdown = document.getElementById('helperColumnDropdown');
+    const helperColumnDropdownBtn = document.getElementById('helperColumnDropdownBtn');
+    const helperColumnMenu = document.getElementById('helperColumnMenu');
+    const bulkClassSelect = document.getElementById('bulkClassSelect');
+    const bulkValueInput = document.getElementById('bulkValueInput');
+    const bulkApplyBtn = document.getElementById('bulkApplyBtn');
+    const tableHeaderRow = document.getElementById('tableHeaderRow');
+    const annotationsTableBody = document.getElementById('annotationsTableBody');
+
+    let projectsSettings = [];
+    let currentProject = null;
+    let currentSubproject = null;
+    let clusterProfileFiles = [];
+
+    let elements = [];
+    let allRows = [];
+
+    let availableColumns = [];
+    let columnValueCounts = new Map();
+    let selectedColumns = new Set();
+
+    let distinctEntries = [];
+    let distinctById = new Map();
+    let clusterEntries = [];
+    let clusterById = new Map();
+
+    let clusters = [];
+    let unassignedIds = new Set();
+    let nextClusterId = 1;
+
+    let nerSettingsFiles = [];
+    let activeNerSettingsFile = '';
+    let nerClassDefs = [];
+
+    let annotationsByItemId = new Map();
+    let activeItemId = '';
+    let activeEntityClass = '';
+    let clusterMode = 'value';
+    let clusterEntityClass = '';
+    let classColorByKey = new Map();
+    let helperColumns = [];
+    let helperValuesCache = new Map();
+    let dragSpanStartIndex = null;
+    let dragSpanHoverIndex = null;
+    let isPointerDrawing = false;
+
+    const ENTITY_COLORS = [
+      '#d94848', '#2b8a3e', '#1d6fd6', '#b35f00', '#7a3db8', '#0f766e', '#c2255c', '#5c7cfa',
+      '#0b7285', '#9c36b5', '#2f9e44', '#e8590c'
+    ];
+
+    const similarityMetrics = {
+      normalized_levenshtein: {
+        label: 'Normalized Levenshtein',
+        fn: normalizedLevenshteinSimilarity,
+      },
+      token_jaccard: {
+        label: 'Token Jaccard',
+        fn: tokenJaccardSimilarity,
+      },
+    };
+
+    const ROW_UUID_KEY = '__rowUuid';
+
+    function setStatus(message) {
+      status.textContent = message;
+    }
+
+    function withCacheBust(url) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}t=${Date.now()}`;
+    }
+
+    function sanitizeText(value) {
+      return String(value ?? '').trim();
+    }
+
+    function getCurrentScopedDir() {
+      return sanitizeText(currentSubproject?.path);
+    }
+
+    function buildScopedApiUrl(pathname) {
+      const scopedDir = getCurrentScopedDir();
+      if (!scopedDir) {
+        return pathname;
+      }
+      const separator = pathname.includes('?') ? '&' : '?';
+      return `${pathname}${separator}dir=${encodeURIComponent(scopedDir)}`;
+    }
+
+    function encodePathSegments(path) {
+      return sanitizeText(path)
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+    }
+
+    function normalizeProjectsSettingsPayload(payload) {
+      if (!Array.isArray(payload)) {
+        return [];
+      }
+
+      return payload
+        .map((project) => {
+          if (!project || typeof project !== 'object') {
+            return null;
+          }
+
+          const projectName = sanitizeText(project.name);
+          if (!projectName) {
+            return null;
+          }
+
+          const rawSubprojects = Array.isArray(project.subprojects) ? project.subprojects : [];
+          const subprojects = rawSubprojects
+            .map((subproject) => {
+              if (!subproject || typeof subproject !== 'object') {
+                return null;
+              }
+
+              const name = sanitizeText(subproject.name);
+              if (!name) {
+                return null;
+              }
+
+              return {
+                name,
+                path: sanitizeText(subproject.path),
+              };
+            })
+            .filter(Boolean);
+
+          if (!subprojects.length) {
+            return null;
+          }
+
+          return {
+            name: projectName,
+            subprojects,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    async function loadProjectsSettings() {
+      const candidates = [
+        '/api/projects-settings',
+        '/projects-settings.json',
+        './projects-settings.json',
+      ];
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          const source = Array.isArray(payload) ? payload : (payload?.projects || []);
+          const normalized = normalizeProjectsSettingsPayload(source);
+          if (normalized.length) {
+            projectsSettings = normalized;
+            return;
+          }
+        } catch {
+        }
+      }
+
+      projectsSettings = [];
+    }
+
+    function refreshSelectors() {
+      projectSelect.innerHTML = '';
+      subprojectSelect.innerHTML = '';
+
+      for (const project of projectsSettings) {
+        const option = document.createElement('option');
+        option.value = project.name;
+        option.textContent = project.name;
+        projectSelect.append(option);
+      }
+
+      currentProject = projectsSettings[0] || null;
+      projectSelect.value = currentProject?.name || '';
+
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+      for (const subproject of subprojects) {
+        const option = document.createElement('option');
+        option.value = subproject.name;
+        option.textContent = subproject.name;
+        subprojectSelect.append(option);
+      }
+
+      currentSubproject = subprojects[0] || null;
+      subprojectSelect.value = currentSubproject?.name || '';
+    }
+
+    function updateCurrentProjectFromControl() {
+      currentProject = projectsSettings.find((item) => item.name === projectSelect.value) || projectsSettings[0] || null;
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+
+      subprojectSelect.innerHTML = '';
+      for (const subproject of subprojects) {
+        const option = document.createElement('option');
+        option.value = subproject.name;
+        option.textContent = subproject.name;
+        subprojectSelect.append(option);
+      }
+
+      currentSubproject = subprojects[0] || null;
+      subprojectSelect.value = currentSubproject?.name || '';
+    }
+
+    function updateCurrentSubprojectFromControl() {
+      const subprojects = Array.isArray(currentProject?.subprojects) ? currentProject.subprojects : [];
+      currentSubproject = subprojects.find((item) => item.name === subprojectSelect.value) || subprojects[0] || null;
+    }
+
+    function getMetricKey() {
+      const key = sanitizeText(metricSelect.value);
+      if (similarityMetrics[key]) {
+        return key;
+      }
+      return 'normalized_levenshtein';
+    }
+
+    function getThreshold() {
+      const value = Number.parseFloat(thresholdInput.value);
+      if (!Number.isFinite(value)) {
+        return 0.82;
+      }
+      return Math.min(1, Math.max(0, value));
+    }
+
+    function normalizeCellValue(value) {
+      const text = sanitizeText(value);
+      if (!text) {
+        return '';
+      }
+
+      if (text === '<EMPTY>' || text === '<IDEM>') {
+        return '';
+      }
+
+      return text;
+    }
+
+    function getRowUuid(row, fallbackDocumentName = '', fallbackRowIndex = 0) {
+      if (row && typeof row === 'object') {
+        const direct = sanitizeText(row[ROW_UUID_KEY]);
+        if (direct) {
+          return direct;
+        }
+      }
+
+      const docPart = sanitizeText(fallbackDocumentName) || 'doc';
+      const rowIndexValue = Number.parseInt(row?.rowIndex, 10);
+      const normalizedRowIndex = Number.isInteger(rowIndexValue) && rowIndexValue > 0
+        ? rowIndexValue
+        : (fallbackRowIndex + 1);
+      return `legacy:${docPart}:${normalizedRowIndex}`;
+    }
+
+    function getRawRowUuids(rawValue) {
+      if (!rawValue || typeof rawValue !== 'object') {
+        return [];
+      }
+
+      const candidates = [
+        ...(Array.isArray(rawValue.rowUuids) ? rawValue.rowUuids : []),
+        ...(Array.isArray(rawValue.sourceRowUuids) ? rawValue.sourceRowUuids : []),
+      ];
+
+      return [...new Set(candidates.map((value) => sanitizeText(value)).filter(Boolean))];
+    }
+
+    function hasAnyRowUuidOverlap(leftValues, rightValues) {
+      const left = Array.isArray(leftValues) ? leftValues.map((value) => sanitizeText(value)).filter(Boolean) : [];
+      const rightSet = new Set(Array.isArray(rightValues)
+        ? rightValues.map((value) => sanitizeText(value)).filter(Boolean)
+        : []);
+
+      if (!left.length || !rightSet.size) {
+        return false;
+      }
+
+      for (const value of left) {
+        if (rightSet.has(value)) {
+          return true;
+        }
+      }
+
+      return false;
+    }
+
+    function inferColumnsFromRows(rows) {
+      const keys = new Set();
+      const skip = new Set(['bbox', 'rowIndex', '__documentName', ROW_UUID_KEY]);
+
+      for (const row of rows) {
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+
+        for (const [key, value] of Object.entries(row)) {
+          if (skip.has(key)) {
+            continue;
+          }
+          if (value && typeof value === 'object') {
+            continue;
+          }
+          keys.add(key);
+        }
+      }
+
+      return [...keys].sort((a, b) => a.localeCompare(b));
+    }
+
+    function rebuildColumnValueCounts() {
+      columnValueCounts = new Map();
+      for (const column of availableColumns) {
+        columnValueCounts.set(column, new Set());
+      }
+
+      for (const row of allRows) {
+        for (const column of availableColumns) {
+          const value = normalizeCellValue(row[column]);
+          if (!value) {
+            continue;
+          }
+          columnValueCounts.get(column).add(value);
+        }
+      }
+    }
+
+    function tokenizeValue(text) {
+      // Keep slash as part of tokens (e.g. "A/B") so span annotation does not split on '/'.
+      const tokens = sanitizeText(text).match(/[\p{L}\p{N}'\/-]+/gu);
+      return Array.isArray(tokens) ? tokens : [];
+    }
+
+    function makeEmptyAnnotation() {
+      return {
+        entities: {},
+        spans: [],
+        dependencies: [],
+        tokenLabels: {},
+      };
+    }
+
+    function getAnnotation(itemId) {
+      if (!annotationsByItemId.has(itemId)) {
+        annotationsByItemId.set(itemId, makeEmptyAnnotation());
+      }
+      return annotationsByItemId.get(itemId);
+    }
+
+    function normalizeAnnotationPayload(raw) {
+      if (!raw || typeof raw !== 'object') {
+        return makeEmptyAnnotation();
+      }
+
+      const entities = {};
+      const spans = [];
+      const dependencies = [];
+      const tokenLabels = {};
+
+      if (raw.entities && typeof raw.entities === 'object' && !Array.isArray(raw.entities)) {
+        for (const [key, value] of Object.entries(raw.entities)) {
+          const normalizedKey = sanitizeText(key);
+          const normalizedValue = sanitizeText(value);
+          if (normalizedKey && normalizedValue) {
+            entities[normalizedKey] = normalizedValue;
+          }
+        }
+      }
+
+      for (const [key, value] of Object.entries(raw)) {
+        if (key === 'entities' || key === 'tokenLabels' || key === 'spans' || key === 'dependencies') {
+          continue;
+        }
+
+        const normalizedKey = sanitizeText(key);
+        const normalizedValue = sanitizeText(value);
+        if (normalizedKey && normalizedValue) {
+          entities[normalizedKey] = normalizedValue;
+        }
+      }
+
+      if (raw.tokenLabels && typeof raw.tokenLabels === 'object' && !Array.isArray(raw.tokenLabels)) {
+        for (const [indexText, classKey] of Object.entries(raw.tokenLabels)) {
+          const index = Number.parseInt(indexText, 10);
+          const normalizedClass = sanitizeText(classKey);
+          if (Number.isInteger(index) && index >= 0 && normalizedClass) {
+            tokenLabels[index] = normalizedClass;
+          }
+        }
+      }
+
+      if (Array.isArray(raw.spans)) {
+        for (const span of raw.spans) {
+          if (!span || typeof span !== 'object') {
+            continue;
+          }
+
+          const classKey = sanitizeText(span.classKey);
+          const start = Number.parseInt(span.start, 10);
+          const end = Number.parseInt(span.end, 10);
+          if (!classKey || !Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end < 0) {
+            continue;
+          }
+
+          spans.push({
+            id: sanitizeText(span.id) || `${classKey}:${start}:${end}`,
+            classKey,
+            start: Math.min(start, end),
+            end: Math.max(start, end),
+          });
+        }
+      }
+
+      if (Array.isArray(raw.dependencies)) {
+        for (const dep of raw.dependencies) {
+          if (!dep || typeof dep !== 'object') {
+            continue;
+          }
+
+          const relation = sanitizeText(dep.relation);
+          if (!relation) {
+            continue;
+          }
+
+          const headNodeId = sanitizeText(dep.headNodeId);
+          const dependentNodeId = sanitizeText(dep.dependentNodeId);
+          const head = Number.parseInt(dep.head, 10);
+          const dependent = Number.parseInt(dep.dependent, 10);
+
+          const hasTokenIndexes = Number.isInteger(head) && Number.isInteger(dependent) && head >= 0 && dependent >= 0;
+          const hasNodeIds = Boolean(headNodeId && dependentNodeId);
+          if (!hasTokenIndexes && !hasNodeIds) {
+            continue;
+          }
+
+          dependencies.push({
+            id: sanitizeText(dep.id) || `${headNodeId || head}:${dependentNodeId || dependent}:${relation}`,
+            ...(hasTokenIndexes ? { head, dependent } : {}),
+            ...(hasNodeIds ? { headNodeId, dependentNodeId } : {}),
+            headLabel: sanitizeText(dep.headLabel),
+            dependentLabel: sanitizeText(dep.dependentLabel),
+            relation,
+          });
+        }
+      }
+
+      // Backward compatibility with legacy single-label tokens.
+      if (!spans.length) {
+        const labels = Object.entries(tokenLabels)
+          .map(([indexText, classKey]) => ({ index: Number.parseInt(indexText, 10), classKey: sanitizeText(classKey) }))
+          .filter((item) => Number.isInteger(item.index) && item.index >= 0 && item.classKey)
+          .sort((a, b) => a.index - b.index);
+
+        let currentClass = '';
+        let start = -1;
+        let end = -1;
+
+        for (const item of labels) {
+          if (currentClass && item.classKey === currentClass && item.index === end + 1) {
+            end = item.index;
+            continue;
+          }
+
+          if (currentClass) {
+            spans.push({
+              id: `${currentClass}:${start}:${end}`,
+              classKey: currentClass,
+              start,
+              end,
+            });
+          }
+
+          currentClass = item.classKey;
+          start = item.index;
+          end = item.index;
+        }
+
+        if (currentClass) {
+          spans.push({
+            id: `${currentClass}:${start}:${end}`,
+            classKey: currentClass,
+            start,
+            end,
+          });
+        }
+      }
+
+      return {
+        entities,
+        spans,
+        dependencies,
+        tokenLabels,
+      };
+    }
+
+    function assignClassColors() {
+      classColorByKey = new Map();
+      for (let i = 0; i < nerClassDefs.length; i += 1) {
+        const classKey = nerClassDefs[i].key;
+        classColorByKey.set(classKey, ENTITY_COLORS[i % ENTITY_COLORS.length]);
+      }
+    }
+
+    function getClassColor(classKey) {
+      return classColorByKey.get(sanitizeText(classKey)) || '#2a7fff';
+    }
+
+    function getClusterItemById(itemId) {
+      return clusterById.get(itemId) || null;
+    }
+
+    function isUniqueValueClassKey(classKey) {
+      //return sanitizeText(classKey).toLowerCase().endsWith('.uniquevalue');
+      return sanitizeText(classKey).toLowerCase()
+    }
+
+    function splitEntityMentionsForClass(rawText, classKey) {
+      const normalized = sanitizeText(rawText);
+      if (!normalized) {
+        return [];
+      }
+
+      if (!isUniqueValueClassKey(classKey)) {
+        return [normalized];
+      }
+
+      return normalized
+        .split('|')
+        .map((part) => sanitizeText(part))
+        .filter(Boolean);
+    }
+
+    function extractMentionsFromAnnotation(sourceItemId, classKey) {
+      const source = distinctById.get(sourceItemId);
+      if (!source) {
+        return [];
+      }
+
+      const annotation = getAnnotation(sourceItemId);
+      const normalizedClass = sanitizeText(classKey);
+      const mentions = [];
+
+      const tokens = tokenizeValue(source.value);
+      let spanOrder = 0;
+      for (const span of annotation.spans || []) {
+        if (sanitizeText(span.classKey) !== normalizedClass) {
+          continue;
+        }
+        const phrase = sanitizeText(tokens.slice(span.start, span.end + 1).join(' '));
+        const splitMentions = splitEntityMentionsForClass(phrase, normalizedClass);
+        for (let splitIndex = 0; splitIndex < splitMentions.length; splitIndex += 1) {
+          const splitMention = splitMentions[splitIndex];
+          mentions.push({
+            mention: splitMention,
+            mentionId: `${span.start}:${span.end}:${spanOrder}:${splitIndex}`,
+          });
+        }
+        spanOrder += 1;
+      }
+
+      if (!mentions.length) {
+        const fallback = sanitizeText(annotation.entities?.[normalizedClass]);
+        if (fallback) {
+          let fallbackIndex = 0;
+          const splitMentions = splitEntityMentionsForClass(fallback, normalizedClass);
+          for (const phrase of splitMentions) {
+            mentions.push({
+              mention: phrase,
+              mentionId: `legacy:${fallbackIndex}`,
+            });
+            fallbackIndex += 1;
+          }
+        }
+      }
+
+      // For *.uniqueValue classes, keep rows clusterable even when no explicit mention exists.
+      // In that case, the full source cell text becomes a single fallback mention.
+      if (!mentions.length && isUniqueValueClassKey(normalizedClass)) {
+        const fullSourceValue = sanitizeText(source.value);
+        if (fullSourceValue) {
+          mentions.push({
+            mention: fullSourceValue,
+            mentionId: 'full-source:0',
+          });
+        }
+      }
+
+      return mentions;
+    }
+
+    function refreshClusterEntityClassSelect() {
+      const previous = sanitizeText(clusterEntityClassSelect.value) || sanitizeText(clusterEntityClass);
+      clusterEntityClassSelect.innerHTML = '';
+
+      for (const classDef of nerClassDefs) {
+        const option = document.createElement('option');
+        option.value = classDef.key;
+        option.textContent = classDef.label;
+        clusterEntityClassSelect.append(option);
+      }
+
+      if (!nerClassDefs.length) {
+        clusterEntityClass = '';
+        return;
+      }
+
+      const keys = nerClassDefs.map((item) => item.key);
+      clusterEntityClass = keys.includes(previous) ? previous : keys[0];
+      clusterEntityClassSelect.value = clusterEntityClass;
+    }
+
+    function rebuildClusterEntries() {
+      const previousClusterByItem = new Map();
+      for (const cluster of clusters) {
+        for (const itemId of cluster.itemIds) {
+          previousClusterByItem.set(itemId, cluster.id);
+        }
+      }
+
+      const previousUnassigned = new Set(unassignedIds);
+
+      clusterMode = sanitizeText(clusterModeSelect.value) || 'value';
+      clusterEntityClass = sanitizeText(clusterEntityClassSelect.value) || clusterEntityClass;
+
+      const nextEntries = [];
+
+      if (clusterMode === 'entity' && clusterEntityClass) {
+        for (const source of distinctEntries) {
+          const mentions = extractMentionsFromAnnotation(source.id, clusterEntityClass);
+          for (let i = 0; i < mentions.length; i += 1) {
+            const mentionEntry = mentions[i];
+            const mention = mentionEntry.mention;
+            const mentionId = sanitizeText(mentionEntry.mentionId) || `mention:${i}`;
+            nextEntries.push({
+              id: `${source.id}::entity::${clusterEntityClass}::${mentionId}::${i}`,
+              sourceId: source.id,
+              column: source.column,
+              value: mention,
+              mentionId,
+              count: source.count,
+              rowUuids: Array.isArray(source.rowUuids) ? [...source.rowUuids] : [],
+              sourceLabel: source.label,
+              label: mention,
+            });
+          }
+        }
+      } else {
+        for (const source of distinctEntries) {
+          nextEntries.push({
+            id: source.id,
+            sourceId: source.id,
+            column: source.column,
+            value: source.value,
+            mentionId: '',
+            count: source.count,
+            rowUuids: Array.isArray(source.rowUuids) ? [...source.rowUuids] : [],
+            sourceLabel: source.label,
+            label: source.label,
+          });
+        }
+      }
+
+      clusterEntries = nextEntries;
+      clusterById = new Map(clusterEntries.map((item) => [item.id, item]));
+
+      if (!clusters.length) {
+        createCluster('Cluster 1');
+      }
+
+      for (const cluster of clusters) {
+        cluster.itemIds = new Set([...cluster.itemIds].filter((itemId) => clusterById.has(itemId)));
+      }
+
+      unassignedIds = new Set();
+      for (const entry of clusterEntries) {
+        const previousClusterId = previousClusterByItem.get(entry.id);
+        if (typeof previousClusterId === 'number') {
+          const target = clusters.find((cluster) => cluster.id === previousClusterId);
+          if (target) {
+            target.itemIds.add(entry.id);
+            continue;
+          }
+        }
+
+        if (previousUnassigned.has(entry.id)) {
+          unassignedIds.add(entry.id);
+          continue;
+        }
+
+        unassignedIds.add(entry.id);
+      }
+
+      if (!clusterEntries.length) {
+        unassignedIds = new Set();
+      }
+    }
+
+    function refreshHelperColumnSelect() {
+      const previous = new Set(helperColumns.filter((column) => availableColumns.includes(column)));
+      helperColumnMenu.innerHTML = '';
+
+      for (const column of availableColumns) {
+        const optionLabel = document.createElement('label');
+        optionLabel.className = 'helper-columns-option';
+        optionLabel.setAttribute('role', 'option');
+        optionLabel.setAttribute('aria-selected', previous.has(column) ? 'true' : 'false');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = column;
+        checkbox.checked = previous.has(column);
+
+        const text = document.createElement('span');
+        text.textContent = column;
+
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            previous.add(column);
+          } else {
+            previous.delete(column);
+          }
+
+          helperColumns = availableColumns.filter((name) => previous.has(name));
+          helperValuesCache = new Map();
+          updateHelperColumnsDropdownLabel();
+          renderAnnotationsTable();
+          optionLabel.setAttribute('aria-selected', checkbox.checked ? 'true' : 'false');
+        });
+
+        optionLabel.append(checkbox, text);
+        helperColumnMenu.append(optionLabel);
+      }
+
+      helperColumns = availableColumns.filter((column) => previous.has(column));
+      helperValuesCache = new Map();
+      updateHelperColumnsDropdownLabel();
+    }
+
+    function updateHelperColumnsDropdownLabel() {
+      if (!helperColumns.length) {
+        helperColumnDropdownBtn.textContent = 'None selected';
+        return;
+      }
+
+      if (helperColumns.length === 1) {
+        helperColumnDropdownBtn.textContent = helperColumns[0];
+        return;
+      }
+
+      helperColumnDropdownBtn.textContent = `${helperColumns.length} selected`;
+    }
+
+    function setHelperColumnsMenuOpen(isOpen) {
+      helperColumnMenu.classList.toggle('open', isOpen);
+      helperColumnDropdownBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    function getHelperValueForSourceItem(item, column) {
+      if (!item || !column) {
+        return '';
+      }
+
+      const cacheKey = `${item.id}::${column}`;
+      if (helperValuesCache.has(cacheKey)) {
+        return helperValuesCache.get(cacheKey);
+      }
+
+      const rowUuidSet = new Set((Array.isArray(item.rowUuids) ? item.rowUuids : [])
+        .map((value) => sanitizeText(value))
+        .filter(Boolean));
+
+      const values = new Set();
+      for (let rowIndex = 0; rowIndex < allRows.length; rowIndex += 1) {
+        const row = allRows[rowIndex];
+        const rowUuid = getRowUuid(row, row?.__documentName, rowIndex);
+        if (rowUuidSet.size && !rowUuidSet.has(rowUuid)) {
+          continue;
+        }
+
+        if (!rowUuidSet.size) {
+          const sourceValue = normalizeCellValue(row[item.column]);
+          if (sourceValue !== item.value) {
+            continue;
+          }
+        }
+
+        const helperValue = sanitizeText(row[column]);
+        if (helperValue) {
+          values.add(helperValue);
+        }
+      }
+
+      const merged = [...values].sort((a, b) => a.localeCompare(b)).join(' | ');
+      helperValuesCache.set(cacheKey, merged);
+      return merged;
+    }
+
+    function getFilledAnnotationCount(itemId) {
+      const annotation = getAnnotation(itemId);
+      let count = 0;
+      for (const value of Object.values(annotation.entities)) {
+        if (sanitizeText(value)) {
+          count += 1;
+        }
+      }
+      return count;
+    }
+
+    function getClusterStateForSourceItem(sourceItemId) {
+      const clusterIds = new Set();
+      let hasUnassigned = false;
+
+      if (clusterMode === 'entity') {
+        const relatedEntries = clusterEntries.filter((entry) => entry.sourceId === sourceItemId);
+        if (!relatedEntries.length) {
+          return { clusterIds, hasUnassigned, hasAny: false };
+        }
+
+        for (const entry of relatedEntries) {
+          let inCluster = false;
+          for (const cluster of clusters) {
+            if (cluster.itemIds.has(entry.id)) {
+              clusterIds.add(cluster.id);
+              inCluster = true;
+            }
+          }
+          if (!inCluster && unassignedIds.has(entry.id)) {
+            hasUnassigned = true;
+          }
+        }
+
+        return { clusterIds, hasUnassigned, hasAny: true };
+      }
+
+      for (const cluster of clusters) {
+        if (cluster.itemIds.has(sourceItemId)) {
+          clusterIds.add(cluster.id);
+        }
+      }
+
+      if (unassignedIds.has(sourceItemId)) {
+        hasUnassigned = true;
+      }
+
+      return { clusterIds, hasUnassigned, hasAny: true };
+    }
+
+    function getClusterNameForItem(itemId) {
+      const state = getClusterStateForSourceItem(itemId);
+      const ids = [...state.clusterIds].sort((a, b) => a - b);
+
+      if (!state.hasAny) {
+        return 'Unknown';
+      }
+
+      if (!ids.length) {
+        return state.hasUnassigned ? 'Unassigned' : 'Unknown';
+      }
+
+      if (ids.length === 1 && !state.hasUnassigned) {
+        const cluster = clusters.find((value) => value.id === ids[0]);
+        return cluster?.name || `Cluster ${ids[0]}`;
+      }
+
+      if (state.hasUnassigned) {
+        return `Multiple (${ids.map((id) => `#${id}`).join(', ')} + Unassigned)`;
+      }
+
+      return `Multiple (${ids.map((id) => `#${id}`).join(', ')})`;
+    }
+
+    function getClusterIdLabelForItem(itemId) {
+      const state = getClusterStateForSourceItem(itemId);
+      const ids = [...state.clusterIds].sort((a, b) => a - b);
+
+      if (!state.hasAny) {
+        return 'Unknown';
+      }
+
+      if (!ids.length) {
+        return state.hasUnassigned ? 'Unassigned' : 'Unknown';
+      }
+
+      const idText = ids.map((id) => String(id)).join(', ');
+      if (state.hasUnassigned) {
+        return `${idText} + U`;
+      }
+      return idText;
+    }
+
+    function setActiveItem(itemId) {
+      activeItemId = distinctById.has(itemId) ? itemId : '';
+      renderAnnotationPanel();
+      renderUnassigned();
+      renderClusters();
+    }
+
+    function setActiveEntityClass(classKey) {
+      activeEntityClass = sanitizeText(classKey);
+      renderAnnotationPanel();
+    }
+
+    function setAnnotationValue(itemId, classKey, value) {
+      const annotation = getAnnotation(itemId);
+      const key = sanitizeText(classKey);
+      const normalizedValue = sanitizeText(value);
+      if (!key) {
+        return;
+      }
+
+      if (normalizedValue) {
+        annotation.entities[key] = normalizedValue;
+      } else {
+        delete annotation.entities[key];
+      }
+
+      if (clusterMode === 'entity') {
+        rebuildClusterEntries();
+        renderUnassigned();
+        renderClusters();
+      }
+
+      renderSummary();
+      updateChipMeta(itemId);
+    }
+
+    function updateChipMeta(itemId) {
+      const item = clusterById.get(itemId) || distinctById.get(itemId);
+      if (!item) {
+        return;
+      }
+
+      const nerCount = getFilledAnnotationCount(itemId);
+      const metaText = nerCount ? `x${item.count} | ner ${nerCount}` : `x${item.count}`;
+
+      const chips = document.querySelectorAll('.value-chip');
+      for (const chip of chips) {
+        if (chip.dataset.itemId !== itemId) {
+          continue;
+        }
+        const meta = chip.querySelector('.value-meta');
+        if (meta) {
+          meta.textContent = metaText;
+        }
+      }
+    }
+
+    function rebuildTokenLabelsFromSpans(annotation) {
+      annotation.tokenLabels = {};
+      for (const span of annotation.spans) {
+        for (let i = span.start; i <= span.end; i += 1) {
+          annotation.tokenLabels[i] = span.classKey;
+        }
+      }
+    }
+
+    function recomputeEntitiesFromSpans(itemId) {
+      const item = distinctById.get(itemId);
+      if (!item) {
+        return;
+      }
+
+      const annotation = getAnnotation(itemId);
+      const tokens = tokenizeValue(item.value);
+
+      const grouped = new Map();
+      for (const span of annotation.spans) {
+        const start = Math.max(0, Math.min(span.start, tokens.length - 1));
+        const end = Math.max(0, Math.min(span.end, tokens.length - 1));
+        const phrase = sanitizeText(tokens.slice(start, end + 1).join(' '));
+        if (!phrase) {
+          continue;
+        }
+
+        const existing = grouped.get(span.classKey) || [];
+        existing.push(phrase);
+        grouped.set(span.classKey, existing);
+      }
+
+      annotation.entities = {};
+      for (const [classKey, phrases] of grouped.entries()) {
+        const joined = sanitizeText(phrases.join(' | '));
+        if (joined) {
+          annotation.entities[classKey] = joined;
+        }
+      }
+
+      rebuildTokenLabelsFromSpans(annotation);
+    }
+
+    function drawSpan(itemId, startIndex, endIndex) {
+      const annotation = getAnnotation(itemId);
+      const classKey = sanitizeText(activeEntityClass);
+      if (!classKey) {
+        return;
+      }
+
+      const start = Math.min(startIndex, endIndex);
+      const end = Math.max(startIndex, endIndex);
+      if (start < 0 || end < 0) {
+        return;
+      }
+
+      const existingIndex = annotation.spans.findIndex((span) => span.classKey === classKey && span.start === start && span.end === end);
+      if (existingIndex >= 0) {
+        annotation.spans.splice(existingIndex, 1);
+      } else {
+        annotation.spans.push({
+          id: `${classKey}:${start}:${end}:${Date.now()}`,
+          classKey,
+          start,
+          end,
+        });
+      }
+
+      recomputeEntitiesFromSpans(itemId);
+      if (clusterMode === 'entity') {
+        rebuildClusterEntries();
+        renderUnassigned();
+        renderClusters();
+      }
+      renderAnnotationPanel();
+      renderSummary();
+      updateChipMeta(itemId);
+      renderAnnotationsTable();
+    }
+
+    function removeSpan(itemId, spanId) {
+      const annotation = getAnnotation(itemId);
+      const nextSpans = annotation.spans.filter((span) => span.id !== spanId);
+      annotation.spans = nextSpans;
+      recomputeEntitiesFromSpans(itemId);
+      if (clusterMode === 'entity') {
+        rebuildClusterEntries();
+        renderUnassigned();
+        renderClusters();
+      }
+      renderAnnotationPanel();
+      renderSummary();
+      updateChipMeta(itemId);
+      renderAnnotationsTable();
+    }
+
+    function splitSpan(itemId, spanId) {
+      const annotation = getAnnotation(itemId);
+      const spanIndex = annotation.spans.findIndex((span) => span.id === spanId);
+      if (spanIndex < 0) {
+        return;
+      }
+
+      const target = annotation.spans[spanIndex];
+      if (!target || target.start >= target.end) {
+        return;
+      }
+
+      const splitAt = Math.floor((target.start + target.end) / 2);
+      const leftSpan = {
+        id: `${target.classKey}:${target.start}:${splitAt}:${Date.now()}:L`,
+        classKey: target.classKey,
+        start: target.start,
+        end: splitAt,
+      };
+      const rightSpan = {
+        id: `${target.classKey}:${splitAt + 1}:${target.end}:${Date.now()}:R`,
+        classKey: target.classKey,
+        start: splitAt + 1,
+        end: target.end,
+      };
+
+      annotation.spans.splice(spanIndex, 1, leftSpan, rightSpan);
+
+      recomputeEntitiesFromSpans(itemId);
+      if (clusterMode === 'entity') {
+        rebuildClusterEntries();
+        renderUnassigned();
+        renderClusters();
+      }
+      renderAnnotationPanel();
+      renderSummary();
+      updateChipMeta(itemId);
+      renderAnnotationsTable();
+      setStatus(`Span split into [${leftSpan.start}-${leftSpan.end}] and [${rightSpan.start}-${rightSpan.end}].`);
+    }
+
+    function getNeighborSpanId(annotation, spanId, direction) {
+      const sorted = [...(annotation.spans || [])]
+        .sort((a, b) => (a.start - b.start) || (a.end - b.end) || a.id.localeCompare(b.id));
+      const index = sorted.findIndex((span) => span.id === spanId);
+      if (index < 0) {
+        return '';
+      }
+
+      const current = sorted[index];
+      if (direction === 'prev') {
+        for (let i = index - 1; i >= 0; i -= 1) {
+          if (sorted[i].classKey === current.classKey && sorted[i].end >= current.start - 1) {
+            return sorted[i].id;
+          }
+        }
+        return '';
+      }
+
+      for (let i = index + 1; i < sorted.length; i += 1) {
+        if (sorted[i].classKey === current.classKey && sorted[i].start <= current.end + 1) {
+          return sorted[i].id;
+        }
+      }
+      return '';
+    }
+
+    function mergeSpan(itemId, spanId, direction) {
+      const annotation = getAnnotation(itemId);
+      const neighborId = getNeighborSpanId(annotation, spanId, direction);
+      if (!neighborId) {
+        setStatus('No mergeable neighbor span found for this class.');
+        return;
+      }
+
+      const first = annotation.spans.find((span) => span.id === spanId);
+      const second = annotation.spans.find((span) => span.id === neighborId);
+      if (!first || !second || first.classKey !== second.classKey) {
+        setStatus('Unable to merge selected spans.');
+        return;
+      }
+
+      const merged = {
+        id: `${first.classKey}:${Math.min(first.start, second.start)}:${Math.max(first.end, second.end)}:${Date.now()}:M`,
+        classKey: first.classKey,
+        start: Math.min(first.start, second.start),
+        end: Math.max(first.end, second.end),
+      };
+
+      annotation.spans = annotation.spans.filter((span) => span.id !== first.id && span.id !== second.id);
+      annotation.spans.push(merged);
+
+      recomputeEntitiesFromSpans(itemId);
+      if (clusterMode === 'entity') {
+        rebuildClusterEntries();
+        renderUnassigned();
+        renderClusters();
+      }
+      renderAnnotationPanel();
+      renderSummary();
+      updateChipMeta(itemId);
+      renderAnnotationsTable();
+      setStatus(`Merged spans into [${merged.start}-${merged.end}].`);
+    }
+
+    function tokenMatchesPreview(index) {
+      if (dragSpanStartIndex === null || dragSpanHoverIndex === null) {
+        return false;
+      }
+      const minIndex = Math.min(dragSpanStartIndex, dragSpanHoverIndex);
+      const maxIndex = Math.max(dragSpanStartIndex, dragSpanHoverIndex);
+      return index >= minIndex && index <= maxIndex;
+    }
+
+    function buildDependencyNodes(itemId, tokens, annotation) {
+      const nodes = [];
+
+      for (let i = 0; i < tokens.length; i += 1) {
+        nodes.push({
+          id: `token:${i}`,
+          label: `Token ${i}: ${tokens[i]}`,
+          type: 'token',
+        });
+      }
+
+      const sortedSpans = [...(annotation.spans || [])].sort((a, b) => (a.start - b.start) || (a.end - b.end));
+      for (const span of sortedSpans) {
+        const phrase = sanitizeText(tokens.slice(span.start, span.end + 1).join(' '));
+        nodes.push({
+          id: `span:${span.id}`,
+          label: `Span ${span.classKey} [${span.start}-${span.end}] ${phrase}`,
+          type: 'span',
+        });
+      }
+
+      const entityKeys = Object.keys(annotation.entities || {}).sort((a, b) => a.localeCompare(b));
+      for (const classKey of entityKeys) {
+        const rawEntity = sanitizeText(annotation.entities[classKey]);
+        if (!rawEntity) {
+          continue;
+        }
+        const mentions = splitEntityMentionsForClass(rawEntity, classKey);
+        for (let index = 0; index < mentions.length; index += 1) {
+          const mention = mentions[index];
+          nodes.push({
+            id: `entity:${classKey}:${index}`,
+            label: `Entity ${classKey} #${index + 1}: ${mention}`,
+            type: 'entity',
+          });
+        }
+      }
+
+      return nodes;
+    }
+
+    function resolveDependencyNodeLabel(dep, nodesById, tokens) {
+      const headNodeId = sanitizeText(dep?.headNodeId);
+      const dependentNodeId = sanitizeText(dep?.dependentNodeId);
+      const headFromNode = nodesById.get(headNodeId)?.label;
+      const dependentFromNode = nodesById.get(dependentNodeId)?.label;
+
+      const fallbackHeadIndex = Number.parseInt(dep?.head, 10);
+      const fallbackDependentIndex = Number.parseInt(dep?.dependent, 10);
+      const headFallback = Number.isInteger(fallbackHeadIndex)
+        ? `Token ${fallbackHeadIndex}: ${tokens[fallbackHeadIndex] || '?'}`
+        : sanitizeText(dep?.headLabel) || '?';
+      const dependentFallback = Number.isInteger(fallbackDependentIndex)
+        ? `Token ${fallbackDependentIndex}: ${tokens[fallbackDependentIndex] || '?'}`
+        : sanitizeText(dep?.dependentLabel) || '?';
+
+      const headText = headFromNode || headFallback;
+      const dependentText = dependentFromNode || dependentFallback;
+      return `${headText} -> ${dependentText} (${dep.relation})`;
+    }
+
+    function renderDependencyControls(itemId, tokens) {
+      depHeadNodeSelect.innerHTML = '';
+      depDepNodeSelect.innerHTML = '';
+      depList.innerHTML = '';
+
+      const annotation = getAnnotation(itemId);
+      const nodes = buildDependencyNodes(itemId, tokens, annotation);
+      const nodesById = new Map(nodes.map((node) => [node.id, node]));
+
+      if (!nodes.length) {
+        depList.innerHTML = '<div class="empty-note">No token/span/entity node available for dependency parsing.</div>';
+        return;
+      }
+
+      for (const node of nodes) {
+        const headOption = document.createElement('option');
+        headOption.value = node.id;
+        headOption.textContent = node.label;
+        depHeadNodeSelect.append(headOption);
+
+        const depOption = document.createElement('option');
+        depOption.value = node.id;
+        depOption.textContent = node.label;
+        depDepNodeSelect.append(depOption);
+      }
+
+      const deps = Array.isArray(annotation.dependencies) ? annotation.dependencies : [];
+      if (!deps.length) {
+        depList.innerHTML = '<div class="empty-note">No dependencies yet.</div>';
+      } else {
+        for (const dep of deps) {
+          const item = document.createElement('div');
+          item.className = 'dep-item';
+          const text = document.createElement('span');
+          text.textContent = resolveDependencyNodeLabel(dep, nodesById, tokens);
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', () => {
+            annotation.dependencies = annotation.dependencies.filter((value) => value.id !== dep.id);
+            renderAnnotationPanel();
+          });
+          item.append(text, removeBtn);
+          depList.append(item);
+        }
+      }
+    }
+
+    function renderAnnotationPanel() {
+      entityClassPills.innerHTML = '';
+      tokenAnnotator.innerHTML = '';
+      spanList.innerHTML = '';
+      entitySummary.innerHTML = '';
+      depHeadNodeSelect.innerHTML = '';
+      depDepNodeSelect.innerHTML = '';
+      depList.innerHTML = '';
+
+      if (!activeItemId || !distinctById.has(activeItemId)) {
+        annotationHeader.textContent = 'Click a distinct value to annotate named entities.';
+        drawHint.textContent = 'Select a class then drag across tokens to draw an entity span. Nested spans are allowed. Use Split/Merge in the span list to reshape spans.';
+        entitySummary.innerHTML = '<div class="empty-note">No selected value.</div>';
+        return;
+      }
+
+      const item = distinctById.get(activeItemId);
+      annotationHeader.textContent = `${item.label} | cluster: ${getClusterNameForItem(activeItemId)}`;
+
+      if (!nerClassDefs.length) {
+        entitySummary.innerHTML = '<div class="empty-note">No NER classes available for selected schema.</div>';
+        return;
+      }
+
+      for (const classDef of nerClassDefs) {
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.className = 'class-pill';
+        if (activeEntityClass === classDef.key) {
+          pill.classList.add('active');
+        }
+        pill.title = classDef.key;
+
+        const dot = document.createElement('span');
+        dot.className = 'class-color-dot';
+        dot.style.background = getClassColor(classDef.key);
+        const text = document.createElement('span');
+        text.textContent = classDef.label;
+
+        pill.append(dot, text);
+        pill.addEventListener('click', () => {
+          setActiveEntityClass(classDef.key);
+        });
+        entityClassPills.append(pill);
+      }
+
+      const tokens = tokenizeValue(item.value);
+      const annotation = getAnnotation(activeItemId);
+      drawHint.textContent = activeEntityClass
+        ? `Drawing class: ${activeEntityClass}. Drag across tokens to add/remove one span. Use Split/Merge in the span list to reshape spans.`
+        : 'Select an entity class first, then drag across tokens.';
+
+      if (!tokens.length) {
+        tokenAnnotator.innerHTML = '<div class="empty-note">No token to annotate.</div>';
+      } else {
+        for (let i = 0; i < tokens.length; i += 1) {
+          const tokenButton = document.createElement('button');
+          tokenButton.type = 'button';
+          tokenButton.className = 'token';
+          tokenButton.textContent = tokens[i];
+
+          const classesForToken = annotation.spans
+            .filter((span) => i >= span.start && i <= span.end)
+            .map((span) => span.classKey);
+
+          if (classesForToken.length) {
+            tokenButton.classList.add('labeled');
+            tokenButton.title = classesForToken.join(', ');
+
+            const bars = document.createElement('span');
+            bars.className = 'token-bars';
+            for (const classKey of [...new Set(classesForToken)]) {
+              const bar = document.createElement('span');
+              bar.className = 'token-bar';
+              bar.style.background = getClassColor(classKey);
+              bars.append(bar);
+            }
+            tokenButton.append(bars);
+          }
+
+          if (tokenMatchesPreview(i)) {
+            tokenButton.classList.add('preview');
+          }
+
+          tokenButton.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            if (!activeEntityClass) {
+              return;
+            }
+            isPointerDrawing = true;
+            dragSpanStartIndex = i;
+            dragSpanHoverIndex = i;
+            renderAnnotationPanel();
+          });
+
+          tokenButton.addEventListener('mouseenter', () => {
+            if (!isPointerDrawing) {
+              return;
+            }
+            dragSpanHoverIndex = i;
+            renderAnnotationPanel();
+          });
+
+          tokenButton.addEventListener('mouseup', () => {
+            if (!isPointerDrawing || dragSpanStartIndex === null) {
+              return;
+            }
+
+            drawSpan(activeItemId, dragSpanStartIndex, i);
+            isPointerDrawing = false;
+            dragSpanStartIndex = null;
+            dragSpanHoverIndex = null;
+          });
+
+          tokenAnnotator.append(tokenButton);
+        }
+      }
+
+      const sortedSpans = [...annotation.spans].sort((a, b) => (a.start - b.start) || (a.end - b.end));
+      if (!sortedSpans.length) {
+        spanList.innerHTML = '<div class="empty-note">No spans yet.</div>';
+      } else {
+        for (const span of sortedSpans) {
+          const itemEl = document.createElement('div');
+          itemEl.className = 'span-item';
+          const label = document.createElement('code');
+          const phrase = sanitizeText(tokens.slice(span.start, span.end + 1).join(' '));
+          label.textContent = `${span.classKey} [${span.start}-${span.end}] ${phrase}`;
+          label.style.color = getClassColor(span.classKey);
+
+          const actions = document.createElement('div');
+          actions.style.display = 'inline-flex';
+          actions.style.gap = '6px';
+
+          if (span.start < span.end) {
+            const splitBtn = document.createElement('button');
+            splitBtn.type = 'button';
+            splitBtn.textContent = 'Split';
+            splitBtn.addEventListener('click', () => splitSpan(activeItemId, span.id));
+            actions.append(splitBtn);
+          }
+
+          const mergePrevId = getNeighborSpanId(annotation, span.id, 'prev');
+          if (mergePrevId) {
+            const mergePrevBtn = document.createElement('button');
+            mergePrevBtn.type = 'button';
+            mergePrevBtn.textContent = 'Merge prev';
+            mergePrevBtn.addEventListener('click', () => mergeSpan(activeItemId, span.id, 'prev'));
+            actions.append(mergePrevBtn);
+          }
+
+          const mergeNextId = getNeighborSpanId(annotation, span.id, 'next');
+          if (mergeNextId) {
+            const mergeNextBtn = document.createElement('button');
+            mergeNextBtn.type = 'button';
+            mergeNextBtn.textContent = 'Merge next';
+            mergeNextBtn.addEventListener('click', () => mergeSpan(activeItemId, span.id, 'next'));
+            actions.append(mergeNextBtn);
+          }
+
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', () => removeSpan(activeItemId, span.id));
+          actions.append(removeBtn);
+
+          itemEl.append(label, actions);
+          spanList.append(itemEl);
+        }
+      }
+
+      const keys = Object.keys(annotation.entities).sort((a, b) => a.localeCompare(b));
+      if (!keys.length) {
+        entitySummary.innerHTML = '<div class="empty-note">No extracted entities yet. Draw spans to generate entities.</div>';
+      } else {
+        for (const key of keys) {
+          const line = document.createElement('div');
+          line.innerHTML = `<span>${key}</span>: <code>${annotation.entities[key]}</code>`;
+          line.style.borderLeft = `4px solid ${getClassColor(key)}`;
+          line.style.paddingLeft = '6px';
+          entitySummary.append(line);
+        }
+      }
+
+      renderDependencyControls(activeItemId, tokens);
+    }
+
+    function rebuildDistinctEntries() {
+      helperValuesCache = new Map();
+      const frequencyByKey = new Map();
+
+      for (let rowIndex = 0; rowIndex < allRows.length; rowIndex += 1) {
+        const row = allRows[rowIndex];
+        const rowUuid = getRowUuid(row, row?.__documentName, rowIndex);
+        for (const column of selectedColumns) {
+          const value = normalizeCellValue(row[column]);
+          if (!value) {
+            continue;
+          }
+
+          const key = `${column}::${value}`;
+          const previous = frequencyByKey.get(key) || { count: 0, rowUuids: new Set() };
+          previous.count += 1;
+          previous.rowUuids.add(rowUuid);
+          frequencyByKey.set(key, previous);
+        }
+      }
+
+      distinctEntries = [...frequencyByKey.entries()]
+        .map(([key, entry]) => {
+          const [column, ...rest] = key.split('::');
+          const value = rest.join('::');
+          return {
+            id: key,
+            column,
+            value,
+            count: entry.count,
+            rowUuids: [...entry.rowUuids],
+            label: `${column}: ${value}`,
+          };
+        })
+        .sort((a, b) => {
+          if (b.count !== a.count) {
+            return b.count - a.count;
+          }
+          return a.label.localeCompare(b.label);
+        });
+
+      distinctById = new Map(distinctEntries.map((item) => [item.id, item]));
+
+      for (const itemId of [...annotationsByItemId.keys()]) {
+        if (!distinctById.has(itemId)) {
+          annotationsByItemId.delete(itemId);
+        }
+      }
+
+      rebuildClusterEntries();
+
+      if (activeItemId && !distinctById.has(activeItemId)) {
+        activeItemId = '';
+      }
+
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      renderAnnotationsTable();
+    }
+
+    function renderColumns() {
+      columnList.innerHTML = '';
+      if (!availableColumns.length) {
+        columnList.innerHTML = '<div class="empty-note">No columns found in JSON rows.</div>';
+        return;
+      }
+
+      for (const column of availableColumns) {
+        const item = document.createElement('div');
+        item.className = 'column-item';
+
+        const label = document.createElement('label');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = column;
+        checkbox.checked = selectedColumns.has(column);
+
+        const text = document.createElement('span');
+        text.textContent = column;
+        label.append(checkbox, text);
+
+        const badge = document.createElement('span');
+        badge.className = 'count-badge';
+        badge.textContent = `${columnValueCounts.get(column)?.size || 0}`;
+
+        checkbox.addEventListener('change', () => {
+          if (checkbox.checked) {
+            selectedColumns.add(column);
+          } else {
+            selectedColumns.delete(column);
+          }
+
+          rebuildDistinctEntries();
+          renderColumns();
+          updateClustersFileLabel();
+          renderClusterProfilesSelect();
+        });
+
+        item.append(label, badge);
+        columnList.append(item);
+      }
+    }
+
+    function createCluster(name) {
+      const cluster = {
+        id: nextClusterId,
+        name: sanitizeText(name) || `Cluster ${nextClusterId}`,
+        itemIds: new Set(),
+      };
+      nextClusterId += 1;
+      clusters.push(cluster);
+      return cluster;
+    }
+
+    function renderValueChip(itemId) {
+      const item = getClusterItemById(itemId);
+      if (!item) {
+        return null;
+      }
+
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'value-chip';
+      chip.draggable = true;
+      chip.dataset.itemId = item.id;
+      chip.title = sanitizeText(item.sourceLabel) ? `Source cell: ${item.sourceLabel}` : item.label;
+
+      if (activeItemId === item.sourceId) {
+        chip.classList.add('active');
+      }
+
+      const text = document.createElement('span');
+      text.className = 'value-text';
+      text.textContent = item.label;
+
+      const meta = document.createElement('span');
+      meta.className = 'value-meta';
+      const nerCount = getFilledAnnotationCount(item.sourceId);
+      const modeText = clusterMode === 'entity' ? 'entity' : 'value';
+      meta.textContent = nerCount ? `x${item.count} | ner ${nerCount} | ${modeText}` : `x${item.count} | ${modeText}`;
+
+      chip.append(text, meta);
+
+      chip.addEventListener('dragstart', (event) => {
+        event.dataTransfer.setData('text/plain', item.id);
+        event.dataTransfer.effectAllowed = 'move';
+      });
+
+      chip.addEventListener('click', () => {
+        setActiveItem(item.sourceId);
+      });
+
+      return chip;
+    }
+
+    function addDropHandlers(zone, onDrop) {
+      zone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        zone.classList.add('drag-over');
+      });
+
+      zone.addEventListener('dragleave', () => {
+        zone.classList.remove('drag-over');
+      });
+
+      zone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        zone.classList.remove('drag-over');
+        const itemId = sanitizeText(event.dataTransfer.getData('text/plain'));
+        if (!itemId || !clusterById.has(itemId)) {
+          return;
+        }
+        onDrop(itemId);
+      });
+    }
+
+    function moveItemToCluster(itemId, clusterId) {
+      if (!clusterById.has(itemId)) {
+        return;
+      }
+
+      unassignedIds.delete(itemId);
+      for (const cluster of clusters) {
+        cluster.itemIds.delete(itemId);
+      }
+
+      const target = clusters.find((cluster) => cluster.id === clusterId);
+      if (!target) {
+        return;
+      }
+
+      target.itemIds.add(itemId);
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      renderAnnotationsTable();
+    }
+
+    function moveItemToUnassigned(itemId) {
+      if (!clusterById.has(itemId)) {
+        return;
+      }
+
+      for (const cluster of clusters) {
+        cluster.itemIds.delete(itemId);
+      }
+      unassignedIds.add(itemId);
+
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      renderAnnotationsTable();
+    }
+
+    function deleteCluster(clusterId) {
+      const index = clusters.findIndex((cluster) => cluster.id === clusterId);
+      if (index < 0) {
+        return;
+      }
+
+      const [removed] = clusters.splice(index, 1);
+      for (const itemId of removed.itemIds) {
+        unassignedIds.add(itemId);
+      }
+
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      renderAnnotationsTable();
+      setStatus(`Deleted ${removed.name} and moved ${removed.itemIds.size} value(s) to unassigned.`);
+    }
+
+    function renderUnassigned() {
+      unassignedWrap.innerHTML = '';
+
+      const sorted = [...unassignedIds].sort((a, b) => {
+        const left = clusterById.get(a);
+        const right = clusterById.get(b);
+        if (!left || !right) {
+          return 0;
+        }
+        if (right.count !== left.count) {
+          return right.count - left.count;
+        }
+        return left.label.localeCompare(right.label);
+      });
+
+      for (const itemId of sorted) {
+        const chip = renderValueChip(itemId);
+        if (chip) {
+          unassignedWrap.append(chip);
+        }
+      }
+
+      if (!sorted.length) {
+        unassignedWrap.innerHTML = '<div class="empty-note">All values are assigned to clusters.</div>';
+      }
+    }
+
+    function renderClusters() {
+      clustersGrid.innerHTML = '';
+
+      if (!clusters.length) {
+        clustersGrid.innerHTML = '<div class="empty-note">No clusters yet. Initialize or create one.</div>';
+        return;
+      }
+
+      for (const cluster of clusters) {
+        const box = document.createElement('section');
+        box.className = 'cluster-box';
+
+        const head = document.createElement('div');
+        head.className = 'cluster-head';
+
+        const name = document.createElement('div');
+        name.className = 'cluster-name';
+        name.textContent = cluster.name;
+        name.title = cluster.name;
+
+        const count = document.createElement('div');
+        count.className = 'cluster-count';
+        count.textContent = `${cluster.itemIds.size} values`;
+
+        const headActions = document.createElement('div');
+        headActions.className = 'cluster-head-actions';
+        headActions.append(count);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'cluster-delete-btn';
+        deleteBtn.title = `Delete ${cluster.name}`;
+        deleteBtn.textContent = 'x';
+        deleteBtn.addEventListener('click', () => {
+          deleteCluster(cluster.id);
+        });
+
+        headActions.append(deleteBtn);
+
+        head.append(name, headActions);
+
+        const body = document.createElement('div');
+        body.className = 'zone';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'chip-wrap';
+
+        const sorted = [...cluster.itemIds].sort((a, b) => {
+          const left = clusterById.get(a);
+          const right = clusterById.get(b);
+          if (!left || !right) {
+            return 0;
+          }
+          if (right.count !== left.count) {
+            return right.count - left.count;
+          }
+          return left.label.localeCompare(right.label);
+        });
+
+        for (const itemId of sorted) {
+          const chip = renderValueChip(itemId);
+          if (chip) {
+            wrap.append(chip);
+          }
+        }
+
+        if (!sorted.length) {
+          wrap.innerHTML = '<div class="empty-note">Drop values here.</div>';
+        }
+
+        body.append(wrap);
+        addDropHandlers(body, (itemId) => moveItemToCluster(itemId, cluster.id));
+        box.append(head, body);
+        clustersGrid.append(box);
+      }
+    }
+
+    function renderSummary() {
+      const totalDistinct = clusterEntries.length;
+      const assigned = clusters.reduce((sum, cluster) => sum + cluster.itemIds.size, 0);
+      const unassigned = unassignedIds.size;
+      const annotated = [...annotationsByItemId.keys()].filter((itemId) => getFilledAnnotationCount(itemId) > 0).length;
+      const modeLabel = clusterMode === 'entity' ? `entity mentions (${clusterEntityClass || 'n/a'})` : 'distinct values';
+      clustersSummary.textContent = `${totalDistinct} ${modeLabel}, ${assigned} assigned, ${unassigned} unassigned, ${clusters.length} clusters, ${annotated} annotated values.`;
+
+      if (clusterMode === 'entity') {
+        clusterModeBanner.textContent = `Clustering class: ${clusterEntityClass || 'none selected'}`;
+      } else {
+        clusterModeBanner.textContent = 'Clustering class: n/a (Distinct values mode)';
+      }
+    }
+
+    function resetAssignments() {
+      unassignedIds = new Set(clusterEntries.map((item) => item.id));
+      for (const cluster of clusters) {
+        cluster.itemIds = new Set();
+      }
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      renderAnnotationsTable();
+      setStatus('Assignments reset.');
+    }
+
+    function normalizedLevenshteinSimilarity(left, right) {
+      const a = sanitizeText(left).toLowerCase();
+      const b = sanitizeText(right).toLowerCase();
+      if (!a && !b) {
+        return 1;
+      }
+
+      const maxLen = Math.max(a.length, b.length);
+      if (!maxLen) {
+        return 1;
+      }
+
+      const dist = levenshteinDistance(a, b);
+      return 1 - (dist / maxLen);
+    }
+
+    function levenshteinDistance(a, b) {
+      if (a === b) {
+        return 0;
+      }
+
+      if (!a.length) {
+        return b.length;
+      }
+      if (!b.length) {
+        return a.length;
+      }
+
+      const previous = new Array(b.length + 1);
+      const current = new Array(b.length + 1);
+
+      for (let j = 0; j <= b.length; j += 1) {
+        previous[j] = j;
+      }
+
+      for (let i = 1; i <= a.length; i += 1) {
+        current[0] = i;
+        for (let j = 1; j <= b.length; j += 1) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          current[j] = Math.min(
+            current[j - 1] + 1,
+            previous[j] + 1,
+            previous[j - 1] + cost
+          );
+        }
+
+        for (let j = 0; j <= b.length; j += 1) {
+          previous[j] = current[j];
+        }
+      }
+
+      return previous[b.length];
+    }
+
+    function tokenJaccardSimilarity(left, right) {
+      const tokenize = (value) => sanitizeText(value)
+        .toLowerCase()
+        .split(/[^\p{L}\p{N}]+/u)
+        .filter(Boolean);
+
+      const leftTokens = new Set(tokenize(left));
+      const rightTokens = new Set(tokenize(right));
+
+      if (!leftTokens.size && !rightTokens.size) {
+        return 1;
+      }
+
+      let intersection = 0;
+      for (const token of leftTokens) {
+        if (rightTokens.has(token)) {
+          intersection += 1;
+        }
+      }
+
+      const union = leftTokens.size + rightTokens.size - intersection;
+      return union ? (intersection / union) : 0;
+    }
+
+    function initializeClusters() {
+      if (!clusterEntries.length) {
+        setStatus('No cluster item available. If in entity mode, annotate entities first.');
+        return;
+      }
+
+      const metric = similarityMetrics[getMetricKey()]?.fn || normalizedLevenshteinSimilarity;
+      const threshold = getThreshold();
+
+      clusters = [];
+      nextClusterId = 1;
+      unassignedIds = new Set();
+
+      const values = [...clusterEntries].sort((a, b) => {
+        if (b.count !== a.count) {
+          return b.count - a.count;
+        }
+        return a.value.localeCompare(b.value);
+      });
+
+      for (const entry of values) {
+        let bestCluster = null;
+        let bestScore = -1;
+
+        for (const cluster of clusters) {
+          let clusterScore = 0;
+          for (const itemId of cluster.itemIds) {
+            const existing = clusterById.get(itemId);
+            if (!existing) {
+              continue;
+            }
+
+            const score = metric(entry.value, existing.value);
+            if (score > clusterScore) {
+              clusterScore = score;
+            }
+          }
+
+          if (clusterScore > bestScore) {
+            bestScore = clusterScore;
+            bestCluster = cluster;
+          }
+        }
+
+        if (bestCluster && bestScore >= threshold) {
+          bestCluster.itemIds.add(entry.id);
+        } else {
+          const cluster = createCluster(`Cluster ${nextClusterId}`);
+          cluster.itemIds.add(entry.id);
+        }
+      }
+
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      renderAnnotationsTable();
+      setStatus(`Initialized ${clusters.length} clusters with ${similarityMetrics[getMetricKey()].label} (${threshold.toFixed(2)}).`);
+    }
+
+    function resolveSavedItemId(rawValue) {
+      if (!rawValue || typeof rawValue !== 'object') {
+        return '';
+      }
+
+      const directId = sanitizeText(rawValue.itemId);
+      if (directId && clusterById.has(directId)) {
+        return directId;
+      }
+
+      const sourceId = sanitizeText(rawValue.sourceItemId);
+      const mentionId = sanitizeText(rawValue.mentionId);
+
+      if (sourceId && mentionId) {
+        for (const item of clusterEntries) {
+          if (item.sourceId === sourceId && sanitizeText(item.mentionId) === mentionId) {
+            return item.id;
+          }
+        }
+      }
+
+      if (sourceId && clusterById.has(sourceId)) {
+        return sourceId;
+      }
+
+      const savedRowUuids = getRawRowUuids(rawValue);
+      if (savedRowUuids.length) {
+        for (const item of clusterEntries) {
+          if (mentionId && sanitizeText(item.mentionId) !== mentionId) {
+            continue;
+          }
+
+          if (hasAnyRowUuidOverlap(item.rowUuids, savedRowUuids)) {
+            return item.id;
+          }
+        }
+      }
+
+      const column = sanitizeText(rawValue.column);
+      const value = sanitizeText(rawValue.value);
+      if (!column || !value) {
+        return '';
+      }
+
+      for (const item of clusterEntries) {
+        if (mentionId) {
+          if (item.column === column && item.value === value && sanitizeText(item.mentionId) === mentionId) {
+            return item.id;
+          }
+          continue;
+        }
+        if (item.column === column && item.value === value) {
+          return item.id;
+        }
+      }
+
+      return '';
+    }
+
+    function resolveSavedSourceItemId(rawValue) {
+      if (!rawValue || typeof rawValue !== 'object') {
+        return '';
+      }
+
+      const sourceItemId = sanitizeText(rawValue.sourceItemId);
+      if (sourceItemId && distinctById.has(sourceItemId)) {
+        return sourceItemId;
+      }
+
+      const itemId = sanitizeText(rawValue.itemId);
+      if (itemId && distinctById.has(itemId)) {
+        return itemId;
+      }
+
+      const savedRowUuids = getRawRowUuids(rawValue);
+      if (savedRowUuids.length) {
+        for (const entry of distinctEntries) {
+          if (hasAnyRowUuidOverlap(entry.rowUuids, savedRowUuids)) {
+            return entry.id;
+          }
+        }
+      }
+
+      const column = sanitizeText(rawValue.column);
+      const value = sanitizeText(rawValue.value);
+      if (!column || !value) {
+        return '';
+      }
+
+      for (const entry of distinctEntries) {
+        if (entry.column === column && entry.value === value) {
+          return entry.id;
+        }
+      }
+
+      return '';
+    }
+
+    function adoptAnnotationFromSaved(itemId, rawValue) {
+      if (!itemId) {
+        return;
+      }
+
+      const sourceItemId = resolveSavedSourceItemId(rawValue) || sanitizeText(clusterById.get(itemId)?.sourceId) || itemId;
+      const normalized = normalizeAnnotationPayload({
+        entities: rawValue?.annotations,
+        spans: rawValue?.spans,
+        dependencies: rawValue?.dependencies,
+        tokenLabels: rawValue?.tokenLabels,
+      });
+
+      annotationsByItemId.set(sourceItemId, normalized);
+    }
+
+    async function applySavedState(payload) {
+      if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+        return false;
+      }
+
+      if (sanitizeText(payload.metric) && similarityMetrics[sanitizeText(payload.metric)]) {
+        metricSelect.value = sanitizeText(payload.metric);
+      }
+
+      const savedThreshold = Number.parseFloat(payload.threshold);
+      if (Number.isFinite(savedThreshold)) {
+        const bounded = Math.min(1, Math.max(0, savedThreshold));
+        thresholdInput.value = String(bounded);
+        thresholdOutput.textContent = bounded.toFixed(2);
+      }
+
+      const savedColumns = Array.isArray(payload.selectedColumns)
+        ? payload.selectedColumns.map((value) => sanitizeText(value)).filter(Boolean)
+        : [];
+
+      if (savedColumns.length) {
+        selectedColumns = new Set(savedColumns.filter((column) => availableColumns.includes(column)));
+        if (!selectedColumns.size && availableColumns.length) {
+          selectedColumns.add(availableColumns[0]);
+        }
+        renderColumns();
+        rebuildDistinctEntries();
+      }
+
+      const wantedSchema = sanitizeText(payload.nerSettingsFile);
+      if (wantedSchema && nerSettingsFiles.includes(wantedSchema)) {
+        nerSettingsSelect.value = wantedSchema;
+        await loadSelectedNerSchema();
+      }
+
+      const savedMode = sanitizeText(payload.clusterMode);
+      if (savedMode === 'entity' || savedMode === 'value') {
+        clusterModeSelect.value = savedMode;
+      }
+      clusterMode = sanitizeText(clusterModeSelect.value) || 'value';
+
+      const savedEntityClass = sanitizeText(payload.clusterEntityClass);
+      if (savedEntityClass) {
+        clusterEntityClass = savedEntityClass;
+      }
+
+      const savedHelperColumns = Array.isArray(payload.helperColumns)
+        ? payload.helperColumns.map((value) => sanitizeText(value)).filter(Boolean)
+        : [];
+      if (savedHelperColumns.length) {
+        helperColumns = savedHelperColumns.filter((column) => availableColumns.includes(column));
+      } else {
+        const legacyHelperColumn = sanitizeText(payload.helperColumn);
+        helperColumns = legacyHelperColumn && availableColumns.includes(legacyHelperColumn)
+          ? [legacyHelperColumn]
+          : [];
+      }
+      refreshHelperColumnSelect();
+
+      refreshClusterEntityClassSelect();
+      if (clusterEntityClass && [...clusterEntityClassSelect.options].some((opt) => opt.value === clusterEntityClass)) {
+        clusterEntityClassSelect.value = clusterEntityClass;
+      }
+
+      // Preload annotation payload first so entity-mode cluster entries can be reconstructed.
+      annotationsByItemId = new Map();
+      for (const rawCluster of (Array.isArray(payload.clusters) ? payload.clusters : [])) {
+        for (const rawValue of (Array.isArray(rawCluster?.values) ? rawCluster.values : [])) {
+          const sourceId = resolveSavedSourceItemId(rawValue);
+          if (!sourceId) {
+            continue;
+          }
+          adoptAnnotationFromSaved(sourceId, rawValue);
+        }
+      }
+      for (const rawValue of (Array.isArray(payload.unassigned) ? payload.unassigned : [])) {
+        const sourceId = resolveSavedSourceItemId(rawValue);
+        if (!sourceId) {
+          continue;
+        }
+        adoptAnnotationFromSaved(sourceId, rawValue);
+      }
+
+      rebuildClusterEntries();
+
+      clusters = [];
+      nextClusterId = 1;
+      unassignedIds = new Set(clusterEntries.map((item) => item.id));
+
+      const savedClusters = Array.isArray(payload.clusters) ? payload.clusters : [];
+      for (const rawCluster of savedClusters) {
+        const cluster = createCluster(sanitizeText(rawCluster?.name) || `Cluster ${nextClusterId}`);
+        const values = Array.isArray(rawCluster?.values) ? rawCluster.values : [];
+
+        for (const rawValue of values) {
+          const itemId = resolveSavedItemId(rawValue);
+          if (!itemId) {
+            continue;
+          }
+
+          cluster.itemIds.add(itemId);
+          unassignedIds.delete(itemId);
+          adoptAnnotationFromSaved(itemId, rawValue);
+        }
+      }
+
+      const savedUnassigned = Array.isArray(payload.unassigned) ? payload.unassigned : [];
+      for (const rawValue of savedUnassigned) {
+        const itemId = resolveSavedItemId(rawValue);
+        if (!itemId) {
+          continue;
+        }
+
+        for (const cluster of clusters) {
+          cluster.itemIds.delete(itemId);
+        }
+        unassignedIds.add(itemId);
+        adoptAnnotationFromSaved(itemId, rawValue);
+      }
+
+      if (!clusters.length) {
+        createCluster('Cluster 1');
+      }
+
+      activeItemId = '';
+      activeEntityClass = nerClassDefs[0]?.key || '';
+
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      renderAnnotationsTable();
+      updateClustersFileLabel();
+      renderClusterProfilesSelect();
+      return true;
+    }
+
+    function getPayloadItem(itemId) {
+      const item = clusterById.get(itemId);
+      if (!item) {
+        return null;
+      }
+
+      const annotation = getAnnotation(item.sourceId);
+      return {
+        itemId: item.id,
+        sourceItemId: item.sourceId,
+        mentionId: item.mentionId || null,
+        column: item.column,
+        value: item.value,
+        count: item.count,
+        rowUuids: Array.isArray(item.rowUuids) ? item.rowUuids : [],
+        sourceRowUuids: Array.isArray(distinctById.get(item.sourceId)?.rowUuids)
+          ? distinctById.get(item.sourceId).rowUuids
+          : [],
+        annotations: annotation.entities,
+        spans: annotation.spans,
+        dependencies: annotation.dependencies,
+        tokenLabels: annotation.tokenLabels,
+      };
+    }
+
+    function buildClustersPayload() {
+      return {
+        project: currentProject?.name || null,
+        subproject: currentSubproject?.name || null,
+        dir: currentSubproject?.path || null,
+        clustersFile: getCurrentClustersFileName(),
+        metric: getMetricKey(),
+        threshold: getThreshold(),
+        clusterMode,
+        clusterEntityClass: clusterEntityClass || null,
+        helperColumns,
+        nerSettingsFile: activeNerSettingsFile || null,
+        nerClasses: nerClassDefs.map((item) => item.key),
+        selectedColumns: [...selectedColumns],
+        distinctValuesCount: distinctEntries.length,
+        clusterItemsCount: clusterEntries.length,
+        clusters: clusters.map((cluster) => ({
+          id: cluster.id,
+          name: cluster.name,
+          values: [...cluster.itemIds].map(getPayloadItem).filter(Boolean),
+        })),
+        unassigned: [...unassignedIds].map(getPayloadItem).filter(Boolean),
+        generatedAt: new Date().toISOString(),
+      };
+    }
+
+    function normalizeColumnNameForFile(value) {
+      const base = sanitizeText(value)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      return base || 'column';
+    }
+
+    function getSortedSelectedColumns() {
+      return [...selectedColumns]
+        .map((value) => sanitizeText(value))
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b));
+    }
+
+    function getCurrentClustersFileName() {
+      const columns = getSortedSelectedColumns();
+      if (!columns.length) {
+        return 'ner-clusters--no-columns.json';
+      }
+
+      const signature = columns.map((name) => normalizeColumnNameForFile(name)).join('__');
+      return `ner-clusters--${signature}.json`;
+    }
+
+    function updateClustersFileLabel() {
+      clustersFileLabel.textContent = `Target: ${getCurrentClustersFileName()}`;
+    }
+
+    function renderClusterProfilesSelect() {
+      const current = getCurrentClustersFileName();
+      const files = [...new Set(clusterProfileFiles.map((value) => sanitizeText(value)).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b));
+
+      clustersProfileSelect.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = files.length ? 'Select a saved profile...' : 'No saved profile yet';
+      clustersProfileSelect.append(placeholder);
+
+      for (const fileName of files) {
+        const option = document.createElement('option');
+        option.value = fileName;
+        option.textContent = fileName;
+        clustersProfileSelect.append(option);
+      }
+
+      if (files.includes(current)) {
+        clustersProfileSelect.value = current;
+      } else {
+        clustersProfileSelect.value = '';
+      }
+    }
+
+    async function loadClusterProfileFilesList() {
+      try {
+        const response = await fetch(withCacheBust(buildScopedApiUrl('/api/ner-cluster-files')), { cache: 'no-store' });
+        if (!response.ok) {
+          clusterProfileFiles = [];
+          renderClusterProfilesSelect();
+          return;
+        }
+
+        const payload = await response.json();
+        const files = Array.isArray(payload?.files) ? payload.files : [];
+        clusterProfileFiles = files
+          .map((value) => sanitizeText(value))
+          .filter((value) => value.toLowerCase().startsWith('ner-clusters--') && value.toLowerCase().endsWith('.json'));
+      } catch {
+        clusterProfileFiles = [];
+      }
+
+      renderClusterProfilesSelect();
+    }
+
+    async function loadClusterProfileByFileName(fileName) {
+      const normalized = sanitizeText(fileName);
+      if (!normalized) {
+        setStatus('Choose a profile file to load.');
+        return;
+      }
+
+      try {
+        const response = await fetch(withCacheBust(buildScopedApiUrl(`/data/${encodeURIComponent(normalized)}`)), { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const applied = await applySavedState(payload);
+        if (!applied) {
+          setStatus(`Could not apply profile ${normalized}.`);
+          return;
+        }
+
+        updateClustersFileLabel();
+        renderClusterProfilesSelect();
+        setStatus(`Loaded profile ${normalized}.`);
+      } catch (error) {
+        setStatus(`Could not load profile ${normalized}: ${error?.message || 'unknown error'}`);
+      }
+    }
+
+    async function saveClustersToBackend() {
+      saveBtn.disabled = true;
+      const fileName = getCurrentClustersFileName();
+      setStatus(`Saving ${fileName}...`);
+
+      try {
+        const response = await fetch(buildScopedApiUrl(`/api/save/${encodeURIComponent(fileName)}`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(buildClustersPayload()),
+        });
+
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(`Save failed (${response.status}): ${text}`);
+        }
+
+        setStatus(`Saved ${fileName} on backend.`);
+        await loadClusterProfileFilesList();
+      } catch (error) {
+        setStatus(error?.message || 'Save failed.');
+      } finally {
+        saveBtn.disabled = false;
+      }
+    }
+
+    function exportClustersJson() {
+      const payload = buildClustersPayload();
+      const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const fileName = getCurrentClustersFileName();
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus(`Exported ${fileName}.`);
+    }
+
+    function buildTableRowsData() {
+      const filterText = sanitizeText(tableFilterInput.value).toLowerCase();
+
+      const rows = distinctEntries.map((item) => {
+        const annotation = getAnnotation(item.id);
+        const clusterName = getClusterIdLabelForItem(item.id);
+        const helperValues = helperColumns.map((column) => ({
+          column,
+          value: getHelperValueForSourceItem(item, column),
+        }));
+        return {
+          item,
+          annotation,
+          clusterName,
+          helperValues,
+        };
+      });
+
+      if (!filterText) {
+        return rows;
+      }
+
+      return rows.filter((row) => {
+        const haystack = [
+          row.item.column,
+          row.item.value,
+          row.clusterName,
+          ...row.helperValues.map((helper) => helper.value),
+          ...Object.values(row.annotation.entities),
+        ].join(' ').toLowerCase();
+        return haystack.includes(filterText);
+      });
+    }
+
+    function buildTableHeader() {
+      tableHeaderRow.innerHTML = '';
+      const baseHeaders = ['Value', 'Cluster', 'Count'];
+      for (const column of helperColumns) {
+        baseHeaders.push(`Helper: ${column}`);
+      }
+      for (const text of baseHeaders) {
+        const th = document.createElement('th');
+        th.textContent = text;
+        tableHeaderRow.append(th);
+      }
+
+      for (const classDef of nerClassDefs) {
+        const th = document.createElement('th');
+        th.textContent = classDef.label;
+        th.title = classDef.key;
+        tableHeaderRow.append(th);
+      }
+    }
+
+    function renderAnnotationsTable() {
+      buildTableHeader();
+      annotationsTableBody.innerHTML = '';
+
+      const rows = buildTableRowsData();
+      if (!rows.length) {
+        annotationsTableBody.innerHTML = '<tr><td colspan="99" class="empty-note">No row matches current filter.</td></tr>';
+        return;
+      }
+
+      for (const rowData of rows) {
+        const tr = document.createElement('tr');
+
+        const valueCell = document.createElement('td');
+        valueCell.className = 'value-cell';
+        valueCell.title = rowData.item.label;
+        valueCell.textContent = rowData.item.label;
+        valueCell.addEventListener('click', () => {
+          setActiveItem(rowData.item.id);
+        });
+
+        const clusterCell = document.createElement('td');
+        clusterCell.textContent = rowData.clusterName;
+
+        const countCell = document.createElement('td');
+        countCell.textContent = String(rowData.item.count);
+
+        tr.append(valueCell, clusterCell, countCell);
+
+        for (const helper of rowData.helperValues) {
+          const helperCell = document.createElement('td');
+          helperCell.className = 'value-cell';
+          helperCell.title = helper.value || '';
+          helperCell.textContent = helper.value || '-';
+          tr.append(helperCell);
+        }
+
+        for (const classDef of nerClassDefs) {
+          const td = document.createElement('td');
+          const input = document.createElement('input');
+          input.className = 'table-input';
+          input.type = 'text';
+          input.value = sanitizeText(rowData.annotation.entities[classDef.key]);
+          input.placeholder = classDef.key;
+          input.addEventListener('input', () => {
+            setAnnotationValue(rowData.item.id, classDef.key, input.value);
+            renderSummary();
+          });
+          td.append(input);
+          tr.append(td);
+        }
+
+        annotationsTableBody.append(tr);
+      }
+    }
+
+    function renderBulkControls() {
+      bulkClassSelect.innerHTML = '';
+
+      for (const classDef of nerClassDefs) {
+        const option = document.createElement('option');
+        option.value = classDef.key;
+        option.textContent = classDef.label;
+        bulkClassSelect.append(option);
+      }
+    }
+
+    function applyBulkEdit() {
+      const classKey = sanitizeText(bulkClassSelect.value);
+      const value = sanitizeText(bulkValueInput.value);
+      if (!classKey) {
+        setStatus('Choose a bulk class first.');
+        return;
+      }
+
+      const rows = buildTableRowsData();
+      for (const row of rows) {
+        setAnnotationValue(row.item.id, classKey, value);
+      }
+
+      renderAnnotationsTable();
+      renderAnnotationPanel();
+      renderSummary();
+      setStatus(`Applied bulk value to ${rows.length} rows for ${classKey}.`);
+    }
+
+    async function loadElements() {
+      const candidates = [
+        buildScopedApiUrl('/data/elements.json'),
+        buildScopedApiUrl('/api/elements'),
+      ];
+
+      for (const url of candidates) {
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            continue;
+          }
+
+          elements = payload
+            .filter((item) => item && typeof item === 'object')
+            .map((item) => ({
+              name: sanitizeText(item.name),
+              json: sanitizeText(item.json),
+            }))
+            .filter((item) => item.name && item.json);
+
+          return;
+        } catch {
+        }
+      }
+
+      elements = [];
+    }
+
+    async function loadRows() {
+      allRows = [];
+
+      if (!elements.length) {
+        return;
+      }
+
+      const requests = elements.map(async (pair) => {
+        const jsonPath = `/data/${encodePathSegments(pair.json.replace(/^\.\//, '').replace(/^\/+/, ''))}`;
+        const url = buildScopedApiUrl(jsonPath);
+        try {
+          const response = await fetch(withCacheBust(url), { cache: 'no-store' });
+          if (!response.ok) {
+            return [];
+          }
+
+          const payload = await response.json();
+          if (!Array.isArray(payload)) {
+            return [];
+          }
+
+          return payload
+            .filter((row) => row && typeof row === 'object')
+            .map((row, rowIndex) => {
+              const normalizedRow = { ...row };
+              normalizedRow[ROW_UUID_KEY] = getRowUuid(normalizedRow, pair.name, rowIndex);
+              normalizedRow.__documentName = pair.name;
+              return normalizedRow;
+            });
+        } catch {
+          return [];
+        }
+      });
+
+      const chunks = await Promise.all(requests);
+      allRows = chunks.flat();
+    }
+
+    function collectNerClassKeys(payload, prefix = '', output = []) {
+      if (Array.isArray(payload)) {
+        for (const item of payload) {
+          collectNerClassKeys(item, prefix, output);
+        }
+        return output;
+      }
+
+      if (payload && typeof payload === 'object') {
+        for (const [key, value] of Object.entries(payload)) {
+          const nextPrefix = prefix ? `${prefix}.${key}` : key;
+
+          if (Array.isArray(value) || (value && typeof value === 'object')) {
+            collectNerClassKeys(value, nextPrefix, output);
+            continue;
+          }
+
+          output.push(nextPrefix);
+        }
+      }
+
+      return output;
+    }
+
+    function toNerLabel(key) {
+      return key
+        .split('.')
+        .map((part) => part.replace(/([a-z])([A-Z])/g, '$1 $2'))
+        .join(' > ');
+    }
+
+    function parseNerClasses(payload) {
+      const flat = collectNerClassKeys(payload, '', []);
+      const unique = [...new Set(flat.map((item) => sanitizeText(item)).filter(Boolean))];
+      return unique.map((key) => ({
+        key,
+        label: toNerLabel(key),
+      }));
+    }
+
+    function renderNerSettingsDropdown() {
+      nerSettingsSelect.innerHTML = '';
+
+      if (!nerSettingsFiles.length) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No schema file';
+        nerSettingsSelect.append(option);
+        activeNerSettingsFile = '';
+        nerClassDefs = [];
+        assignClassColors();
+        refreshClusterEntityClassSelect();
+        renderAnnotationPanel();
+        renderBulkControls();
+        renderAnnotationsTable();
+        return;
+      }
+
+      for (const file of nerSettingsFiles) {
+        const option = document.createElement('option');
+        option.value = file;
+        option.textContent = file;
+        nerSettingsSelect.append(option);
+      }
+
+      if (!nerSettingsFiles.includes(activeNerSettingsFile)) {
+        activeNerSettingsFile = nerSettingsFiles[0];
+      }
+
+      nerSettingsSelect.value = activeNerSettingsFile;
+    }
+
+    async function loadNerSettingsFiles() {
+      try {
+        const response = await fetch(withCacheBust('/api/ner-settings'), { cache: 'no-store' });
+        if (response.ok) {
+          const payload = await response.json();
+          const files = Array.isArray(payload?.files) ? payload.files : [];
+          nerSettingsFiles = files
+            .map((item) => sanitizeText(item))
+            .filter((item) => item.toLowerCase().endsWith('.json'));
+          return;
+        }
+      } catch {
+      }
+
+      nerSettingsFiles = ['cadastre.json'];
+    }
+
+    async function loadSelectedNerSchema() {
+      const file = sanitizeText(nerSettingsSelect.value);
+      activeNerSettingsFile = file;
+
+      if (!file) {
+        nerClassDefs = [];
+        activeEntityClass = '';
+        assignClassColors();
+        refreshClusterEntityClassSelect();
+        rebuildClusterEntries();
+        renderAnnotationPanel();
+        renderBulkControls();
+        renderAnnotationsTable();
+        return;
+      }
+
+      try {
+        const response = await fetch(withCacheBust(`/ner-settings/${encodeURIComponent(file)}`), { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        nerClassDefs = parseNerClasses(payload);
+        assignClassColors();
+        refreshClusterEntityClassSelect();
+
+        if (!nerClassDefs.find((item) => item.key === activeEntityClass)) {
+          activeEntityClass = nerClassDefs[0]?.key || '';
+        }
+
+        rebuildClusterEntries();
+
+        renderAnnotationPanel();
+        renderBulkControls();
+        renderAnnotationsTable();
+        renderSummary();
+        setStatus(`Loaded NER schema ${file} with ${nerClassDefs.length} classes.`);
+      } catch (error) {
+        nerClassDefs = [];
+        activeEntityClass = '';
+        assignClassColors();
+        refreshClusterEntityClassSelect();
+        rebuildClusterEntries();
+        renderAnnotationPanel();
+        renderBulkControls();
+        renderAnnotationsTable();
+        setStatus(`Could not load NER schema ${file}: ${error?.message || 'unknown error'}`);
+      }
+    }
+
+    async function loadSavedClustersForCurrentSubproject() {
+      const currentFile = getCurrentClustersFileName();
+      const candidates = [...new Set([currentFile, 'ner-clusters.json'])];
+
+      for (const fileName of candidates) {
+        try {
+          const response = await fetch(withCacheBust(buildScopedApiUrl(`/data/${encodeURIComponent(fileName)}`)), { cache: 'no-store' });
+          if (!response.ok) {
+            continue;
+          }
+
+          const payload = await response.json();
+          const applied = await applySavedState(payload);
+          if (applied) {
+            return { restored: true, fileName };
+          }
+        } catch {
+        }
+      }
+
+      return { restored: false, fileName: '' };
+    }
+
+    async function loadData() {
+      setStatus('Loading elements and JSON rows...');
+
+      elements = [];
+      allRows = [];
+      availableColumns = [];
+      selectedColumns = new Set();
+      distinctEntries = [];
+      distinctById = new Map();
+      clusters = [];
+      unassignedIds = new Set();
+      nextClusterId = 1;
+      annotationsByItemId = new Map();
+      activeItemId = '';
+
+      await loadElements();
+      await loadRows();
+
+      availableColumns = inferColumnsFromRows(allRows);
+      rebuildColumnValueCounts();
+      refreshHelperColumnSelect();
+      await loadClusterProfileFilesList();
+
+      const defaultColumns = availableColumns.slice(0, 1);
+      selectedColumns = new Set(defaultColumns);
+      updateClustersFileLabel();
+
+      createCluster('Cluster 1');
+      rebuildDistinctEntries();
+      renderColumns();
+
+      const restoredState = await loadSavedClustersForCurrentSubproject();
+      if (restoredState.restored) {
+        setStatus(`Loaded ${elements.length} documents and restored ${restoredState.fileName} for this subproject.`);
+      } else {
+        setStatus(`Loaded ${elements.length} documents, ${allRows.length} rows, ${availableColumns.length} columns.`);
+      }
+      updateClustersFileLabel();
+      renderClusterProfilesSelect();
+    }
+
+    function initMetricSelector() {
+      metricSelect.innerHTML = '';
+      for (const [key, entry] of Object.entries(similarityMetrics)) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = entry.label;
+        metricSelect.append(option);
+      }
+      metricSelect.value = 'normalized_levenshtein';
+    }
+
+    function updateWorkAreaHeight() {
+      const navHeight = document.querySelector('.top-nav')?.offsetHeight || 0;
+      const toolbarHeight = document.querySelector('.toolbar')?.offsetHeight || 0;
+      const controlsHeight = document.querySelector('.controls')?.offsetHeight || 0;
+      const verticalPadding = 28;
+      const available = Math.max(420, window.innerHeight - navHeight - toolbarHeight - controlsHeight - verticalPadding);
+      document.documentElement.style.setProperty('--work-area-height', `${available}px`);
+    }
+
+    function wireSectionToggle(button, section) {
+      const updateState = () => {
+        const collapsed = section.classList.contains('is-collapsed');
+        button.textContent = collapsed ? 'Extend' : 'Reduce';
+      };
+
+      button.addEventListener('click', () => {
+        section.classList.toggle('is-collapsed');
+        updateState();
+      });
+
+      updateState();
+    }
+
+    projectSelect.addEventListener('change', async () => {
+      updateCurrentProjectFromControl();
+      await loadData();
+    });
+
+    subprojectSelect.addEventListener('change', async () => {
+      updateCurrentSubprojectFromControl();
+      await loadData();
+    });
+
+    reloadBtn.addEventListener('click', async () => {
+      await loadData();
+    });
+
+    nerSettingsSelect.addEventListener('change', async () => {
+      await loadSelectedNerSchema();
+    });
+
+    clusterModeSelect.addEventListener('change', () => {
+      clusterMode = sanitizeText(clusterModeSelect.value) || 'value';
+      rebuildClusterEntries();
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      setStatus(clusterMode === 'entity'
+        ? 'Entity-level clustering enabled. Choose entity class and cluster mentions independently.'
+        : 'Value-level clustering enabled.');
+    });
+
+    clusterEntityClassSelect.addEventListener('change', () => {
+      clusterEntityClass = sanitizeText(clusterEntityClassSelect.value);
+      if (clusterMode !== 'entity') {
+        return;
+      }
+      rebuildClusterEntries();
+      renderUnassigned();
+      renderClusters();
+      renderSummary();
+      renderAnnotationPanel();
+      setStatus(`Entity-level clustering class set to ${clusterEntityClass || 'none'}.`);
+    });
+
+    thresholdInput.addEventListener('input', () => {
+      thresholdOutput.textContent = getThreshold().toFixed(2);
+    });
+
+    initClustersBtn.addEventListener('click', () => {
+      initializeClusters();
+    });
+
+    newClusterBtn.addEventListener('click', () => {
+      createCluster(`Cluster ${nextClusterId}`);
+      renderClusters();
+      renderSummary();
+      renderAnnotationsTable();
+      setStatus('Added an empty cluster.');
+    });
+
+    resetBtn.addEventListener('click', () => {
+      resetAssignments();
+    });
+
+    selectAllColumnsBtn.addEventListener('click', () => {
+      selectedColumns = new Set(availableColumns);
+      renderColumns();
+      rebuildDistinctEntries();
+      updateClustersFileLabel();
+      renderClusterProfilesSelect();
+    });
+
+    clearColumnsBtn.addEventListener('click', () => {
+      selectedColumns = new Set();
+      renderColumns();
+      rebuildDistinctEntries();
+      updateClustersFileLabel();
+      renderClusterProfilesSelect();
+    });
+
+    saveBtn.addEventListener('click', async () => {
+      await saveClustersToBackend();
+    });
+
+    exportBtn.addEventListener('click', () => {
+      exportClustersJson();
+    });
+
+    loadProfileBtn.addEventListener('click', async () => {
+      await loadClusterProfileByFileName(clustersProfileSelect.value);
+    });
+
+    tableFilterInput.addEventListener('input', () => {
+      renderAnnotationsTable();
+    });
+
+    helperColumnDropdownBtn.addEventListener('click', () => {
+      const shouldOpen = !helperColumnMenu.classList.contains('open');
+      setHelperColumnsMenuOpen(shouldOpen);
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!helperColumnDropdown.contains(event.target)) {
+        setHelperColumnsMenuOpen(false);
+      }
+    });
+
+    bulkApplyBtn.addEventListener('click', () => {
+      applyBulkEdit();
+    });
+
+    addDepBtn.addEventListener('click', () => {
+      if (!activeItemId || !distinctById.has(activeItemId)) {
+        setStatus('Select a value before adding dependency.');
+        return;
+      }
+
+      const headNodeId = sanitizeText(depHeadNodeSelect.value);
+      const dependentNodeId = sanitizeText(depDepNodeSelect.value);
+      const relation = sanitizeText(depRelationInput.value);
+      if (!headNodeId || !dependentNodeId || !relation) {
+        setStatus('Dependency requires head node, dependent node and relation.');
+        return;
+      }
+
+      const annotation = getAnnotation(activeItemId);
+      const tokens = tokenizeValue(distinctById.get(activeItemId)?.value || '');
+      const nodes = buildDependencyNodes(activeItemId, tokens, annotation);
+      const nodesById = new Map(nodes.map((node) => [node.id, node]));
+      const headLabel = nodesById.get(headNodeId)?.label || headNodeId;
+      const dependentLabel = nodesById.get(dependentNodeId)?.label || dependentNodeId;
+
+      const headTokenMatch = /^token:(\d+)$/.exec(headNodeId);
+      const dependentTokenMatch = /^token:(\d+)$/.exec(dependentNodeId);
+
+      annotation.dependencies.push({
+        id: `${headNodeId}:${dependentNodeId}:${relation}:${Date.now()}`,
+        headNodeId,
+        dependentNodeId,
+        ...(headTokenMatch ? { head: Number.parseInt(headTokenMatch[1], 10) } : {}),
+        ...(dependentTokenMatch ? { dependent: Number.parseInt(dependentTokenMatch[1], 10) } : {}),
+        headLabel,
+        dependentLabel,
+        relation,
+      });
+
+      depRelationInput.value = '';
+      renderAnnotationPanel();
+      setStatus('Dependency added.');
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (!isPointerDrawing || dragSpanStartIndex === null || dragSpanHoverIndex === null || !activeItemId) {
+        isPointerDrawing = false;
+        dragSpanStartIndex = null;
+        dragSpanHoverIndex = null;
+        return;
+      }
+
+      drawSpan(activeItemId, dragSpanStartIndex, dragSpanHoverIndex);
+      isPointerDrawing = false;
+      dragSpanStartIndex = null;
+      dragSpanHoverIndex = null;
+    });
+
+    addDropHandlers(unassignedZone, (itemId) => moveItemToUnassigned(itemId));
+
+    async function init() {
+      initMetricSelector();
+      updateWorkAreaHeight();
+      wireSectionToggle(toggleNerAnnotationBtn, nerAnnotationSection);
+      wireSectionToggle(toggleDependencyBtn, dependencySection);
+      wireSectionToggle(toggleTableBtn, resultTableSection);
+      wireSectionToggle(toggleClusteringBtn, clusteringAreaSection);
+      thresholdOutput.textContent = getThreshold().toFixed(2);
+
+      await loadProjectsSettings();
+      if (!projectsSettings.length) {
+        setStatus('No projects configured');
+        columnList.innerHTML = '<div class="empty-note">No projects found in projects-settings.json.</div>';
+        return;
+      }
+
+      await loadNerSettingsFiles();
+      renderNerSettingsDropdown();
+      await loadSelectedNerSchema();
+
+      refreshSelectors();
+      await loadData();
+    }
+
+    window.addEventListener('resize', updateWorkAreaHeight);
+
+    init();
+  </script>
+</body>
+</html>

@@ -24,7 +24,8 @@
             "width": 2182,
             "height": 153
         },
-        "rowIndex": 1
+        "rowIndex": 1,
+        "__rowUuid": "480ff622-4b56-4f8a-8ae4-66b3bfa92cfa"
     },
     {
         "contribuable": "Stéphan Ve et enf Jacques",
@@ -51,7 +52,8 @@
             "width": 2182,
             "height": 149
         },
-        "rowIndex": 2
+        "rowIndex": 2,
+        "__rowUuid": "2aaedd23-018a-464c-b3af-c281bf87e832"
     },
     {
         "contribuable": "Stéphan Paul",
@@ -78,7 +80,8 @@
             "width": 2182,
             "height": 110
         },
-        "rowIndex": 3
+        "rowIndex": 3,
+        "__rowUuid": "83108630-485a-47ab-9af8-53ac14f7502a"
     },
     {
         "contribuable": "Brunot Lassalle",
@@ -105,7 +108,8 @@
             "width": 2182,
             "height": 113
         },
-        "rowIndex": 4
+        "rowIndex": 4,
+        "__rowUuid": "92f7fcd5-249e-4a3a-8fae-ce6aa8585560"
     },
     {
         "contribuable": "Nédélec Pierre",
@@ -132,7 +136,8 @@
             "width": 2182,
             "height": 133
         },
-        "rowIndex": 5
+        "rowIndex": 5,
+        "__rowUuid": "56bd7feb-cabf-40fa-b0bc-2b67820d8db9"
     },
     {
         "contribuable": "Malgorn Jn Louis",
@@ -159,7 +164,8 @@
             "width": 2182,
             "height": 137
         },
-        "rowIndex": 6
+        "rowIndex": 6,
+        "__rowUuid": "c465ac29-c994-4d56-8ff7-39f5dd6b645e"
     },
     {
         "contribuable": "Pichon Jn Louis ~~enfants daniel~~",
@@ -186,7 +192,8 @@
             "width": 2182,
             "height": 137
         },
-        "rowIndex": 7
+        "rowIndex": 7,
+        "__rowUuid": "bf36ba6a-eba9-456d-80e6-44b1cd169671"
     },
     {
         "contribuable": "Pichon Jn Louis",
@@ -213,7 +220,8 @@
             "width": 2182,
             "height": 164
         },
-        "rowIndex": 8
+        "rowIndex": 8,
+        "__rowUuid": "0ee01869-66e4-4d8e-8290-5196fb5c366f"
     },
     {
         "contribuable": "Stéphan michel",
@@ -240,7 +248,8 @@
             "width": 2182,
             "height": 117
         },
-        "rowIndex": 9
+        "rowIndex": 9,
+        "__rowUuid": "104e0924-bc3c-4ed5-a4c8-0333277ee92f"
     },
     {
         "contribuable": "Noret Louis",
@@ -267,7 +276,8 @@
             "width": 2182,
             "height": 110
         },
-        "rowIndex": 10
+        "rowIndex": 10,
+        "__rowUuid": "6fc33c42-36f1-4c2b-8300-a0c80bcdd995"
     },
     {
         "contribuable": "Stéphan Ve et enf Jn Louis",
@@ -294,7 +304,8 @@
             "width": 2182,
             "height": 149
         },
-        "rowIndex": 11
+        "rowIndex": 11,
+        "__rowUuid": "735e1989-b393-4740-b667-8cdc1b1ed987"
     },
     {
         "contribuable": "fabrique d'Ouessant",
@@ -321,7 +332,8 @@
             "width": 2182,
             "height": 129
         },
-        "rowIndex": 12
+        "rowIndex": 12,
+        "__rowUuid": "73e09c84-36fb-44ee-a6aa-199d563af46a"
     },
     {
         "contribuable": "Noret Ve et enf Paul",
@@ -348,7 +360,8 @@
             "width": 2182,
             "height": 110
         },
-        "rowIndex": 13
+        "rowIndex": 13,
+        "__rowUuid": "716d67de-5c8f-416e-b1f2-74f8e6c0a57a"
     },
     {
         "contribuable": "Malgorn Charles",
@@ -375,7 +388,8 @@
             "width": 2182,
             "height": 133
         },
-        "rowIndex": 14
+        "rowIndex": 14,
+        "__rowUuid": "dc943dba-5fcb-423e-b9d7-6a8ef103ee24"
     },
     {
         "contribuable": "Pennec Guy",
@@ -402,7 +416,8 @@
             "width": 2182,
             "height": 149
         },
-        "rowIndex": 15
+        "rowIndex": 15,
+        "__rowUuid": "2ccfcaca-50dd-40ec-84eb-39f2070cd377"
     },
     {
         "contribuable": "Héré Jean",
@@ -429,7 +444,8 @@
             "width": 2182,
             "height": 110
         },
-        "rowIndex": 16
+        "rowIndex": 16,
+        "__rowUuid": "80ade900-973a-4579-ba0a-ce0d0c221e2f"
     },
     {
         "contribuable": "Noret Louis",
@@ -456,7 +472,8 @@
             "width": 2182,
             "height": 125
         },
-        "rowIndex": 17
+        "rowIndex": 17,
+        "__rowUuid": "5df5b0ee-2c84-4b95-abfa-b4a19024a2f0"
     },
     {
         "contribuable": "Berthélé Jean",
@@ -483,7 +500,8 @@
             "width": 2182,
             "height": 141
         },
-        "rowIndex": 18
+        "rowIndex": 18,
+        "__rowUuid": "3705f0b4-1145-45f3-8b30-33cacf811363"
     },
     {
         "contribuable": "Jaouen Louis",
@@ -510,7 +528,8 @@
             "width": 2182,
             "height": 117
         },
-        "rowIndex": 19
+        "rowIndex": 19,
+        "__rowUuid": "54d0c787-26e4-4393-bf6c-09c56c49cf33"
     },
     {
         "contribuable": "Cozan Prosper",
@@ -537,6 +556,7 @@
             "width": 2182,
             "height": 133
         },
-        "rowIndex": 20
+        "rowIndex": 20,
+        "__rowUuid": "9a830cd0-4851-42b8-9b98-db7d1acaba12"
     }
 ]
