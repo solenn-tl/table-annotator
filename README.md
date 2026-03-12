@@ -5,19 +5,16 @@ This repository contains a demo of a tool to annotate digitized historical table
 ## Setup
 ## Python Virtual environnement (required)
 ```bash
-python -m venv ocr-test
+python -m venv table-annotator
 
-ocr-test\Scripts\activate
-.\ocr-test\Scripts\Activate.ps1
+table-annotator\Scripts\activate
+.\table-annotator\Scripts\Activate.ps1
 
 pip install -r requirements.txt
 ```
 
 ## Viewer
-The detailed documentation of the viewer is given in the folder ```viewer```.
-
-## Citation
-To be added
+The detailed documentation of the viewer, including how to launch it, is given in the folder ```viewer```.
 
 ## Licence
 To be added
