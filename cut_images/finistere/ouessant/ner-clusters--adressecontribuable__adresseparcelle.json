@@ -17,6 +17,7 @@
         "contribuable.address",
         "contribuable.familyStatus",
         "contribuable.title",
+        "contribuable.association",
         "natureParcelle.uniqueValue",
         "natureParcelle.quantity",
         "adresseParcelle.uniqueValue",
@@ -26,8 +27,8 @@
         "adresseParcelle",
         "adresseContribuable"
     ],
-    "distinctValuesCount": 54,
-    "clusterItemsCount": 56,
+    "distinctValuesCount": 62,
+    "clusterItemsCount": 64,
     "clusters": [
         {
             "id": 1,
@@ -39,7 +40,7 @@
                     "mentionId": "full-source:0",
                     "column": "adresseContribuable",
                     "value": "Feunteun vélen",
-                    "count": 33,
+                    "count": 38,
                     "rowUuids": [
                         "16f19338-c8af-4782-aef4-ace6cd7444eb",
                         "b964cbc7-b5d8-415a-94c9-2b48b7aa9a31",
@@ -73,7 +74,12 @@
                         "b2753871-ac1e-4efd-958a-7bb436569dfa",
                         "b3a550de-2872-4bfa-808b-93e80bed1a56",
                         "a5458847-227e-40e3-a39e-0a703f0d54ce",
-                        "f7120663-4c31-4eed-922c-c28bc2f40e72"
+                        "f7120663-4c31-4eed-922c-c28bc2f40e72",
+                        "84c28233-dc93-442d-b244-00a9b6943496",
+                        "3d717d21-c872-42cd-bbfd-ae4f0de60df5",
+                        "ffd2b1c9-5bcb-42ab-8793-e4759be41635",
+                        "3c6f5d88-0715-4281-966c-e265cbd6e0c4",
+                        "6e4c4a0a-456d-420e-95dc-dc67274219c3"
                     ],
                     "sourceRowUuids": [
                         "16f19338-c8af-4782-aef4-ace6cd7444eb",
@@ -108,7 +114,12 @@
                         "b2753871-ac1e-4efd-958a-7bb436569dfa",
                         "b3a550de-2872-4bfa-808b-93e80bed1a56",
                         "a5458847-227e-40e3-a39e-0a703f0d54ce",
-                        "f7120663-4c31-4eed-922c-c28bc2f40e72"
+                        "f7120663-4c31-4eed-922c-c28bc2f40e72",
+                        "84c28233-dc93-442d-b244-00a9b6943496",
+                        "3d717d21-c872-42cd-bbfd-ae4f0de60df5",
+                        "ffd2b1c9-5bcb-42ab-8793-e4759be41635",
+                        "3c6f5d88-0715-4281-966c-e265cbd6e0c4",
+                        "6e4c4a0a-456d-420e-95dc-dc67274219c3"
                     ],
                     "annotations": {},
                     "spans": [],
@@ -121,7 +132,7 @@
                     "mentionId": "full-source:0",
                     "column": "adresseParcelle",
                     "value": "Feunteun vélen",
-                    "count": 7,
+                    "count": 8,
                     "rowUuids": [
                         "6466f86e-99aa-4317-9377-1c5216fef9c5",
                         "b1db2208-241d-4a4f-8df6-0a962a0f008b",
@@ -129,7 +140,8 @@
                         "480ff622-4b56-4f8a-8ae4-66b3bfa92cfa",
                         "d357dc05-ad89-4a0f-93e1-3859942da423",
                         "021bdfdc-eef5-4f63-ba2c-2ae3ca176570",
-                        "fea7eac0-f50d-4262-a405-39784618e6a8"
+                        "fea7eac0-f50d-4262-a405-39784618e6a8",
+                        "84c28233-dc93-442d-b244-00a9b6943496"
                     ],
                     "sourceRowUuids": [
                         "6466f86e-99aa-4317-9377-1c5216fef9c5",
@@ -138,7 +150,8 @@
                         "480ff622-4b56-4f8a-8ae4-66b3bfa92cfa",
                         "d357dc05-ad89-4a0f-93e1-3859942da423",
                         "021bdfdc-eef5-4f63-ba2c-2ae3ca176570",
-                        "fea7eac0-f50d-4262-a405-39784618e6a8"
+                        "fea7eac0-f50d-4262-a405-39784618e6a8",
+                        "84c28233-dc93-442d-b244-00a9b6943496"
                     ],
                     "annotations": {},
                     "spans": [],
@@ -161,45 +174,20 @@
                         "de2a584b-026f-4924-8628-24c43972bf32"
                     ],
                     "annotations": {},
-                    "spans": [],
-                    "dependencies": [],
-                    "tokenLabels": {}
-                },
-                {
-                    "itemId": "adresseContribuable::Frugulou ~~Feunteun vélen~~::entity::adresseContribuable.uniqueValue::1:2:1:0::1",
-                    "sourceItemId": "adresseContribuable::Frugulou ~~Feunteun vélen~~",
-                    "mentionId": "1:2:1:0",
-                    "column": "adresseContribuable",
-                    "value": "Feunteun vélen",
-                    "count": 1,
-                    "rowUuids": [
-                        "30be05f2-0e15-4d67-bb16-b843de16b185"
-                    ],
-                    "sourceRowUuids": [
-                        "30be05f2-0e15-4d67-bb16-b843de16b185"
-                    ],
-                    "annotations": {
-                        "adresseContribuable.uniqueValue": "Frugulou | Feunteun vélen"
-                    },
                     "spans": [
                         {
-                            "id": "adresseContribuable.uniqueValue:0:0:1772881205397",
-                            "classKey": "adresseContribuable.uniqueValue",
+                            "id": "adresseParcelle.uniqueValue:0:1:1772896153312",
+                            "classKey": "adresseParcelle.uniqueValue",
                             "start": 0,
-                            "end": 0
-                        },
-                        {
-                            "id": "adresseContribuable.uniqueValue:1:2:1772881206899",
-                            "classKey": "adresseContribuable.uniqueValue",
-                            "start": 1,
-                            "end": 2
+                            "end": 1,
+                            "textOverride": "",
+                            "order": 61
                         }
                     ],
                     "dependencies": [],
                     "tokenLabels": {
-                        "0": "adresseContribuable.uniqueValue",
-                        "1": "adresseContribuable.uniqueValue",
-                        "2": "adresseContribuable.uniqueValue"
+                        "0": "adresseParcelle.uniqueValue",
+                        "1": "adresseParcelle.uniqueValue"
                     }
                 },
                 {
@@ -219,6 +207,47 @@
                     "spans": [],
                     "dependencies": [],
                     "tokenLabels": {}
+                },
+                {
+                    "itemId": "adresseContribuable::Frugulou ~~Feunteun vélen~~::entity::adresseContribuable.uniqueValue::2:3:1:0::1",
+                    "sourceItemId": "adresseContribuable::Frugulou ~~Feunteun vélen~~",
+                    "mentionId": "2:3:1:0",
+                    "column": "adresseContribuable",
+                    "value": "Feunteun vélen",
+                    "count": 1,
+                    "rowUuids": [
+                        "30be05f2-0e15-4d67-bb16-b843de16b185"
+                    ],
+                    "sourceRowUuids": [
+                        "30be05f2-0e15-4d67-bb16-b843de16b185"
+                    ],
+                    "annotations": {
+                        "adresseContribuable.uniqueValue": "Frugulou | Feunteun vélen"
+                    },
+                    "spans": [
+                        {
+                            "id": "adresseContribuable.uniqueValue:0:0:1772881205397",
+                            "classKey": "adresseContribuable.uniqueValue",
+                            "start": 0,
+                            "end": 0,
+                            "textOverride": "",
+                            "order": 1
+                        },
+                        {
+                            "id": "adresseContribuable.uniqueValue:2:3:1772892761105",
+                            "classKey": "adresseContribuable.uniqueValue",
+                            "start": 2,
+                            "end": 3,
+                            "textOverride": "",
+                            "order": 5
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "adresseContribuable.uniqueValue",
+                        "2": "adresseContribuable.uniqueValue",
+                        "3": "adresseContribuable.uniqueValue"
+                    }
                 }
             ]
         },
@@ -232,7 +261,7 @@
                     "mentionId": "full-source:0",
                     "column": "adresseContribuable",
                     "value": "Pen ar ruguel",
-                    "count": 17,
+                    "count": 18,
                     "rowUuids": [
                         "ab668b79-1ec8-4fb1-b88c-9e682505f1c5",
                         "2bc6dbf1-9333-496b-9f2f-d23ee893f78d",
@@ -250,7 +279,8 @@
                         "021bdfdc-eef5-4f63-ba2c-2ae3ca176570",
                         "39ba7eaf-2e7f-4f8b-a666-ec9dd9fd78e0",
                         "6ffea062-19d9-46e5-8ef2-8d99ac8bf248",
-                        "35c3f73c-0e23-4c34-ba69-53588d97c601"
+                        "35c3f73c-0e23-4c34-ba69-53588d97c601",
+                        "9da80ba3-d32a-4c75-918d-aadb3fc363d0"
                     ],
                     "sourceRowUuids": [
                         "ab668b79-1ec8-4fb1-b88c-9e682505f1c5",
@@ -269,7 +299,8 @@
                         "021bdfdc-eef5-4f63-ba2c-2ae3ca176570",
                         "39ba7eaf-2e7f-4f8b-a666-ec9dd9fd78e0",
                         "6ffea062-19d9-46e5-8ef2-8d99ac8bf248",
-                        "35c3f73c-0e23-4c34-ba69-53588d97c601"
+                        "35c3f73c-0e23-4c34-ba69-53588d97c601",
+                        "9da80ba3-d32a-4c75-918d-aadb3fc363d0"
                     ],
                     "annotations": {},
                     "spans": [],
@@ -299,11 +330,11 @@
                     "tokenLabels": {}
                 },
                 {
-                    "itemId": "adresseContribuable::~~Pen ar ruguel~~::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "itemId": "adresseContribuable::~~Pen ar ruguel~~::entity::adresseContribuable.uniqueValue::1:3:0:0::0",
                     "sourceItemId": "adresseContribuable::~~Pen ar ruguel~~",
-                    "mentionId": "full-source:0",
+                    "mentionId": "1:3:0:0",
                     "column": "adresseContribuable",
-                    "value": "~~Pen ar ruguel~~",
+                    "value": "Pen ar ruguel",
                     "count": 1,
                     "rowUuids": [
                         "02decf19-bb08-47ee-ab47-1e6e1b55d308"
@@ -311,10 +342,25 @@
                     "sourceRowUuids": [
                         "02decf19-bb08-47ee-ab47-1e6e1b55d308"
                     ],
-                    "annotations": {},
-                    "spans": [],
+                    "annotations": {
+                        "adresseContribuable.uniqueValue": "Pen ar ruguel"
+                    },
+                    "spans": [
+                        {
+                            "id": "adresseContribuable.uniqueValue:1:3:1772892780605",
+                            "classKey": "adresseContribuable.uniqueValue",
+                            "start": 1,
+                            "end": 3,
+                            "textOverride": "",
+                            "order": 6
+                        }
+                    ],
                     "dependencies": [],
-                    "tokenLabels": {}
+                    "tokenLabels": {
+                        "1": "adresseContribuable.uniqueValue",
+                        "2": "adresseContribuable.uniqueValue",
+                        "3": "adresseContribuable.uniqueValue"
+                    }
                 }
             ]
         },
@@ -403,43 +449,6 @@
                     "tokenLabels": {}
                 },
                 {
-                    "itemId": "adresseContribuable::Frugulou ~~Costi Lan~~::entity::adresseContribuable.uniqueValue::0:0:1:0::1",
-                    "sourceItemId": "adresseContribuable::Frugulou ~~Costi Lan~~",
-                    "mentionId": "0:0:1:0",
-                    "column": "adresseContribuable",
-                    "value": "Frugulou",
-                    "count": 1,
-                    "rowUuids": [
-                        "bf36ba6a-eba9-456d-80e6-44b1cd169671"
-                    ],
-                    "sourceRowUuids": [
-                        "bf36ba6a-eba9-456d-80e6-44b1cd169671"
-                    ],
-                    "annotations": {
-                        "adresseContribuable.uniqueValue": "Costi Lan | Frugulou"
-                    },
-                    "spans": [
-                        {
-                            "id": "adresseContribuable.uniqueValue:1:2:1772881246502",
-                            "classKey": "adresseContribuable.uniqueValue",
-                            "start": 1,
-                            "end": 2
-                        },
-                        {
-                            "id": "adresseContribuable.uniqueValue:0:0:1772881247324",
-                            "classKey": "adresseContribuable.uniqueValue",
-                            "start": 0,
-                            "end": 0
-                        }
-                    ],
-                    "dependencies": [],
-                    "tokenLabels": {
-                        "0": "adresseContribuable.uniqueValue",
-                        "1": "adresseContribuable.uniqueValue",
-                        "2": "adresseContribuable.uniqueValue"
-                    }
-                },
-                {
                     "itemId": "adresseContribuable::Frugulou ~~Feunteun vélen~~::entity::adresseContribuable.uniqueValue::0:0:0:0::0",
                     "sourceItemId": "adresseContribuable::Frugulou ~~Feunteun vélen~~",
                     "mentionId": "0:0:0:0",
@@ -460,21 +469,84 @@
                             "id": "adresseContribuable.uniqueValue:0:0:1772881205397",
                             "classKey": "adresseContribuable.uniqueValue",
                             "start": 0,
-                            "end": 0
+                            "end": 0,
+                            "textOverride": "",
+                            "order": 1
                         },
                         {
-                            "id": "adresseContribuable.uniqueValue:1:2:1772881206899",
+                            "id": "adresseContribuable.uniqueValue:2:3:1772892761105",
                             "classKey": "adresseContribuable.uniqueValue",
-                            "start": 1,
-                            "end": 2
+                            "start": 2,
+                            "end": 3,
+                            "textOverride": "",
+                            "order": 5
                         }
                     ],
                     "dependencies": [],
                     "tokenLabels": {
                         "0": "adresseContribuable.uniqueValue",
-                        "1": "adresseContribuable.uniqueValue",
-                        "2": "adresseContribuable.uniqueValue"
+                        "2": "adresseContribuable.uniqueValue",
+                        "3": "adresseContribuable.uniqueValue"
                     }
+                },
+                {
+                    "itemId": "adresseContribuable::Frugulou ~~Costi Lan~~::entity::adresseContribuable.uniqueValue::0:0:0:0::0",
+                    "sourceItemId": "adresseContribuable::Frugulou ~~Costi Lan~~",
+                    "mentionId": "0:0:0:0",
+                    "column": "adresseContribuable",
+                    "value": "Frugulou",
+                    "count": 1,
+                    "rowUuids": [
+                        "bf36ba6a-eba9-456d-80e6-44b1cd169671"
+                    ],
+                    "sourceRowUuids": [
+                        "bf36ba6a-eba9-456d-80e6-44b1cd169671"
+                    ],
+                    "annotations": {
+                        "adresseContribuable.uniqueValue": "Frugulou | Costi Lan"
+                    },
+                    "spans": [
+                        {
+                            "id": "adresseContribuable.uniqueValue:0:0:1772881247324",
+                            "classKey": "adresseContribuable.uniqueValue",
+                            "start": 0,
+                            "end": 0,
+                            "textOverride": "",
+                            "order": 2
+                        },
+                        {
+                            "id": "adresseContribuable.uniqueValue:2:3:1772892807497",
+                            "classKey": "adresseContribuable.uniqueValue",
+                            "start": 2,
+                            "end": 3,
+                            "textOverride": "",
+                            "order": 7
+                        }
+                    ],
+                    "dependencies": [],
+                    "tokenLabels": {
+                        "0": "adresseContribuable.uniqueValue",
+                        "2": "adresseContribuable.uniqueValue",
+                        "3": "adresseContribuable.uniqueValue"
+                    }
+                },
+                {
+                    "itemId": "adresseContribuable::frugulou::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "sourceItemId": "adresseContribuable::frugulou",
+                    "mentionId": "full-source:0",
+                    "column": "adresseContribuable",
+                    "value": "frugulou",
+                    "count": 1,
+                    "rowUuids": [
+                        "61cdc607-9522-4b99-b452-fb31ef6b57a2"
+                    ],
+                    "sourceRowUuids": [
+                        "61cdc607-9522-4b99-b452-fb31ef6b57a2"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
                 }
             ]
         },
@@ -518,20 +590,24 @@
                     "mentionId": "full-source:0",
                     "column": "adresseContribuable",
                     "value": "bourg",
-                    "count": 5,
+                    "count": 7,
                     "rowUuids": [
                         "3697587d-159b-491c-9136-5ddd00428567",
                         "593ac43e-dce3-4a26-921e-48a4b713522b",
                         "e7207895-f2a7-4267-ad76-04fa467c9055",
                         "a169c59e-be99-45b8-85e8-f800ca4370b7",
-                        "9a096383-a9ee-485e-8ba5-d8f1f2d550ec"
+                        "9a096383-a9ee-485e-8ba5-d8f1f2d550ec",
+                        "c5c5e549-71d5-4cc5-8c34-0e2d94aebb35",
+                        "394ef7bc-c593-48df-9892-2c4cab11dd0d"
                     ],
                     "sourceRowUuids": [
                         "3697587d-159b-491c-9136-5ddd00428567",
                         "593ac43e-dce3-4a26-921e-48a4b713522b",
                         "e7207895-f2a7-4267-ad76-04fa467c9055",
                         "a169c59e-be99-45b8-85e8-f800ca4370b7",
-                        "9a096383-a9ee-485e-8ba5-d8f1f2d550ec"
+                        "9a096383-a9ee-485e-8ba5-d8f1f2d550ec",
+                        "c5c5e549-71d5-4cc5-8c34-0e2d94aebb35",
+                        "394ef7bc-c593-48df-9892-2c4cab11dd0d"
                     ],
                     "annotations": {},
                     "spans": [],
@@ -746,16 +822,18 @@
                     "mentionId": "full-source:0",
                     "column": "adresseContribuable",
                     "value": "Penarlan",
-                    "count": 3,
+                    "count": 4,
                     "rowUuids": [
                         "55959dec-c8d2-45e8-b76a-d5c59cc1c255",
                         "104e0924-bc3c-4ed5-a4c8-0333277ee92f",
-                        "5f355649-2462-4952-8c09-5a4e538b9d70"
+                        "5f355649-2462-4952-8c09-5a4e538b9d70",
+                        "a5332862-29de-49d9-a0a9-51f75d150b30"
                     ],
                     "sourceRowUuids": [
                         "55959dec-c8d2-45e8-b76a-d5c59cc1c255",
                         "104e0924-bc3c-4ed5-a4c8-0333277ee92f",
-                        "5f355649-2462-4952-8c09-5a4e538b9d70"
+                        "5f355649-2462-4952-8c09-5a4e538b9d70",
+                        "a5332862-29de-49d9-a0a9-51f75d150b30"
                     ],
                     "annotations": {},
                     "spans": [],
@@ -854,14 +932,16 @@
                     "mentionId": "full-source:0",
                     "column": "adresseContribuable",
                     "value": "Keranchas",
-                    "count": 2,
+                    "count": 3,
                     "rowUuids": [
                         "d6d9a14f-a5f6-42c1-aa5a-7de83642e779",
-                        "12d28241-c5db-4481-96ea-3f831ae8bc26"
+                        "12d28241-c5db-4481-96ea-3f831ae8bc26",
+                        "a4a252ca-0db0-4f5f-9787-ca23fe653ebf"
                     ],
                     "sourceRowUuids": [
                         "d6d9a14f-a5f6-42c1-aa5a-7de83642e779",
-                        "12d28241-c5db-4481-96ea-3f831ae8bc26"
+                        "12d28241-c5db-4481-96ea-3f831ae8bc26",
+                        "a4a252ca-0db0-4f5f-9787-ca23fe653ebf"
                     ],
                     "annotations": {},
                     "spans": [],
@@ -906,14 +986,16 @@
                     "mentionId": "full-source:0",
                     "column": "adresseContribuable",
                     "value": "Kerlaouen",
-                    "count": 2,
+                    "count": 3,
                     "rowUuids": [
                         "588b4f11-b386-406b-ac6a-58d17e9f5e4c",
-                        "b146fddb-337d-46ec-9ffe-c7998da20fdd"
+                        "b146fddb-337d-46ec-9ffe-c7998da20fdd",
+                        "80aafb2b-d557-458e-952a-e2dc204ba61b"
                     ],
                     "sourceRowUuids": [
                         "588b4f11-b386-406b-ac6a-58d17e9f5e4c",
-                        "b146fddb-337d-46ec-9ffe-c7998da20fdd"
+                        "b146fddb-337d-46ec-9ffe-c7998da20fdd",
+                        "80aafb2b-d557-458e-952a-e2dc204ba61b"
                     ],
                     "annotations": {},
                     "spans": [],
@@ -1010,12 +1092,14 @@
                     "mentionId": "full-source:0",
                     "column": "adresseContribuable",
                     "value": "Caraès",
-                    "count": 1,
+                    "count": 2,
                     "rowUuids": [
-                        "357497bd-a2b1-4fac-89bb-7b6eaafef8b3"
+                        "357497bd-a2b1-4fac-89bb-7b6eaafef8b3",
+                        "0db44465-59ca-4db9-b764-56f61826eeb3"
                     ],
                     "sourceRowUuids": [
-                        "357497bd-a2b1-4fac-89bb-7b6eaafef8b3"
+                        "357497bd-a2b1-4fac-89bb-7b6eaafef8b3",
+                        "0db44465-59ca-4db9-b764-56f61826eeb3"
                     ],
                     "annotations": {},
                     "spans": [],
@@ -1047,9 +1131,9 @@
             "name": "Cluster 23",
             "values": [
                 {
-                    "itemId": "adresseContribuable::Frugulou ~~Costi Lan~~::entity::adresseContribuable.uniqueValue::1:2:0:0::0",
+                    "itemId": "adresseContribuable::Frugulou ~~Costi Lan~~::entity::adresseContribuable.uniqueValue::2:3:1:0::1",
                     "sourceItemId": "adresseContribuable::Frugulou ~~Costi Lan~~",
-                    "mentionId": "1:2:0:0",
+                    "mentionId": "2:3:1:0",
                     "column": "adresseContribuable",
                     "value": "Costi Lan",
                     "count": 1,
@@ -1060,27 +1144,31 @@
                         "bf36ba6a-eba9-456d-80e6-44b1cd169671"
                     ],
                     "annotations": {
-                        "adresseContribuable.uniqueValue": "Costi Lan | Frugulou"
+                        "adresseContribuable.uniqueValue": "Frugulou | Costi Lan"
                     },
                     "spans": [
-                        {
-                            "id": "adresseContribuable.uniqueValue:1:2:1772881246502",
-                            "classKey": "adresseContribuable.uniqueValue",
-                            "start": 1,
-                            "end": 2
-                        },
                         {
                             "id": "adresseContribuable.uniqueValue:0:0:1772881247324",
                             "classKey": "adresseContribuable.uniqueValue",
                             "start": 0,
-                            "end": 0
+                            "end": 0,
+                            "textOverride": "",
+                            "order": 2
+                        },
+                        {
+                            "id": "adresseContribuable.uniqueValue:2:3:1772892807497",
+                            "classKey": "adresseContribuable.uniqueValue",
+                            "start": 2,
+                            "end": 3,
+                            "textOverride": "",
+                            "order": 7
                         }
                     ],
                     "dependencies": [],
                     "tokenLabels": {
                         "0": "adresseContribuable.uniqueValue",
-                        "1": "adresseContribuable.uniqueValue",
-                        "2": "adresseContribuable.uniqueValue"
+                        "2": "adresseContribuable.uniqueValue",
+                        "3": "adresseContribuable.uniqueValue"
                     }
                 }
             ]
@@ -1606,8 +1694,176 @@
                     "tokenLabels": {}
                 }
             ]
+        },
+        {
+            "id": 45,
+            "name": "Cluster 45",
+            "values": [
+                {
+                    "itemId": "adresseContribuable::Cors::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "sourceItemId": "adresseContribuable::Cors",
+                    "mentionId": "full-source:0",
+                    "column": "adresseContribuable",
+                    "value": "Cors",
+                    "count": 1,
+                    "rowUuids": [
+                        "2f932fce-3730-4433-b384-b4c298b53432"
+                    ],
+                    "sourceRowUuids": [
+                        "2f932fce-3730-4433-b384-b4c298b53432"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                }
+            ]
+        },
+        {
+            "id": 46,
+            "name": "Cluster 46",
+            "values": [
+                {
+                    "itemId": "adresseContribuable::Goubars::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "sourceItemId": "adresseContribuable::Goubars",
+                    "mentionId": "full-source:0",
+                    "column": "adresseContribuable",
+                    "value": "Goubars",
+                    "count": 1,
+                    "rowUuids": [
+                        "af0dc27e-7913-4758-972d-6e9ae8b60b4f"
+                    ],
+                    "sourceRowUuids": [
+                        "af0dc27e-7913-4758-972d-6e9ae8b60b4f"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                }
+            ]
+        },
+        {
+            "id": 47,
+            "name": "Cluster 47",
+            "values": [
+                {
+                    "itemId": "adresseContribuable::Keréré::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "sourceItemId": "adresseContribuable::Keréré",
+                    "mentionId": "full-source:0",
+                    "column": "adresseContribuable",
+                    "value": "Keréré",
+                    "count": 1,
+                    "rowUuids": [
+                        "ab5cf520-2c7d-4cde-a2f3-cb71412242a3"
+                    ],
+                    "sourceRowUuids": [
+                        "ab5cf520-2c7d-4cde-a2f3-cb71412242a3"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                }
+            ]
+        },
+        {
+            "id": 48,
+            "name": "Cluster 48",
+            "values": [
+                {
+                    "itemId": "adresseContribuable::Kernigou::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "sourceItemId": "adresseContribuable::Kernigou",
+                    "mentionId": "full-source:0",
+                    "column": "adresseContribuable",
+                    "value": "Kernigou",
+                    "count": 1,
+                    "rowUuids": [
+                        "15015811-a922-46d1-8a57-868b89f7ed10"
+                    ],
+                    "sourceRowUuids": [
+                        "15015811-a922-46d1-8a57-868b89f7ed10"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                }
+            ]
+        },
+        {
+            "id": 49,
+            "name": "Cluster 49",
+            "values": [
+                {
+                    "itemId": "adresseContribuable::Lan ar créac'h::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "sourceItemId": "adresseContribuable::Lan ar créac'h",
+                    "mentionId": "full-source:0",
+                    "column": "adresseContribuable",
+                    "value": "Lan ar créac'h",
+                    "count": 1,
+                    "rowUuids": [
+                        "da1fc48e-0f6e-4202-8e7c-cbd6e78528b7"
+                    ],
+                    "sourceRowUuids": [
+                        "da1fc48e-0f6e-4202-8e7c-cbd6e78528b7"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                }
+            ]
+        },
+        {
+            "id": 50,
+            "name": "Cluster 50",
+            "values": [
+                {
+                    "itemId": "adresseContribuable::Pen ar prat::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "sourceItemId": "adresseContribuable::Pen ar prat",
+                    "mentionId": "full-source:0",
+                    "column": "adresseContribuable",
+                    "value": "Pen ar prat",
+                    "count": 1,
+                    "rowUuids": [
+                        "6be0f4f1-b659-4f5d-b845-d87e47d6c076"
+                    ],
+                    "sourceRowUuids": [
+                        "6be0f4f1-b659-4f5d-b845-d87e47d6c076"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                }
+            ]
+        },
+        {
+            "id": 51,
+            "name": "Cluster 51",
+            "values": [
+                {
+                    "itemId": "adresseContribuable::Poulguéguen::entity::adresseContribuable.uniqueValue::full-source:0::0",
+                    "sourceItemId": "adresseContribuable::Poulguéguen",
+                    "mentionId": "full-source:0",
+                    "column": "adresseContribuable",
+                    "value": "Poulguéguen",
+                    "count": 1,
+                    "rowUuids": [
+                        "4cd45065-21b1-41e9-8fde-0f895c36940b"
+                    ],
+                    "sourceRowUuids": [
+                        "4cd45065-21b1-41e9-8fde-0f895c36940b"
+                    ],
+                    "annotations": {},
+                    "spans": [],
+                    "dependencies": [],
+                    "tokenLabels": {}
+                }
+            ]
         }
     ],
     "unassigned": [],
-    "generatedAt": "2026-03-07T11:01:35.893Z"
+    "generatedAt": "2026-03-08T07:24:38.934Z"
 }

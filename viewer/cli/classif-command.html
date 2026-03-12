@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>IIIF Command Helper</title>
+  <title>Classification Command Helper</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -57,13 +57,6 @@
       border-bottom: 1px solid #7774;
     }
 
-    .toolbar a,
-    .toolbar button,
-    .toolbar input {
-      padding: 5px 8px;
-      font: inherit;
-    }
-
     .content {
       padding: 12px;
       display: grid;
@@ -103,7 +96,8 @@
       font-size: 13px;
     }
 
-    .row input {
+    .row input,
+    .row select {
       padding: 6px 8px;
       border: 1px solid #7776;
       border-radius: 6px;
@@ -166,16 +160,19 @@
 <body>
   <div class="app">
     <nav class="top-nav" aria-label="Viewer pages">
-      <a class="active" href="./iiif-command.html">IIIF Retriever</a>
-      <a href="./page-classification.html">Page Classification</a>
-      <a href="./index.html">Table annotation</a>
-      <a href="./cover-annotator.html">Cover annotation</a>
-      <a href="./ner-and-clustering.html">NER and clustering</a>
-      <a href="./projects-settings.html">Projects settings</a>
+      <a href="../page-classification.html">Page Classification</a>
+      <a href="../index.html">Table annotation</a>
+      <a href="../cover-annotator.html">Cover annotation</a>
+      <a href="../ner-and-clustering.html">NER and clustering</a>
+      <a href="../projects-settings.html">Projects settings</a>
+      <a href="./iiif-command.html">CLI: IIIF Ligeo</a>
+      <a href="./iiif-arkotheque-command.html">CLI: IIIF Arkotheque</a>
+      <a class="active" href="./classif-command.html">CLI: Classification</a>
+      <a href="./local-pretreatement-command.html">CLI: Local Pretreatement</a>
     </nav>
 
     <div class="toolbar">
-      <strong>IIIF Command Helper</strong>
+      <strong>Classification Command Helper</strong>
       <div class="actions"></div>
     </div>
 
@@ -184,29 +181,41 @@
         <div class="panel-title">Command Inputs</div>
         <div class="panel-body">
           <div class="row">
-            <label for="manifestUrl">Manifest URL</label>
-            <input id="manifestUrl" type="text" value="https://archives06.fr/ark:/79346/a586c563adb32013b2b3a8e920240680/manifest.json" />
+            <label for="elementsPath">Elements JSON path</label>
+            <input id="elementsPath" type="text" value=".\\cut_images\\alpes-maritimes\\aiglun\\3P31\\elements.json" />
           </div>
 
           <div class="row">
-            <label for="outputDir">Output directory</label>
-            <input id="outputDir" type="text" value=".\cut_images\alpes-maritimes\aiglun\3P31" />
-            <div class="help">Folder where generated files will be written.</div>
+            <label for="outputPath">Output classification JSON path</label>
+            <input id="outputPath" type="text" value=".\\cut_images\\alpes-maritimes\\aiglun\\3P31\\classification.json" />
           </div>
 
           <div class="row">
-            <label for="itemsOutput">Items filename/path</label>
-            <input id="itemsOutput" type="text" value="items.json" />
+            <label for="modelPath">Model path</label>
+            <input id="modelPath" type="text" value=".\\models\\classification\\best.pt" />
           </div>
 
           <div class="row">
-            <label for="elementsOutput">Pairs filename/path</label>
-            <input id="elementsOutput" type="text" value="elements.json" />
+            <label for="limit">Limit (optional)</label>
+            <input id="limit" type="number" min="1" step="1" value="" />
+            <div class="help">Leave empty to process all elements.</div>
           </div>
 
           <div class="row">
-            <label for="manifestOutput">Manifest filename/path (optional)</label>
-            <input id="manifestOutput" type="text" value="manifest.json" />
+            <label for="iiifWidth">IIIF width</label>
+            <input id="iiifWidth" type="number" min="0" step="1" value="800" />
+            <div class="help">Use 0 to keep full-size IIIF images.</div>
+          </div>
+
+          <div class="row">
+            <label for="device">Device</label>
+            <select id="device">
+              <option value="auto" selected>auto</option>
+              <option value="cpu">cpu</option>
+              <option value="cuda">cuda</option>
+              <option value="cuda:0">cuda:0</option>
+              <option value="cuda:1">cuda:1</option>
+            </select>
           </div>
 
           <div class="actions">
@@ -226,9 +235,9 @@
 
           <div class="panel-title" style="margin:0 -10px 0 -10px; border-top:1px solid #7774;">Notes</div>
           <ul>
-            <li>Creates <strong>items</strong>, <strong>elements</strong>, and empty annotation JSON files for each pair.</li>
-            <li>If files already exist, annotation JSON files are not overwritten.</li>
-            <li>Use absolute paths if you run command outside project root.</li>
+            <li>The classifier downloads each image, then runs YOLO classification.</li>
+            <li>If some image downloads fail, failures are listed in output JSON.</li>
+            <li>Use a relative path from repo root or provide absolute paths.</li>
           </ul>
         </div>
       </section>
@@ -236,11 +245,12 @@
   </div>
 
   <script>
-    const manifestUrlInput = document.getElementById('manifestUrl');
-    const outputDirInput = document.getElementById('outputDir');
-    const itemsOutputInput = document.getElementById('itemsOutput');
-    const elementsOutputInput = document.getElementById('elementsOutput');
-    const manifestOutputInput = document.getElementById('manifestOutput');
+    const elementsPathInput = document.getElementById('elementsPath');
+    const outputPathInput = document.getElementById('outputPath');
+    const modelPathInput = document.getElementById('modelPath');
+    const limitInput = document.getElementById('limit');
+    const iiifWidthInput = document.getElementById('iiifWidth');
+    const deviceInput = document.getElementById('device');
     const commandPreview = document.getElementById('commandPreview');
     const status = document.getElementById('status');
     const buildBtn = document.getElementById('buildBtn');
@@ -252,49 +262,64 @@
     }
 
     function buildCommand() {
-      const manifestUrl = manifestUrlInput.value.trim();
-      const outputDir = outputDirInput.value.trim();
-      const itemsOutput = itemsOutputInput.value.trim();
-      const elementsOutput = elementsOutputInput.value.trim();
-      const manifestOutput = manifestOutputInput.value.trim();
+      const elementsPath = elementsPathInput.value.trim();
+      const outputPath = outputPathInput.value.trim();
+      const modelPath = modelPathInput.value.trim();
+      const limit = limitInput.value.trim();
+      const iiifWidth = iiifWidthInput.value.trim();
+      const device = deviceInput.value;
 
-      if (!manifestUrl) {
-        status.textContent = 'Manifest URL is required';
+      if (!elementsPath) {
+        status.textContent = 'Elements path is required';
         return '';
       }
 
-      if (!outputDir) {
-        status.textContent = 'Output directory is required';
+      if (!outputPath) {
+        status.textContent = 'Output path is required';
         return '';
       }
 
-      let command = `python viewer\\iiif.py ${quote(manifestUrl)} --output-dir ${quote(outputDir)}`;
-
-      if (itemsOutput) {
-        command += ` --items-output ${quote(itemsOutput)}`;
+      if (!modelPath) {
+        status.textContent = 'Model path is required';
+        return '';
       }
 
-      if (elementsOutput) {
-        command += ` --elements-output ${quote(elementsOutput)}`;
+      const parts = [
+        'python',
+        'viewer\\cli\\classif.py',
+        '--elements-path',
+        quote(elementsPath),
+        '--output-path',
+        quote(outputPath),
+        '--model-path',
+        quote(modelPath),
+      ];
+
+      if (limit) {
+        parts.push('--limit', limit);
       }
 
-      if (manifestOutput) {
-        command += ` --manifest-output ${quote(manifestOutput)}`;
+      if (iiifWidth) {
+        parts.push('--iiif-width', iiifWidth);
+      }
+
+      if (device) {
+        parts.push('--device', device);
       }
 
       status.textContent = 'Command ready';
-      return command;
+      return parts.join(' ');
     }
 
     function renderCommand() {
       const command = buildCommand();
-      commandPreview.textContent = command || '—';
+      commandPreview.textContent = command || '-';
     }
 
     async function copyCommand() {
       const command = buildCommand();
       if (!command) {
-        commandPreview.textContent = '—';
+        commandPreview.textContent = '-';
         return;
       }
 
@@ -308,10 +333,17 @@
       }
     }
 
-    [manifestUrlInput, outputDirInput, itemsOutputInput, elementsOutputInput, manifestOutputInput]
-      .forEach((input) => {
-        input.addEventListener('input', renderCommand);
-      });
+    [
+      elementsPathInput,
+      outputPathInput,
+      modelPathInput,
+      limitInput,
+      iiifWidthInput,
+      deviceInput,
+    ].forEach((input) => {
+      input.addEventListener('input', renderCommand);
+      input.addEventListener('change', renderCommand);
+    });
 
     buildBtn.addEventListener('click', renderCommand);
     copyBtn.addEventListener('click', copyCommand);

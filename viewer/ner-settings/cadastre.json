@@ -7,7 +7,8 @@
             {"activity":""},
             {"address":""},
             {"familyStatus":""},
-            {"title":""}
+            {"title":""},
+            {"association":""}
         ]
     },
     {"natureParcelle":

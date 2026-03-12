@@ -440,15 +440,41 @@
     .span-list {
       display: grid;
       gap: 4px;
-      max-height: 120px;
+      max-height: 240px;
+      min-height: 170px;
       overflow: auto;
-      padding-right: 2px;
+      padding: 4px;
+      border: 1px dashed #7778;
+      border-radius: 8px;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .span-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .span-merge-btn {
+      font: inherit;
+      padding: 3px 8px;
+      border: 1px solid #7778;
+      border-radius: 6px;
+      background: color-mix(in oklab, Canvas 99%, black 1%);
+      color: CanvasText;
+    }
+
+    .span-merge-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
     .span-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-wrap: wrap;
       gap: 8px;
       font-size: 12px;
       padding: 3px 6px;
@@ -457,13 +483,39 @@
       background: color-mix(in oklab, Canvas 98%, black 2%);
     }
 
+    .span-item.selected {
+      border-color: #2a7fff;
+      box-shadow: 0 0 0 1px #2a7fff66 inset;
+    }
+
     .span-item code {
       font-size: 11px;
+      flex: 1 1 220px;
+      min-width: 0;
+      word-break: break-word;
     }
 
     .span-item button {
       font: inherit;
       padding: 2px 6px;
+      border: 1px solid #7778;
+      border-radius: 6px;
+      background: color-mix(in oklab, Canvas 99%, black 1%);
+      color: CanvasText;
+    }
+
+    .span-actions {
+      display: inline-flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      flex: 0 1 100%;
+    }
+
+    .span-empty-note {
+      font-size: 12px;
+      color: GrayText;
+      padding: 6px;
     }
 
     .entity-summary {
@@ -616,6 +668,15 @@
       z-index: 1;
     }
 
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th.sortable:hover {
+      background: color-mix(in oklab, Canvas 92%, black 4%);
+    }
+
     td.value-cell {
       max-width: 200px;
       overflow: hidden;
@@ -739,7 +800,7 @@
       }
 
       .table-wrap {
-        max-height: min(260px, 34dvh);
+        max-height: min(260px, 40dvh);
       }
     }
   </style>
@@ -747,7 +808,7 @@
 <body>
   <div class="app">
     <nav class="top-nav" aria-label="Viewer pages">
-      <a href="./iiif-command.html">IIIF Retriever</a>
+      <!--<a href="./iiif-command.html">IIIF Retriever</a>-->
       <a href="./page-classification.html">Page Classification</a>
       <a href="./index.html">Table annotation</a>
       <a href="./cover-annotator.html">Cover annotation</a>
@@ -823,7 +884,7 @@
 
       <section class="panel">
         <div class="panel-title">Clusters and NER Annotations</div>
-        <div class="panel-body clusters-layout">
+        <div id="clustersPanelBody" class="panel-body clusters-layout">
           <div id="clustersSummary" class="summary"></div>
 
           <div class="section-head">
@@ -835,6 +896,9 @@
             <div id="entityClassPills" class="class-pills"></div>
             <div id="drawHint" class="draw-hint">Select a class then drag across tokens to draw an entity span. Nested spans are allowed.</div>
             <div id="tokenAnnotator" class="token-wrap"></div>
+            <div class="span-toolbar">
+              <button id="mergeSelectedSpansBtn" class="span-merge-btn" type="button">Merge span</button>
+            </div>
             <div id="spanList" class="span-list"></div>
             <div id="entitySummary" class="entity-summary"></div>
           </section>
@@ -929,6 +993,7 @@
     const unassignedZone = document.getElementById('unassignedZone');
 
     const clustersSummary = document.getElementById('clustersSummary');
+    const clustersPanelBody = document.getElementById('clustersPanelBody');
     const clusterModeBanner = document.getElementById('clusterModeBanner');
     const clustersGrid = document.getElementById('clustersGrid');
     const saveBtn = document.getElementById('saveBtn');
@@ -949,6 +1014,7 @@
     const entityClassPills = document.getElementById('entityClassPills');
     const drawHint = document.getElementById('drawHint');
     const tokenAnnotator = document.getElementById('tokenAnnotator');
+    const mergeSelectedSpansBtn = document.getElementById('mergeSelectedSpansBtn');
     const spanList = document.getElementById('spanList');
     const entitySummary = document.getElementById('entitySummary');
     const depHeadNodeSelect = document.getElementById('depHeadNodeSelect');
@@ -1003,6 +1069,15 @@
     let dragSpanStartIndex = null;
     let dragSpanHoverIndex = null;
     let isPointerDrawing = false;
+    let activeDraggedItemId = '';
+    let lastDragClientY = -1;
+    let dragAutoScrollTimer = null;
+    let selectedSpanIds = new Set();
+    let nextSpanOrder = 1;
+    let tableSortState = {
+      key: '',
+      direction: 'asc',
+    };
 
     const ENTITY_COLORS = [
       '#d94848', '#2b8a3e', '#1d6fd6', '#b35f00', '#7a3db8', '#0f766e', '#c2255c', '#5c7cfa',
@@ -1294,10 +1369,140 @@
       }
     }
 
+    function splitPartIntoDedicatedTokens(part) {
+      const tokens = [];
+      let buffer = '';
+
+      for (const char of String(part || '')) {
+        // Keep apostrophes inside words (e.g. d'Arc, l'ile) while splitting other punctuation.
+        const isApostrophe = char === "'" || char === '’';
+        if (/\p{P}/u.test(char) && !isApostrophe) {
+          if (buffer) {
+            tokens.push(buffer);
+            buffer = '';
+          }
+          tokens.push(char);
+        } else {
+          buffer += char;
+        }
+      }
+
+      if (buffer) {
+        tokens.push(buffer);
+      }
+
+      return tokens;
+    }
+
     function tokenizeValue(text) {
-      // Keep slash as part of tokens (e.g. "A/B") so span annotation does not split on '/'.
-      const tokens = sanitizeText(text).match(/[\p{L}\p{N}'\/-]+/gu);
-      return Array.isArray(tokens) ? tokens : [];
+      // Tokenization is whitespace-based, with dedicated tokens for "~~" and punctuation.
+      const parts = sanitizeText(text)
+        .split(/\s+/u)
+        .map((token) => sanitizeText(token))
+        .filter(Boolean);
+
+      const tokens = [];
+      for (const part of parts) {
+        const chunks = part.split('~~');
+        for (let i = 0; i < chunks.length; i += 1) {
+          const chunk = sanitizeText(chunks[i]);
+          if (chunk) {
+            const chunkTokens = splitPartIntoDedicatedTokens(chunk);
+            tokens.push(...chunkTokens);
+          }
+          if (i < chunks.length - 1) {
+            tokens.push('~~');
+          }
+        }
+      }
+
+      return tokens;
+    }
+
+    function takeNextSpanOrder() {
+      const value = nextSpanOrder;
+      nextSpanOrder += 1;
+      return value;
+    }
+
+    function getSpanSortOrder(span) {
+      const raw = Number.parseFloat(span?.order);
+      return Number.isFinite(raw) ? raw : Number.MAX_SAFE_INTEGER;
+    }
+
+    function compareSpans(left, right) {
+      const leftStart = Number.parseInt(left?.start, 10) || 0;
+      const rightStart = Number.parseInt(right?.start, 10) || 0;
+      if (leftStart !== rightStart) {
+        return leftStart - rightStart;
+      }
+
+      const leftEnd = Number.parseInt(left?.end, 10) || 0;
+      const rightEnd = Number.parseInt(right?.end, 10) || 0;
+      if (leftEnd !== rightEnd) {
+        return leftEnd - rightEnd;
+      }
+
+      const leftOrder = getSpanSortOrder(left);
+      const rightOrder = getSpanSortOrder(right);
+      if (leftOrder !== rightOrder) {
+        return leftOrder - rightOrder;
+      }
+
+      return String(left?.id || '').localeCompare(String(right?.id || ''));
+    }
+
+    function getSpanText(tokens, span) {
+      const override = sanitizeText(span?.textOverride);
+      if (override) {
+        return override;
+      }
+      const start = Number.parseInt(span?.start, 10);
+      const end = Number.parseInt(span?.end, 10);
+      if (!Number.isInteger(start) || !Number.isInteger(end)) {
+        return '';
+      }
+      return sanitizeText(tokens.slice(start, end + 1).join(' '));
+    }
+
+    function updateMergeSelectedButtonState(annotation) {
+      if (!mergeSelectedSpansBtn) {
+        return;
+      }
+
+      const allSpanIds = new Set((annotation?.spans || []).map((span) => sanitizeText(span.id)).filter(Boolean));
+      selectedSpanIds = new Set([...selectedSpanIds].filter((id) => allSpanIds.has(id)));
+      mergeSelectedSpansBtn.disabled = selectedSpanIds.size < 2;
+    }
+
+    function getTextOffsetFromPoint(event, element) {
+      const textLength = String(element?.textContent || '').length;
+      if (!textLength) {
+        return 0;
+      }
+
+      let offset = -1;
+
+      if (typeof document.caretPositionFromPoint === 'function') {
+        const position = document.caretPositionFromPoint(event.clientX, event.clientY);
+        if (position && typeof position.offset === 'number') {
+          offset = position.offset;
+        }
+      } else if (typeof document.caretRangeFromPoint === 'function') {
+        const range = document.caretRangeFromPoint(event.clientX, event.clientY);
+        if (range && typeof range.startOffset === 'number') {
+          offset = range.startOffset;
+        }
+      }
+
+      if (offset < 0) {
+        const rect = element.getBoundingClientRect();
+        const width = Math.max(1, rect.width);
+        const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / width));
+        offset = Math.round(ratio * textLength);
+      }
+
+      return Math.max(0, Math.min(textLength, offset));
     }
 
     function makeEmptyAnnotation() {
@@ -1379,6 +1584,21 @@
           });
         }
       }
+
+      // Ensure deterministic span ordering and keep optional text overrides.
+      let highestOrder = 0;
+      for (let index = 0; index < spans.length; index += 1) {
+        const span = spans[index];
+        const rawSpan = Array.isArray(raw.spans) ? raw.spans[index] : null;
+        span.textOverride = sanitizeText(rawSpan?.textOverride);
+        const parsedOrder = Number.parseFloat(rawSpan?.order);
+        const normalizedOrder = Number.isFinite(parsedOrder) ? parsedOrder : (index + 1);
+        span.order = normalizedOrder;
+        if (normalizedOrder > highestOrder) {
+          highestOrder = normalizedOrder;
+        }
+      }
+      nextSpanOrder = Math.max(nextSpanOrder, highestOrder + 1);
 
       if (Array.isArray(raw.dependencies)) {
         for (const dep of raw.dependencies) {
@@ -1859,6 +2079,7 @@
 
     function setActiveItem(itemId) {
       activeItemId = distinctById.has(itemId) ? itemId : '';
+      selectedSpanIds = new Set();
       renderAnnotationPanel();
       renderUnassigned();
       renderClusters();
@@ -1934,9 +2155,7 @@
 
       const grouped = new Map();
       for (const span of annotation.spans) {
-        const start = Math.max(0, Math.min(span.start, tokens.length - 1));
-        const end = Math.max(0, Math.min(span.end, tokens.length - 1));
-        const phrase = sanitizeText(tokens.slice(start, end + 1).join(' '));
+        const phrase = getSpanText(tokens, span);
         if (!phrase) {
           continue;
         }
@@ -1972,13 +2191,17 @@
 
       const existingIndex = annotation.spans.findIndex((span) => span.classKey === classKey && span.start === start && span.end === end);
       if (existingIndex >= 0) {
+        const removed = annotation.spans[existingIndex];
         annotation.spans.splice(existingIndex, 1);
+        selectedSpanIds.delete(sanitizeText(removed?.id));
       } else {
         annotation.spans.push({
           id: `${classKey}:${start}:${end}:${Date.now()}`,
           classKey,
           start,
           end,
+          order: takeNextSpanOrder(),
+          textOverride: '',
         });
       }
 
@@ -1996,6 +2219,7 @@
 
     function removeSpan(itemId, spanId) {
       const annotation = getAnnotation(itemId);
+      selectedSpanIds.delete(sanitizeText(spanId));
       const nextSpans = annotation.spans.filter((span) => span.id !== spanId);
       annotation.spans = nextSpans;
       recomputeEntitiesFromSpans(itemId);
@@ -2028,15 +2252,21 @@
         classKey: target.classKey,
         start: target.start,
         end: splitAt,
+        order: takeNextSpanOrder(),
+        textOverride: '',
       };
       const rightSpan = {
         id: `${target.classKey}:${splitAt + 1}:${target.end}:${Date.now()}:R`,
         classKey: target.classKey,
         start: splitAt + 1,
         end: target.end,
+        order: takeNextSpanOrder(),
+        textOverride: '',
       };
 
-      annotation.spans.splice(spanIndex, 1, leftSpan, rightSpan);
+      annotation.spans = annotation.spans.filter((span) => span.id !== spanId);
+      annotation.spans.push(leftSpan, rightSpan);
+      selectedSpanIds.delete(sanitizeText(spanId));
 
       recomputeEntitiesFromSpans(itemId);
       if (clusterMode === 'entity') {
@@ -2049,6 +2279,69 @@
       updateChipMeta(itemId);
       renderAnnotationsTable();
       setStatus(`Span split into [${leftSpan.start}-${leftSpan.end}] and [${rightSpan.start}-${rightSpan.end}].`);
+    }
+
+    function splitSpanAtCharacter(itemId, spanId, splitIndex) {
+      const annotation = getAnnotation(itemId);
+      const spanIndex = annotation.spans.findIndex((span) => span.id === spanId);
+      if (spanIndex < 0) {
+        return;
+      }
+
+      const target = annotation.spans[spanIndex];
+      const leftClassKey = sanitizeText(target.classKey);
+      const rightClassKey = sanitizeText(activeEntityClass) || leftClassKey;
+      const source = distinctById.get(itemId);
+      const tokens = tokenizeValue(source?.value || '');
+      const phrase = getSpanText(tokens, target);
+      if (!phrase || phrase.length < 2) {
+        setStatus('Span is too short for a character-level split.');
+        return;
+      }
+
+      const safeSplit = Math.max(1, Math.min(phrase.length - 1, Number.parseInt(splitIndex, 10) || 0));
+      const leftText = sanitizeText(phrase.slice(0, safeSplit));
+      const rightText = sanitizeText(phrase.slice(safeSplit));
+      if (!leftText || !rightText) {
+        setStatus('Character-level split failed: choose a split position inside the text.');
+        return;
+      }
+
+      const leftSpan = {
+        id: `${leftClassKey}:${target.start}:${target.end}:${Date.now()}:CL`,
+        classKey: leftClassKey,
+        start: target.start,
+        end: target.end,
+        order: takeNextSpanOrder(),
+        textOverride: leftText,
+      };
+
+      const rightSpan = {
+        id: `${rightClassKey}:${target.start}:${target.end}:${Date.now()}:CR`,
+        classKey: rightClassKey,
+        start: target.start,
+        end: target.end,
+        order: takeNextSpanOrder(),
+        textOverride: rightText,
+      };
+
+      annotation.spans = annotation.spans.filter((span) => span.id !== spanId);
+      annotation.spans.push(leftSpan, rightSpan);
+      selectedSpanIds.delete(sanitizeText(spanId));
+      selectedSpanIds.add(leftSpan.id);
+      selectedSpanIds.add(rightSpan.id);
+
+      recomputeEntitiesFromSpans(itemId);
+      if (clusterMode === 'entity') {
+        rebuildClusterEntries();
+        renderUnassigned();
+        renderClusters();
+      }
+      renderAnnotationPanel();
+      renderSummary();
+      updateChipMeta(itemId);
+      renderAnnotationsTable();
+      setStatus(`Character split created two spans: "${leftText}" (${leftClassKey}) and "${rightText}" (${rightClassKey}).`);
     }
 
     function getNeighborSpanId(annotation, spanId, direction) {
@@ -2097,10 +2390,14 @@
         classKey: first.classKey,
         start: Math.min(first.start, second.start),
         end: Math.max(first.end, second.end),
+        order: Math.min(getSpanSortOrder(first), getSpanSortOrder(second)),
+        textOverride: '',
       };
 
       annotation.spans = annotation.spans.filter((span) => span.id !== first.id && span.id !== second.id);
       annotation.spans.push(merged);
+      selectedSpanIds.delete(sanitizeText(first.id));
+      selectedSpanIds.delete(sanitizeText(second.id));
 
       recomputeEntitiesFromSpans(itemId);
       if (clusterMode === 'entity') {
@@ -2137,7 +2434,7 @@
 
       const sortedSpans = [...(annotation.spans || [])].sort((a, b) => (a.start - b.start) || (a.end - b.end));
       for (const span of sortedSpans) {
-        const phrase = sanitizeText(tokens.slice(span.start, span.end + 1).join(' '));
+        const phrase = getSpanText(tokens, span);
         nodes.push({
           id: `span:${span.id}`,
           label: `Span ${span.classKey} [${span.start}-${span.end}] ${phrase}`,
@@ -2233,6 +2530,72 @@
       }
     }
 
+    function mergeSelectedSpans(itemId) {
+      if (!itemId || !distinctById.has(itemId)) {
+        setStatus('Select a value before merging spans.');
+        return;
+      }
+
+      const annotation = getAnnotation(itemId);
+      const selected = (annotation.spans || [])
+        .filter((span) => selectedSpanIds.has(sanitizeText(span.id)))
+        .sort(compareSpans);
+
+      if (selected.length < 2) {
+        setStatus('Select at least two successive spans to merge.');
+        return;
+      }
+
+      const classKey = sanitizeText(selected[0].classKey);
+      if (!selected.every((span) => sanitizeText(span.classKey) === classKey)) {
+        setStatus('Selected spans must belong to the same class.');
+        return;
+      }
+
+      for (let i = 1; i < selected.length; i += 1) {
+        const prev = selected[i - 1];
+        const curr = selected[i];
+        const isAdjacentByTokens = Number.parseInt(curr.start, 10) <= (Number.parseInt(prev.end, 10) + 1);
+        const isSameRange = Number.parseInt(curr.start, 10) === Number.parseInt(prev.start, 10)
+          && Number.parseInt(curr.end, 10) === Number.parseInt(prev.end, 10);
+        if (!isAdjacentByTokens && !isSameRange) {
+          setStatus('Selected spans must be successive (adjacent) to be merged.');
+          return;
+        }
+      }
+
+      const source = distinctById.get(itemId);
+      const tokens = tokenizeValue(source?.value || '');
+      const parts = selected.map((span) => getSpanText(tokens, span)).filter(Boolean);
+      const mergedText = sanitizeText(parts.join(' '));
+
+      const merged = {
+        id: `${classKey}:${Math.min(...selected.map((span) => Number.parseInt(span.start, 10) || 0))}:${Math.max(...selected.map((span) => Number.parseInt(span.end, 10) || 0))}:${Date.now()}:SM`,
+        classKey,
+        start: Math.min(...selected.map((span) => Number.parseInt(span.start, 10) || 0)),
+        end: Math.max(...selected.map((span) => Number.parseInt(span.end, 10) || 0)),
+        order: Math.min(...selected.map((span) => getSpanSortOrder(span))),
+        textOverride: mergedText,
+      };
+
+      const selectedIdSet = new Set(selected.map((span) => sanitizeText(span.id)));
+      annotation.spans = annotation.spans.filter((span) => !selectedIdSet.has(sanitizeText(span.id)));
+      annotation.spans.push(merged);
+      selectedSpanIds = new Set([merged.id]);
+
+      recomputeEntitiesFromSpans(itemId);
+      if (clusterMode === 'entity') {
+        rebuildClusterEntries();
+        renderUnassigned();
+        renderClusters();
+      }
+      renderAnnotationPanel();
+      renderSummary();
+      updateChipMeta(itemId);
+      renderAnnotationsTable();
+      setStatus(`Merged ${selected.length} spans into one span.`);
+    }
+
     function renderAnnotationPanel() {
       entityClassPills.innerHTML = '';
       tokenAnnotator.innerHTML = '';
@@ -2246,6 +2609,9 @@
         annotationHeader.textContent = 'Click a distinct value to annotate named entities.';
         drawHint.textContent = 'Select a class then drag across tokens to draw an entity span. Nested spans are allowed. Use Split/Merge in the span list to reshape spans.';
         entitySummary.innerHTML = '<div class="empty-note">No selected value.</div>';
+        if (mergeSelectedSpansBtn) {
+          mergeSelectedSpansBtn.disabled = true;
+        }
         return;
       }
 
@@ -2282,7 +2648,7 @@
       const tokens = tokenizeValue(item.value);
       const annotation = getAnnotation(activeItemId);
       drawHint.textContent = activeEntityClass
-        ? `Drawing class: ${activeEntityClass}. Drag across tokens to add/remove one span. Use Split/Merge in the span list to reshape spans.`
+        ? `Drawing class: ${activeEntityClass}. Drag across tokens to add/remove one span, double-click a token for a 1-token span, or double-click inside a span label to split at character level. Right split part uses the current drawing class.`
         : 'Select an entity class first, then drag across tokens.';
 
       if (!tokens.length) {
@@ -2347,25 +2713,63 @@
             dragSpanHoverIndex = null;
           });
 
+          tokenButton.addEventListener('dblclick', (event) => {
+            event.preventDefault();
+            if (!activeEntityClass) {
+              return;
+            }
+            isPointerDrawing = false;
+            dragSpanStartIndex = null;
+            dragSpanHoverIndex = null;
+            drawSpan(activeItemId, i, i);
+          });
+
           tokenAnnotator.append(tokenButton);
         }
       }
 
-      const sortedSpans = [...annotation.spans].sort((a, b) => (a.start - b.start) || (a.end - b.end));
+      const sortedSpans = [...annotation.spans].sort(compareSpans);
       if (!sortedSpans.length) {
-        spanList.innerHTML = '<div class="empty-note">No spans yet.</div>';
+        spanList.innerHTML = '<div class="span-empty-note">No spans yet. Drag across tokens or double-click a token to create one.</div>';
       } else {
         for (const span of sortedSpans) {
           const itemEl = document.createElement('div');
           itemEl.className = 'span-item';
+          const spanId = sanitizeText(span.id);
+          if (selectedSpanIds.has(spanId)) {
+            itemEl.classList.add('selected');
+          }
+
+          const select = document.createElement('input');
+          select.type = 'checkbox';
+          select.checked = selectedSpanIds.has(spanId);
+          select.title = 'Select span for multi-merge';
+          select.addEventListener('change', () => {
+            if (select.checked) {
+              selectedSpanIds.add(spanId);
+            } else {
+              selectedSpanIds.delete(spanId);
+            }
+            updateMergeSelectedButtonState(annotation);
+            renderAnnotationPanel();
+          });
+
           const label = document.createElement('code');
-          const phrase = sanitizeText(tokens.slice(span.start, span.end + 1).join(' '));
+          const phrase = getSpanText(tokens, span);
           label.textContent = `${span.classKey} [${span.start}-${span.end}] ${phrase}`;
           label.style.color = getClassColor(span.classKey);
+          label.title = 'Double-click inside this text to split the span at character level.';
+          label.addEventListener('dblclick', (event) => {
+            event.preventDefault();
+            const fullText = label.textContent || '';
+            const splitOffset = getTextOffsetFromPoint(event, label);
+            const suffixLength = Math.max(0, fullText.length - phrase.length);
+            const phraseOffset = Math.max(1, Math.min(phrase.length - 1, splitOffset - suffixLength));
+            splitSpanAtCharacter(activeItemId, span.id, phraseOffset);
+          });
 
           const actions = document.createElement('div');
-          actions.style.display = 'inline-flex';
-          actions.style.gap = '6px';
+          actions.className = 'span-actions';
 
           if (span.start < span.end) {
             const splitBtn = document.createElement('button');
@@ -2399,10 +2803,12 @@
           removeBtn.addEventListener('click', () => removeSpan(activeItemId, span.id));
           actions.append(removeBtn);
 
-          itemEl.append(label, actions);
+          itemEl.append(select, label, actions);
           spanList.append(itemEl);
         }
       }
+
+      updateMergeSelectedButtonState(annotation);
 
       const keys = Object.keys(annotation.entities).sort((a, b) => a.localeCompare(b));
       if (!keys.length) {
@@ -2568,6 +2974,13 @@
       chip.addEventListener('dragstart', (event) => {
         event.dataTransfer.setData('text/plain', item.id);
         event.dataTransfer.effectAllowed = 'move';
+        activeDraggedItemId = item.id;
+        lastDragClientY = -1;
+        startDragAutoScroll();
+      });
+
+      chip.addEventListener('dragend', () => {
+        stopDragAutoScroll();
       });
 
       chip.addEventListener('click', () => {
@@ -2596,6 +3009,55 @@
         }
         onDrop(itemId);
       });
+    }
+
+    function maybeAutoScrollContainer(container, clientY) {
+      if (!container || clientY < 0) {
+        return;
+      }
+
+      const rect = container.getBoundingClientRect();
+      if (clientY < rect.top || clientY > rect.bottom) {
+        return;
+      }
+
+      const thresholdPx = 56;
+      const maxStepPx = 22;
+      const topDistance = clientY - rect.top;
+      const bottomDistance = rect.bottom - clientY;
+
+      if (topDistance < thresholdPx) {
+        const ratio = (thresholdPx - topDistance) / thresholdPx;
+        container.scrollTop -= Math.ceil(maxStepPx * ratio);
+        return;
+      }
+
+      if (bottomDistance < thresholdPx) {
+        const ratio = (thresholdPx - bottomDistance) / thresholdPx;
+        container.scrollTop += Math.ceil(maxStepPx * ratio);
+      }
+    }
+
+    function startDragAutoScroll() {
+      if (dragAutoScrollTimer) {
+        return;
+      }
+
+      dragAutoScrollTimer = window.setInterval(() => {
+        if (!activeDraggedItemId) {
+          return;
+        }
+        maybeAutoScrollContainer(clustersPanelBody, lastDragClientY);
+      }, 16);
+    }
+
+    function stopDragAutoScroll() {
+      activeDraggedItemId = '';
+      lastDragClientY = -1;
+      if (dragAutoScrollTimer) {
+        window.clearInterval(dragAutoScrollTimer);
+        dragAutoScrollTimer = null;
+      }
     }
 
     function moveItemToCluster(itemId, clusterId) {
@@ -3082,7 +3544,7 @@
       }
       clusterMode = sanitizeText(clusterModeSelect.value) || 'value';
 
-      const savedEntityClass = sanitizeText(payload.clusterEntityClass);
+      const savedEntityClass = sanitizeText(payload.clusterEntityClass) || sanitizeText(payload.entityClass);
       if (savedEntityClass) {
         clusterEntityClass = savedEntityClass;
       }
@@ -3104,6 +3566,7 @@
       if (clusterEntityClass && [...clusterEntityClassSelect.options].some((opt) => opt.value === clusterEntityClass)) {
         clusterEntityClassSelect.value = clusterEntityClass;
       }
+      clusterEntityClass = sanitizeText(clusterEntityClassSelect.value) || clusterEntityClass;
 
       // Preload annotation payload first so entity-mode cluster entries can be reconstructed.
       annotationsByItemId = new Map();
@@ -3166,6 +3629,7 @@
       }
 
       activeItemId = '';
+      selectedSpanIds = new Set();
       activeEntityClass = nerClassDefs[0]?.key || '';
 
       renderUnassigned();
@@ -3387,41 +3851,135 @@
           annotation,
           clusterName,
           helperValues,
+          classValues: Object.fromEntries(
+            nerClassDefs.map((classDef) => [classDef.key, sanitizeText(annotation.entities[classDef.key])])
+          ),
         };
       });
 
-      if (!filterText) {
+      const filteredRows = filterText
+        ? rows.filter((row) => {
+          const haystack = [
+            row.item.column,
+            row.item.value,
+            row.clusterName,
+            ...row.helperValues.map((helper) => helper.value),
+            ...Object.values(row.annotation.entities),
+          ].join(' ').toLowerCase();
+          return haystack.includes(filterText);
+        })
+        : rows;
+
+      return sortTableRows(filteredRows);
+    }
+
+    function getTableRowSortValue(row, sortKey) {
+      if (!sortKey) {
+        return '';
+      }
+
+      if (sortKey === 'value') {
+        return sanitizeText(row.item.label);
+      }
+
+      if (sortKey === 'cluster') {
+        return sanitizeText(row.clusterName);
+      }
+
+      if (sortKey === 'count') {
+        return Number(row.item.count) || 0;
+      }
+
+      if (sortKey.startsWith('helper:')) {
+        const helperColumn = sortKey.slice('helper:'.length);
+        const helper = row.helperValues.find((entry) => entry.column === helperColumn);
+        return sanitizeText(helper?.value);
+      }
+
+      if (sortKey.startsWith('class:')) {
+        const classKey = sortKey.slice('class:'.length);
+        return sanitizeText(row.classValues?.[classKey]);
+      }
+
+      return '';
+    }
+
+    function compareTableSortValues(left, right) {
+      const leftNumber = typeof left === 'number' ? left : Number.NaN;
+      const rightNumber = typeof right === 'number' ? right : Number.NaN;
+      if (Number.isFinite(leftNumber) && Number.isFinite(rightNumber)) {
+        return leftNumber - rightNumber;
+      }
+
+      return String(left ?? '').localeCompare(String(right ?? ''), undefined, {
+        sensitivity: 'base',
+        numeric: true,
+      });
+    }
+
+    function sortTableRows(rows) {
+      const sortKey = sanitizeText(tableSortState.key);
+      if (!sortKey) {
         return rows;
       }
 
-      return rows.filter((row) => {
-        const haystack = [
-          row.item.column,
-          row.item.value,
-          row.clusterName,
-          ...row.helperValues.map((helper) => helper.value),
-          ...Object.values(row.annotation.entities),
-        ].join(' ').toLowerCase();
-        return haystack.includes(filterText);
-      });
+      const directionMultiplier = tableSortState.direction === 'desc' ? -1 : 1;
+      return [...rows]
+        .map((row, index) => ({ row, index }))
+        .sort((left, right) => {
+          const leftValue = getTableRowSortValue(left.row, sortKey);
+          const rightValue = getTableRowSortValue(right.row, sortKey);
+          const compared = compareTableSortValues(leftValue, rightValue);
+          if (compared !== 0) {
+            return compared * directionMultiplier;
+          }
+          return left.index - right.index;
+        })
+        .map((entry) => entry.row);
+    }
+
+    function getSortIndicator(sortKey) {
+      if (tableSortState.key !== sortKey) {
+        return '';
+      }
+      return tableSortState.direction === 'desc' ? ' ▼' : ' ▲';
+    }
+
+    function updateTableSort(sortKey) {
+      const normalizedKey = sanitizeText(sortKey);
+      if (!normalizedKey) {
+        return;
+      }
+
+      if (tableSortState.key === normalizedKey) {
+        tableSortState.direction = tableSortState.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        tableSortState.key = normalizedKey;
+        tableSortState.direction = 'asc';
+      }
+
+      renderAnnotationsTable();
     }
 
     function buildTableHeader() {
       tableHeaderRow.innerHTML = '';
-      const baseHeaders = ['Value', 'Cluster', 'Count'];
-      for (const column of helperColumns) {
-        baseHeaders.push(`Helper: ${column}`);
-      }
-      for (const text of baseHeaders) {
-        const th = document.createElement('th');
-        th.textContent = text;
-        tableHeaderRow.append(th);
-      }
 
-      for (const classDef of nerClassDefs) {
+      const headers = [
+        { text: 'Value', sortKey: 'value' },
+        { text: 'Cluster', sortKey: 'cluster' },
+        { text: 'Count', sortKey: 'count' },
+        ...helperColumns.map((column) => ({ text: `Helper: ${column}`, sortKey: `helper:${column}` })),
+        ...nerClassDefs.map((classDef) => ({ text: classDef.label, sortKey: `class:${classDef.key}`, title: classDef.key })),
+      ];
+
+      for (const header of headers) {
         const th = document.createElement('th');
-        th.textContent = classDef.label;
-        th.title = classDef.key;
+        th.textContent = `${header.text}${getSortIndicator(header.sortKey)}`;
+        th.classList.add('sortable');
+        th.title = header.title || `Sort by ${header.text}`;
+        th.addEventListener('click', () => {
+          updateTableSort(header.sortKey);
+        });
         tableHeaderRow.append(th);
       }
     }
@@ -3761,6 +4319,7 @@
       nextClusterId = 1;
       annotationsByItemId = new Map();
       activeItemId = '';
+      selectedSpanIds = new Set();
 
       await loadElements();
       await loadRows();
@@ -3928,8 +4487,23 @@
       }
     });
 
+    document.addEventListener('dragover', (event) => {
+      if (!activeDraggedItemId) {
+        return;
+      }
+      lastDragClientY = event.clientY;
+    });
+
+    document.addEventListener('drop', () => {
+      stopDragAutoScroll();
+    });
+
     bulkApplyBtn.addEventListener('click', () => {
       applyBulkEdit();
+    });
+
+    mergeSelectedSpansBtn.addEventListener('click', () => {
+      mergeSelectedSpans(activeItemId);
     });
 
     addDepBtn.addEventListener('click', () => {
@@ -3996,6 +4570,7 @@
       wireSectionToggle(toggleTableBtn, resultTableSection);
       wireSectionToggle(toggleClusteringBtn, clusteringAreaSection);
       thresholdOutput.textContent = getThreshold().toFixed(2);
+      mergeSelectedSpansBtn.disabled = true;
 
       await loadProjectsSettings();
       if (!projectsSettings.length) {

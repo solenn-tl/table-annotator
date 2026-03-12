@@ -12,6 +12,7 @@ from urllib.request import Request, urlopen
 
 
 ROOT_DIR = Path(__file__).resolve().parent
+CLI_DIR = ROOT_DIR / "cli"
 CUT_IMAGES_DIR = ROOT_DIR.parent / "cut_images"
 NER_SETTINGS_DIR = ROOT_DIR / "ner-settings"
 PROJECTS_SETTINGS_PATH = ROOT_DIR / "projects-settings.json"
@@ -1372,7 +1373,19 @@ class ViewerHandler(BaseHTTPRequestHandler):
             return
 
         if route in {"/iiif-command", "/iiif-command.html"}:
-            self._send_file(ROOT_DIR / "iiif-command.html")
+            self._send_file(CLI_DIR / "iiif-command.html")
+            return
+
+        if route in {"/iiif-arkotheque-command", "/iiif-arkotheque-command.html"}:
+            self._send_file(CLI_DIR / "iiif-arkotheque-command.html")
+            return
+
+        if route in {"/classif-command", "/classif-command.html"}:
+            self._send_file(CLI_DIR / "classif-command.html")
+            return
+
+        if route in {"/local-pretreatement-command", "/local-pretreatement-command.html"}:
+            self._send_file(CLI_DIR / "local-pretreatement-command.html")
             return
 
         if route in {"/projects-settings", "/projects-settings.html"}:
@@ -1519,6 +1532,17 @@ class ViewerHandler(BaseHTTPRequestHandler):
             file_path = (NER_SETTINGS_DIR / relative).resolve()
 
             if file_path.parent != NER_SETTINGS_DIR.resolve():
+                self.send_error(403, "Forbidden")
+                return
+
+            self._send_file(file_path)
+            return
+
+        if route.startswith("/cli/"):
+            relative = unquote(route[len("/cli/") :]).lstrip("/")
+            file_path = (CLI_DIR / relative).resolve()
+
+            if file_path.parent != CLI_DIR.resolve():
                 self.send_error(403, "Forbidden")
                 return
 

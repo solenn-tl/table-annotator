@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Local Pretreatement Command Helper</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Segoe UI, system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: Canvas;
+      color: CanvasText;
+      overflow-y: auto;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+    }
+
+    .top-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 8px 12px;
+      border-bottom: 1px solid #7774;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .top-nav a {
+      padding: 4px 10px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      color: inherit;
+      text-decoration: none;
+      font-size: 13px;
+    }
+
+    .top-nav a.active {
+      outline: 2px solid #7778;
+      outline-offset: 1px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      border-bottom: 1px solid #7774;
+    }
+
+    .content {
+      padding: 12px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+    }
+
+    .panel {
+      border: 1px solid #7774;
+      border-radius: 8px;
+      overflow: hidden;
+      background: color-mix(in oklab, Canvas 95%, black 2%);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .panel-title {
+      padding: 8px 10px;
+      border-bottom: 1px solid #7774;
+      font-weight: 600;
+      background: color-mix(in oklab, Canvas 98%, black 2%);
+    }
+
+    .panel-body {
+      padding: 10px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .row {
+      display: grid;
+      gap: 6px;
+    }
+
+    .row label {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .row input {
+      padding: 6px 8px;
+      border: 1px solid #7776;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 2px;
+      padding-bottom: 2px;
+    }
+
+    .help {
+      color: GrayText;
+      font-size: 12px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #7776;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    pre {
+      margin: 0;
+      padding: 10px;
+      border: 1px solid #7774;
+      border-radius: 6px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: Consolas, 'Courier New', monospace;
+      font-size: 13px;
+      background: color-mix(in oklab, Canvas 96%, black 4%);
+    }
+
+    #status {
+      color: GrayText;
+      font-size: 13px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    @media (max-width: 920px) {
+      .content {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="top-nav" aria-label="Viewer pages">
+      <a href="../page-classification.html">Page Classification</a>
+      <a href="../index.html">Table annotation</a>
+      <a href="../cover-annotator.html">Cover annotation</a>
+      <a href="../ner-and-clustering.html">NER and clustering</a>
+      <a href="../projects-settings.html">Projects settings</a>
+      <a href="./iiif-command.html">CLI: IIIF Ligeo</a>
+      <a href="./iiif-arkotheque-command.html">CLI: IIIF Arkotheque</a>
+      <a href="./classif-command.html">CLI: Classification</a>
+      <a class="active" href="./local-pretreatement-command.html">CLI: Local Pretreatement</a>
+    </nav>
+
+    <div class="toolbar">
+      <strong>Local Pretreatement Command Helper</strong>
+      <div class="actions"></div>
+    </div>
+
+    <div class="content">
+      <section class="panel">
+        <div class="panel-title">Command Inputs</div>
+        <div class="panel-body">
+          <div class="row">
+            <label for="folderPath">Source folder path</label>
+            <input id="folderPath" type="text" value=".\\images" />
+          </div>
+
+          <div class="row">
+            <label for="saveDir">Destination folder path</label>
+            <input id="saveDir" type="text" value=".\\cut_images" />
+          </div>
+
+          <div class="checkbox-row">
+            <input id="createJsonAndElements" type="checkbox" checked />
+            <label for="createJsonAndElements">Add --create-json-and-elements</label>
+          </div>
+          <div class="help">Creates missing sidecar JSON files and writes elements.json in destination.</div>
+
+          <div class="actions">
+            <button id="buildBtn" type="button">Build command</button>
+            <button id="copyBtn" type="button">Copy command</button>
+          </div>
+
+          <div id="status">Ready</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Generated Command</div>
+        <div class="panel-body">
+          <pre id="commandPreview"></pre>
+          <div class="help">Run this command in your activated Python environment.</div>
+
+          <div class="panel-title" style="margin:0 -10px 0 -10px; border-top:1px solid #7774;">Notes</div>
+          <ul>
+            <li>Landscape images are split into left and right halves.</li>
+            <li>Portrait images are copied unchanged.</li>
+            <li>The script scans recursively and skips unreadable files.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const folderPathInput = document.getElementById('folderPath');
+    const saveDirInput = document.getElementById('saveDir');
+    const createJsonAndElementsInput = document.getElementById('createJsonAndElements');
+    const commandPreview = document.getElementById('commandPreview');
+    const status = document.getElementById('status');
+    const buildBtn = document.getElementById('buildBtn');
+    const copyBtn = document.getElementById('copyBtn');
+
+    function quote(value) {
+      const text = String(value || '').trim();
+      return `"${text.replaceAll('"', '\\"')}"`;
+    }
+
+    function buildCommand() {
+      const folderPath = folderPathInput.value.trim();
+      const saveDir = saveDirInput.value.trim();
+
+      if (!folderPath) {
+        status.textContent = 'Source folder path is required';
+        return '';
+      }
+
+      if (!saveDir) {
+        status.textContent = 'Destination folder path is required';
+        return '';
+      }
+
+      const parts = [
+        'python',
+        'viewer\\cli\\local-pretreatement.py',
+        quote(folderPath),
+        quote(saveDir),
+      ];
+
+      if (createJsonAndElementsInput.checked) {
+        parts.push('--create-json-and-elements');
+      }
+
+      status.textContent = 'Command ready';
+      return parts.join(' ');
+    }
+
+    function renderCommand() {
+      const command = buildCommand();
+      commandPreview.textContent = command || '-';
+    }
+
+    async function copyCommand() {
+      const command = buildCommand();
+      if (!command) {
+        commandPreview.textContent = '-';
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(command);
+        commandPreview.textContent = command;
+        status.textContent = 'Command copied to clipboard';
+      } catch {
+        commandPreview.textContent = command;
+        status.textContent = 'Copy failed. Select the command text manually.';
+      }
+    }
+
+    [folderPathInput, saveDirInput, createJsonAndElementsInput].forEach((input) => {
+      input.addEventListener('input', renderCommand);
+      input.addEventListener('change', renderCommand);
+    });
+
+    buildBtn.addEventListener('click', renderCommand);
+    copyBtn.addEventListener('click', copyCommand);
+
+    renderCommand();
+  </script>
+</body>
+</html>
